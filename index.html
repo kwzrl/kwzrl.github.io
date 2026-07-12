@@ -147,6 +147,8 @@
     github:"kwzrl",   // "" hides
     x:     "",        // handle without @, "" hides
   };
+  // your real projects — edit freely
+  const PROJECTS = ["Avoverse", "qoot", "the avogram apps"];
 
   // ============================================================
   //  COMPONENTS  —  self-contained live demos (own iframe). Monochrome.
@@ -346,6 +348,10 @@
     if (CONFIG.x) links.push('<a class="link" href="https://x.com/' + CONFIG.x + '" target="_blank" rel="noopener">𝕏 twitter</a>');
     const d = document.createElement("div"); d.className = "links"; d.innerHTML = links.join(""); ai.appendChild(d); scroll();
   }
+  async function answerProjects(ai) {
+    await streamText(ai, `Ha — with the intel I've got? Lately we've been shipping ${PROJECTS.join(", ")} — plus this very site you're talking to right now.`);
+    await streamText(ai, `Want the receipts? Ask for my github, or tell me to show my work.`, { cls: "dim" });
+  }
   async function answerGithub(ai) {
     await streamText(ai, `Proof you actually ship — your last year on GitHub:`);
     await runTool(ai, `fetch(github.com/${CONFIG.github})`);
@@ -420,6 +426,7 @@
     if (/(roast|brutal|weak|flaw|worst|bad at|critic|tear me|harsh)/.test(q)) return answerRoast;
     if (/(good at|strength|best at|great at|skill|talent|special)/.test(q)) return answerStrengths;
     if (/(should i|build next|next\b|do next|advice|improve|get better)/.test(q)) return answerNext;
+    if (/(project|working on|what have we|what we|intel)/.test(q)) return answerProjects;
     if (/(github|contribution|commit|stats|activity|streak|graph|heatmap)/.test(q)) return answerGithub;
     if (/(everything|show.*work|my work|best work|portfolio|all my|^work$|^pieces$)/.test(q)) return answerEverything;
     if (/(sidebar|nav|menu)/.test(q)) return ai => answerCategory(ai, "sidebar");
@@ -457,7 +464,7 @@
   (async function boot() {
     renderSuggestions();
     await sleep(500);
-    await typeIntoInput("what do you actually think of me?");
+    await typeIntoInput("hey claude, with the intel you have, what projects we've been working on?");
     await ask($input.value);
     await sleep(650);
     await typeIntoInput("show me my github");
