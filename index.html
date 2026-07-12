@@ -3,83 +3,468 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>kilian</title>
-  <!-- Cormorant Garamond: freely-embeddable, has a true Light (300) italic — closest web match to Apple Garamond Light Italic -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,300;1,400;1,500&display=swap" rel="stylesheet" />
+  <title>kilian — kwzrl</title>
+  <meta name="description" content="Kilian Weinzierl — a terminal that renders its own pieces." />
   <style>
     /* ---------- reset ---------- */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --fg: #111;
-      --muted: #9a9a9a;
-      --line: #ececec;
-      --maxw: 600px;
-      --serif: "Apple Garamond Light", "Apple Garamond", "Cormorant Garamond", Garamond, Georgia, serif;
+      --bg:     #ffffff;
+      --fg:     #141414;
+      --muted:  #8c8c8c;
+      --faint:  #bcbcbc;
+      --line:   #e6e6e6;
+      --panel:  #fafafa;
+      --accent: #141414;   /* monochrome — no green */
+      --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Helvetica, Arial, sans-serif;
     }
-
     html { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+    body { font-family: var(--sans); color: var(--fg); background: var(--bg); }
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Helvetica, Arial, sans-serif;
-      color: var(--fg);
-      background: #fff;
-      font-size: 16px;
-      line-height: 1.6;
-      letter-spacing: -0.01em;
+    /* ---------- terminal column (single pane, sharp) ---------- */
+    .term {
+      width: 100%; max-width: 720px; height: 100dvh; margin: 0 auto;
+      background: var(--bg);
+      border-left: 1px solid var(--line); border-right: 1px solid var(--line);
+      display: flex; flex-direction: column; overflow: hidden;
     }
+    .term__bar { display: flex; align-items: center; gap: 9px; padding: 12px 22px; border-bottom: 1px solid var(--line); flex: 0 0 auto; }
+    .status { width: 7px; height: 7px; background: var(--accent); flex: 0 0 auto; }
+    .term__title { font-family: var(--mono); font-size: 12px; color: var(--muted); letter-spacing: .02em; }
+    .term__title b { color: var(--fg); font-weight: 600; }
 
-    .wrap {
-      max-width: var(--maxw);
-      margin: 0 auto;
-      padding: 140px 24px 160px;
+    /* ---------- log ---------- */
+    .log { flex: 1 1 auto; overflow-y: auto; padding: 24px 22px 10px; scroll-behavior: smooth; overscroll-behavior: contain; display: flex; flex-direction: column; }
+    .log__inner { margin-top: auto; }
+    .log::-webkit-scrollbar { width: 10px; }
+    .log::-webkit-scrollbar-thumb { background: #e2e2e2; border: 3px solid #fff; background-clip: padding-box; }
+    .log::-webkit-scrollbar-thumb:hover { background: #cfcfcf; background-clip: padding-box; }
+
+    .msg { margin-bottom: 20px; }
+    .msg--user { font-family: var(--mono); font-size: 14px; color: var(--fg); display: flex; gap: 10px; align-items: baseline; }
+    .msg--user .sqm { align-self: center; }
+    .msg--user .txt { word-break: break-word; }
+    .sqm { display: inline-block; width: 8px; height: 8px; background: var(--fg); flex: 0 0 auto; }
+
+    .msg--ai { padding-left: 2px; }
+    .msg--ai p { margin-bottom: 12px; max-width: 60ch; line-height: 1.62; }
+    .msg--ai p:last-child { margin-bottom: 0; }
+    .msg--ai a { color: var(--fg); text-decoration: underline; text-decoration-color: #cfcfcf; text-underline-offset: 3px; transition: text-decoration-color .15s; }
+    .msg--ai a:hover { text-decoration-color: var(--fg); }
+    .dim { color: var(--muted); }
+
+    .thinking { display: inline-flex; gap: 5px; padding: 4px 0; }
+    .thinking span { width: 6px; height: 6px; border-radius: 50%; background: var(--faint); animation: bounce 1.2s infinite ease-in-out; }
+    .thinking span:nth-child(2){ animation-delay: .15s; } .thinking span:nth-child(3){ animation-delay: .3s; }
+    @keyframes bounce { 0%,80%,100%{ transform: translateY(0); opacity:.4 } 40%{ transform: translateY(-4px); opacity:1 } }
+
+    .cursor { display: inline-block; width: .55ch; height: 1.05em; background: var(--accent); vertical-align: -2px; margin-left: 1px; animation: blink 1s steps(1) infinite; }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    /* tool call */
+    .tool { font-family: var(--mono); font-size: 12.5px; color: var(--muted); display: flex; align-items: center; gap: 9px; padding: 8px 12px; margin: 4px 0 14px; border: 1px solid var(--line); background: var(--panel); max-width: max-content; }
+    .tool .name { color: #444; }
+    .tool .spin { width: 12px; height: 12px; border-radius: 50%; border: 2px solid #e2e2e2; border-top-color: var(--accent); animation: spin .7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .tool .check { color: var(--accent); font-weight: 700; }
+
+    /* inline component canvas */
+    .canvas { border: 1px solid var(--line); background: #fff; margin: 4px 0 16px; }
+    .canvas__bar { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-bottom: 1px solid var(--line); font-family: var(--mono); font-size: 12px; color: var(--muted); }
+    .canvas__file { color: var(--fg); }
+    .canvas__tag { text-transform: uppercase; letter-spacing: .06em; font-size: 11px; }
+    .canvas iframe { display: block; width: 100%; border: 0; background: #fff; }
+
+    /* github contribution heatmap (monochrome) */
+    .gh__body { padding: 16px; overflow-x: auto; }
+    .gh__months { display: flex; margin-bottom: 6px; font-family: var(--mono); font-size: 10px; color: var(--muted); }
+    .gh__months .m { flex: 0 0 14px; white-space: nowrap; }
+    .gh__grid { display: grid; grid-template-rows: repeat(7, 11px); grid-auto-flow: column; grid-auto-columns: 11px; gap: 3px; width: max-content; }
+    .gh__cell { width: 11px; height: 11px; }
+    .gh__cell--pad { background: transparent !important; }
+    .gh [data-level="0"] { background: #ececec; }
+    .gh [data-level="1"] { background: #c4c4c4; }
+    .gh [data-level="2"] { background: #8f8f8f; }
+    .gh [data-level="3"] { background: #4d4d4d; }
+    .gh [data-level="4"] { background: #141414; }
+    .gh__legend { display: flex; align-items: center; gap: 5px; margin-top: 14px; font-family: var(--mono); font-size: 11px; color: var(--muted); }
+    .gh__legend .sq { width: 11px; height: 11px; display: inline-block; }
+    .gh__note { font-family: var(--mono); font-size: 12px; color: var(--muted); padding: 14px 16px; }
+
+    /* contact links */
+    .links { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 4px; }
+    .link { font-family: var(--mono); font-size: 13px; color: var(--fg); text-decoration: none !important; border: 1px solid var(--line); padding: 8px 14px; background: #fff; transition: border-color .15s; }
+    .link:hover { border-color: var(--accent); }
+
+    /* suggestions */
+    .suggest { display: flex; flex-wrap: wrap; gap: 8px; padding: 2px 22px 12px; flex: 0 0 auto; }
+    .chip { font-family: var(--mono); font-size: 12.5px; color: var(--muted); background: #fff; border: 1px solid var(--line); padding: 6px 12px; cursor: pointer; transition: color .15s, border-color .15s; }
+    .chip:hover { color: var(--fg); border-color: var(--accent); }
+    .chip::before { content: "→ "; color: var(--faint); }
+
+    /* prompt */
+    .prompt { display: flex; align-items: center; gap: 10px; padding: 13px 22px; border-top: 1px solid var(--line); flex: 0 0 auto; }
+    .prompt input { flex: 1; min-width: 0; background: transparent; border: 0; outline: 0; color: var(--fg); font-family: var(--mono); font-size: 14px; caret-color: var(--accent); }
+    .prompt input::placeholder { color: var(--faint); }
+    .prompt.is-busy { opacity: .55; pointer-events: none; }
+    .suggest.is-busy { opacity: .4; pointer-events: none; }
+
+    @media (max-width: 560px) {
+      .term { max-width: none; border-left: 0; border-right: 0; }
+      .log { padding: 20px 16px 6px; }
+      .suggest { padding: 2px 16px 10px; }
+      .prompt, .term__bar { padding-left: 16px; padding-right: 16px; }
     }
-
-    /* ---------- intro ---------- */
-    .headline {
-      font-family: var(--serif);
-      font-weight: 300;
-      font-style: italic;
-      font-size: 40px;
-      line-height: 1.18;
-      margin-bottom: 14px;
-    }
-    .byline { margin-bottom: 40px; }
-    .byline__name { display: block; font-size: 16px; font-weight: 500; }
-    .byline__attr { display: block; font-size: 14px; color: var(--muted); margin-top: 2px; }
-
-    .bio p { margin-bottom: 20px; }
-    .bio a {
-      color: var(--fg);
-      text-decoration: underline;
-      text-decoration-color: #cfcfcf;
-      text-underline-offset: 2px;
-      transition: text-decoration-color .15s ease;
-    }
-    .bio a:hover { text-decoration-color: var(--fg); }
-
-    @media (max-width: 640px) {
-      .wrap { padding-top: 84px; }
+    @media (prefers-reduced-motion: reduce) {
+      .cursor, .thinking span, .tool .spin { animation: none !important; }
+      .log { scroll-behavior: auto; }
     }
   </style>
 </head>
 <body>
-  <main class="wrap">
-
-    <!-- ===== intro (replace with your own words) ===== -->
-    <div class="headline">&ldquo;You don&rsquo;t need more information.<br />You need more execution.&rdquo;</div>
-    <div class="byline">
-      <span class="byline__name">Kilian Weinzierl</span>
-      <span class="byline__attr">&mdash; Alex Hormozi</span>
+  <main class="term" role="log" aria-live="polite">
+    <div class="term__bar">
+      <span class="status" title="online"></span>
+      <span class="term__title"><b>kilian weinzierl</b></span>
     </div>
-
-    <div class="bio">
-      <p>20 years old. I build things and try to ship faster than I overthink.</p>
-      <p>Find me on <a href="#">X</a>, <a href="#">GitHub</a>, or via <a href="#">email</a>.</p>
-    </div>
-
+    <div class="log" id="log"><div class="log__inner" id="loginner"></div></div>
+    <div class="suggest" id="suggest"></div>
+    <form class="prompt" id="promptForm" autocomplete="off">
+      <span class="sqm"></span>
+      <input id="promptInput" type="text" placeholder="ask it anything about you…" aria-label="Ask the AI about yourself" />
+    </form>
   </main>
+
+  <script>
+  // ============================================================
+  //  CONFIG
+  // ============================================================
+  const CONFIG = {
+    name:  "Kilian Weinzierl",
+    email: "kilianweinzierl7@gmail.com",
+    github:"kwzrl",   // "" hides
+    x:     "",        // handle without @, "" hides
+  };
+
+  // ============================================================
+  //  COMPONENTS  —  self-contained live demos (own iframe). Monochrome.
+  //  Swap the `html` snippets for your real components.
+  // ============================================================
+  const COMPONENTS = [
+    {
+      cat: "sidebar", file: "sidebar.tsx", type: "component", h: 300,
+      html:
+        '<!doctype html><meta charset=utf-8><style>' +
+        '*{margin:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif}' +
+        'body{display:flex;height:300px;background:#fafafa;color:#1a1a1a}' +
+        '.sb{width:220px;background:#0f1113;color:#c9cdd3;display:flex;flex-direction:column;padding:18px 12px}' +
+        '.brand{display:flex;align-items:center;gap:10px;font-weight:600;color:#fff;font-size:14px;padding:6px 8px 18px}' +
+        '.brand .m{width:24px;height:24px;background:#fff;color:#0f1113;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700}' +
+        '.nav{display:flex;flex-direction:column;gap:2px}' +
+        '.item{display:flex;align-items:center;gap:12px;padding:10px 11px;font-size:13.5px;color:#9aa0a6;cursor:pointer;transition:.15s}' +
+        '.item:hover{background:#1b1e22;color:#e7e8ea}' +
+        '.item.on{background:rgba(255,255,255,.12);color:#fff}' +
+        '.ic{width:15px;height:15px;background:currentColor;opacity:.6;flex:0 0 auto}' +
+        '.spacer{flex:1}' +
+        '.user{display:flex;align-items:center;gap:10px;padding:12px 8px 4px;border-top:1px solid #1e2126;font-size:13px;color:#c9cdd3}' +
+        '.av{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#3a3a3a,#6f6f6f)}' +
+        '.main{flex:1;padding:26px}.h{height:14px;width:150px;background:#e6e6e6}' +
+        '.row{height:11px;background:#efefef;margin-top:12px}' +
+        '</style>' +
+        '<div class=sb><div class=brand><span class=m>k</span>kilian.ui</div>' +
+        '<div class=nav>' +
+        '<div class="item on"><span class=ic></span>Overview</div>' +
+        '<div class=item><span class=ic></span>Components</div>' +
+        '<div class=item><span class=ic></span>Motion</div>' +
+        '<div class=item><span class=ic></span>Settings</div></div>' +
+        '<div class=spacer></div>' +
+        '<div class=user><span class=av></span>Kilian W.</div></div>' +
+        '<div class=main><div class=h></div>' +
+        '<div class=row style=width:90%></div><div class=row style=width:74%></div><div class=row style=width:82%></div></div>'
+    },
+    {
+      cat: "logo", file: "logo.svg", type: "brand mark", h: 240,
+      html:
+        '<!doctype html><meta charset=utf-8><style>' +
+        '*{margin:0;box-sizing:border-box}' +
+        'body{height:240px;display:flex;align-items:center;justify-content:center;gap:18px;background:#fff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif}' +
+        '.mark{width:64px;height:64px;background:linear-gradient(135deg,#141414,#3d3d3d);display:flex;align-items:center;justify-content:center;color:#fff;font-size:40px;font-weight:700;line-height:1;opacity:0;transform:scale(.72);animation:pop .7s cubic-bezier(.2,.9,.3,1.35) .2s forwards}' +
+        '@keyframes pop{to{opacity:1;transform:scale(1)}}' +
+        '.word{display:flex;font-size:30px;font-weight:600;letter-spacing:-.01em;color:#141414}' +
+        '.word b{font-weight:600;opacity:0;transform:translateY(9px);animation:up .5s ease forwards}' +
+        '@keyframes up{to{opacity:1;transform:translateY(0)}}' +
+        '</style>' +
+        '<div class=mark>k</div>' +
+        '<div class=word>' +
+        '<b style="animation-delay:.50s">k</b><b style="animation-delay:.56s">i</b><b style="animation-delay:.62s">l</b>' +
+        '<b style="animation-delay:.68s">i</b><b style="animation-delay:.74s">a</b><b style="animation-delay:.80s">n</b>' +
+        '</div>'
+    },
+    {
+      cat: "font", file: "type-scale.css", type: "typography", h: 250,
+      html:
+        '<!doctype html><meta charset=utf-8><style>' +
+        '*{margin:0;box-sizing:border-box}' +
+        'body{height:250px;padding:30px;background:#fff;color:#141414;display:flex;flex-direction:column;justify-content:center;gap:14px}' +
+        '.sub{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#8c8c8c}' +
+        '.big{font-family:Georgia,"Times New Roman",serif;font-style:italic;font-size:52px;line-height:1;letter-spacing:-.01em}' +
+        '.scale{display:flex;align-items:baseline;gap:20px;font-family:Georgia,serif}' +
+        '.scale span:nth-child(1){font-size:13px}.scale span:nth-child(2){font-size:19px}.scale span:nth-child(3){font-size:27px}.scale span:nth-child(4){font-size:38px}' +
+        '.p{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif;font-size:14.5px;line-height:1.5;max-width:48ch;color:#3a3a3a}' +
+        '</style>' +
+        '<div class=sub>Typeface · display serif</div>' +
+        '<div class=big>Ship it.</div>' +
+        '<div class=scale><span>Aa</span><span>Aa</span><span>Aa</span><span>Aa</span></div>' +
+        '<div class=p>An italic display serif over a mono caption and a neutral sans body — the type system behind the pieces.</div>'
+    },
+    {
+      cat: "animation", file: "motion.css", type: "micro-interactions", h: 220,
+      html:
+        '<!doctype html><meta charset=utf-8><style>' +
+        '*{margin:0;box-sizing:border-box}' +
+        'body{height:220px;display:flex;align-items:center;justify-content:center;gap:44px;background:#fff;font-family:ui-monospace,"SF Mono",Menlo,monospace;color:#8c8c8c}' +
+        '.cell{display:flex;flex-direction:column;align-items:center;gap:15px;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase}' +
+        '.spin{width:34px;height:34px;border-radius:50%;border:3px solid #ececec;border-top-color:#141414;animation:spin .8s linear infinite}' +
+        '@keyframes spin{to{transform:rotate(360deg)}}' +
+        '.pulse{width:16px;height:16px;border-radius:50%;background:#141414;position:relative}' +
+        '.pulse::after{content:"";position:absolute;inset:0;border-radius:50%;background:#141414;animation:pulse 1.6s ease-out infinite}' +
+        '@keyframes pulse{to{transform:scale(3);opacity:0}}' +
+        '.bar{width:62px;height:6px;background:#ececec;overflow:hidden}' +
+        '.bar::after{content:"";display:block;height:100%;width:38%;background:#141414;animation:load 1.8s ease-in-out infinite}' +
+        '@keyframes load{0%{transform:translateX(-110%)}100%{transform:translateX(300%)}}' +
+        '.tg{width:44px;height:24px;border-radius:999px;background:#dcdcdc;position:relative;animation:tgbg 2.4s ease infinite}' +
+        '.tg::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);animation:tgmove 2.4s ease infinite}' +
+        '@keyframes tgmove{0%,40%{left:3px}60%,100%{left:23px}}' +
+        '@keyframes tgbg{0%,40%{background:#dcdcdc}60%,100%{background:#141414}}' +
+        '</style>' +
+        '<div class=cell><div class=spin></div>loader</div>' +
+        '<div class=cell><div class=pulse></div>pulse</div>' +
+        '<div class=cell><div class=bar></div>progress</div>' +
+        '<div class=cell><div class=tg></div>toggle</div>'
+    },
+  ];
+
+  // ============================================================
+  const $log     = document.getElementById("log");
+  const $logInner = document.getElementById("loginner");
+  const $suggest = document.getElementById("suggest");
+  const $form    = document.getElementById("promptForm");
+  const $input   = document.getElementById("promptInput");
+
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const sleep  = ms => new Promise(r => setTimeout(r, reduce ? 0 : ms));
+  const rand   = (a, b) => a + Math.random() * (b - a);
+  const scroll = () => { $log.scrollTop = $log.scrollHeight; };
+  let busy = false;
+  let booting = true;
+
+  function setBusy(v) { busy = v; $form.classList.toggle("is-busy", v); $suggest.classList.toggle("is-busy", v); if (!v) $input.focus(); }
+
+  // ---------- streaming primitives ----------
+  // append a submitted prompt to the transcript, instantly (no per-char animation)
+  function commitUserMsg(text) {
+    const el = document.createElement("div"); el.className = "msg msg--user";
+    el.innerHTML = '<span class="sqm"></span><span class="txt"></span>';
+    el.querySelector(".txt").textContent = text;
+    $logInner.appendChild(el); scroll();
+  }
+  // type into the real input field at the bottom (used by the boot demo)
+  async function typeIntoInput(text) {
+    $input.value = "";
+    for (const ch of text) { $input.value += ch; await sleep(rand(45, 90)); }
+    await sleep(300);
+  }
+  const aiBlock = () => { const el = document.createElement("div"); el.className = "msg msg--ai"; $logInner.appendChild(el); return el; };
+  async function thinking(container) {
+    const t = document.createElement("div"); t.className = "thinking"; t.innerHTML = "<span></span><span></span><span></span>";
+    container.appendChild(t); scroll(); await sleep(rand(420, 720)); t.remove();
+  }
+  async function streamText(container, text, { cls = "" } = {}) {
+    const p = document.createElement("p"); if (cls) p.className = cls;
+    p.innerHTML = '<span class="body"></span><span class="cursor"></span>';
+    container.appendChild(p);
+    const body = p.querySelector(".body"), words = text.split(" ");
+    for (let i = 0; i < words.length; i++) { body.textContent += (i ? " " : "") + words[i]; scroll(); await sleep(rand(16, 52)); }
+    p.querySelector(".cursor").remove(); return p;
+  }
+  async function runTool(container, label) {
+    const t = document.createElement("div"); t.className = "tool";
+    t.innerHTML = '<span class="spin"></span><span class="name">' + label + '</span>';
+    container.appendChild(t); scroll();
+    await sleep(rand(600, 950));
+    t.querySelector(".spin").outerHTML = '<span class="check">✓</span>';
+  }
+  function renderComponent(container, c) {
+    const wrap = document.createElement("div"); wrap.className = "canvas";
+    wrap.innerHTML = '<div class="canvas__bar"><span class="canvas__file">' + c.file + '</span><span class="canvas__tag">' + c.type + '</span></div>' +
+      '<iframe title="' + c.file + '" scrolling="no" sandbox="" style="height:' + c.h + 'px"></iframe>';
+    container.appendChild(wrap);
+    wrap.querySelector("iframe").srcdoc = c.html;
+    scroll();
+  }
+
+  // ---------- answers (the AI's honest read of you, in second person) ----------
+  async function answerAbout(ai) {
+    await streamText(ai, `Honest? You're 20 and you move — you'd rather build the thing than talk about building it. You don't do whole apps; you obsess over the pieces they're made of: sidebars, logos, type, motion.`);
+    await streamText(ai, `You ship faster than you overthink. The work is sharp; the patience is a work in progress.`);
+    await streamText(ai, `Ask what you're good at, or tell me to show your work.`, { cls: "dim" });
+  }
+  async function answerStrengths(ai) {
+    await streamText(ai, `Interfaces — the small, tactile stuff most people skip: a sidebar's active state, a mark that still reads at 16px, motion you feel more than see.`);
+    await streamText(ai, `And speed. You get things in front of people while they're still deciding whether to start.`);
+  }
+  async function answerRoast(ai) {
+    await streamText(ai, `You asked for it. You'd start three pieces before finishing one, and "ship faster than I overthink" is a generous way to say you skip the planning.`);
+    await streamText(ai, `But for 20? That's the good kind of problem. Keep it.`, { cls: "dim" });
+  }
+  async function answerNext(ai) {
+    await streamText(ai, `Take one of these and make it real — turn the sidebar into a component library people can actually drop in. Keep it small and you'll finish it for once.`);
+  }
+  async function answerCategory(ai, cat) {
+    const c = COMPONENTS.find(x => x.cat === cat);
+    const lead = {
+      sidebar: "Your sidebars — cleanest thing you make:",
+      logo: "The marks you built in code:",
+      font: "Your type system:",
+      animation: "The motion you sweat over:",
+    }[cat];
+    await streamText(ai, lead);
+    await runTool(ai, `render(${c.file})`);
+    renderComponent(ai, c);
+  }
+  async function answerEverything(ai) {
+    await streamText(ai, `Fine — here's what you've actually shipped. All live, not screenshots:`);
+    for (const c of COMPONENTS) { await runTool(ai, `render(${c.file})`); renderComponent(ai, c); await sleep(rand(200, 380)); }
+    await streamText(ai, `Ask for one on its own, or see how people reach you.`, { cls: "dim" });
+  }
+  async function answerContact(ai) {
+    await streamText(ai, `People reach you here:`);
+    const links = ['<a class="link" href="mailto:' + CONFIG.email + '">✉ email</a>'];
+    if (CONFIG.github) links.push('<a class="link" href="https://github.com/' + CONFIG.github + '" target="_blank" rel="noopener">⌥ github / ' + CONFIG.github + '</a>');
+    if (CONFIG.x) links.push('<a class="link" href="https://x.com/' + CONFIG.x + '" target="_blank" rel="noopener">𝕏 twitter</a>');
+    const d = document.createElement("div"); d.className = "links"; d.innerHTML = links.join(""); ai.appendChild(d); scroll();
+  }
+  async function answerGithub(ai) {
+    await streamText(ai, `Proof you actually ship — your last year on GitHub:`);
+    await runTool(ai, `fetch(github.com/${CONFIG.github})`);
+    await renderGithub(ai);
+  }
+  function buildHeatmap(days) {
+    const frag = document.createElement("div");
+    const cells = [];
+    if (days.length) { const pad = new Date(days[0].date + "T00:00:00").getDay(); for (let i = 0; i < pad; i++) cells.push(null); }
+    for (const d of days) cells.push(d);
+    const weeks = []; for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
+    const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    const mrow = document.createElement("div"); mrow.className = "gh__months"; let last = -1;
+    for (const wk of weeks) {
+      const first = wk.find(x => x); const slot = document.createElement("span"); slot.className = "m";
+      if (first) { const m = new Date(first.date + "T00:00:00").getMonth(); if (m !== last) { slot.textContent = MONTHS[m]; last = m; } }
+      mrow.appendChild(slot);
+    }
+    frag.appendChild(mrow);
+    const grid = document.createElement("div"); grid.className = "gh__grid";
+    for (const c of cells) {
+      const el = document.createElement("span"); el.className = "gh__cell";
+      if (!c) el.classList.add("gh__cell--pad");
+      else { el.dataset.level = c.level; el.title = c.count + " on " + c.date; }
+      grid.appendChild(el);
+    }
+    frag.appendChild(grid);
+    const legend = document.createElement("div"); legend.className = "gh__legend";
+    legend.innerHTML = 'less <span class="sq" data-level="0"></span><span class="sq" data-level="1"></span><span class="sq" data-level="2"></span><span class="sq" data-level="3"></span><span class="sq" data-level="4"></span> more';
+    frag.appendChild(legend);
+    return frag;
+  }
+  async function renderGithub(container) {
+    const box = document.createElement("div"); box.className = "canvas gh";
+    box.innerHTML = '<div class="canvas__bar"><span class="canvas__file">github.contributions</span><span class="canvas__tag" id="ghtotal">loading…</span></div><div class="gh__body" id="ghbody"></div>';
+    container.appendChild(box); scroll();
+    try {
+      // NOTE: the ?y=last (rolling year) endpoint is cache-stale for a while; the full-year
+      // endpoint stays fresh, so we fetch all years and slice the trailing 365 days ourselves.
+      const res = await fetch('https://github-contributions-api.jogruber.de/v4/' + CONFIG.github);
+      if (!res.ok) throw 0;
+      const data = await res.json();
+      const all = (data.contributions || []).slice().sort((a, b) => a.date < b.date ? -1 : 1);
+      const iso = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      const start = new Date(today); start.setDate(start.getDate() - 364);
+      const startISO = iso(start), todayISO = iso(today);
+      const days = all.filter(x => x.date >= startISO && x.date <= todayISO);
+      const total = days.reduce((s, d) => s + (d.count || 0), 0);
+      box.querySelector("#ghtotal").textContent = total.toLocaleString("en-US") + " in the last year";
+      box.querySelector("#ghbody").appendChild(buildHeatmap(days));
+    } catch (e) {
+      box.querySelector("#ghtotal").textContent = "unavailable";
+      box.querySelector("#ghbody").innerHTML = '<div class="gh__note">⚠ couldn\'t reach GitHub right now.</div>';
+    }
+    scroll();
+  }
+  async function answerMotto(ai) {
+    await streamText(ai, `"You don't need more information. You need more execution."`);
+    await streamText(ai, `— Alex Hormozi. Basically your whole operating system.`, { cls: "dim" });
+  }
+  async function answerHelp(ai) {
+    await streamText(ai, `Ask me: what am I good at? · roast me · show my work · sidebars · logos · type · motion · contact.`, { cls: "dim" });
+  }
+  async function answerFallback(ai, q) {
+    await streamText(ai, `I only really know you and your work — try "what am I good at?", or tell me to show your pieces.`, { cls: "dim" });
+  }
+
+  // ---------- routing ----------
+  function route(text) {
+    const q = text.toLowerCase();
+    if (/(roast|brutal|weak|flaw|worst|bad at|critic|tear me|harsh)/.test(q)) return answerRoast;
+    if (/(good at|strength|best at|great at|skill|talent|special)/.test(q)) return answerStrengths;
+    if (/(should i|build next|next\b|do next|advice|improve|get better)/.test(q)) return answerNext;
+    if (/(github|contribution|commit|stats|activity|streak|graph|heatmap)/.test(q)) return answerGithub;
+    if (/(everything|show.*work|my work|best work|portfolio|all my|^work$|^pieces$)/.test(q)) return answerEverything;
+    if (/(sidebar|nav|menu)/.test(q)) return ai => answerCategory(ai, "sidebar");
+    if (/(logo|brand|mark|icon)/.test(q)) return ai => answerCategory(ai, "logo");
+    if (/(font|type|typo|specimen)/.test(q)) return ai => answerCategory(ai, "font");
+    if (/(anim|motion|interaction|loader|toggle|hover)/.test(q)) return ai => answerCategory(ai, "animation");
+    if (/(contact|email|reach|hire|twitter|dm)/.test(q)) return answerContact;
+    if (/(motto|philosoph|quote|belief|principle|live by)/.test(q)) return answerMotto;
+    if (/(think of|about me|who am i|read me|sum me|assessment|opinion|impression|honest|what do you)/.test(q)) return answerAbout;
+    if (/(who|about|you|yourself|kilian|bio|me\b)/.test(q)) return answerAbout;
+    if (/(component|piece|show|made|ship|build)/.test(q)) return answerEverything;
+    if (/(help|command|what can)/.test(q)) return answerHelp;
+    return null;
+  }
+
+  const SUGGESTIONS = ["what am I good at?", "roast me", "github", "show my work", "sidebars", "contact"];
+  function renderSuggestions() {
+    $suggest.innerHTML = "";
+    for (const s of SUGGESTIONS) { const b = document.createElement("button"); b.className = "chip"; b.type = "button"; b.textContent = s; b.onclick = () => { if (booting) return; ask(s); }; $suggest.appendChild(b); }
+  }
+
+  async function ask(text) {
+    if (busy) return;
+    text = text.trim(); if (!text) return;
+    setBusy(true); $input.value = "";
+    commitUserMsg(text);            // the typed prompt moves up into the transcript
+    const ai = aiBlock(); await thinking(ai);
+    const fn = route(text);
+    if (fn) await fn(ai); else await answerFallback(ai, text);
+    setBusy(false);
+  }
+  $form.addEventListener("submit", e => { e.preventDefault(); if (booting) return; ask($input.value); });
+
+  // ---------- boot: the demo types into the input below, then sends ----------
+  (async function boot() {
+    renderSuggestions();
+    await sleep(500);
+    await typeIntoInput("what do you actually think of me?");
+    await ask($input.value);
+    await sleep(650);
+    await typeIntoInput("show me my github");
+    await ask($input.value);
+    booting = false;
+    $input.focus();
+  })();
+  </script>
 </body>
 </html>
