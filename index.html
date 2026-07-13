@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content" />
   <title>kilian — kwzrl</title>
-  <meta name="description" content="Kilian Weinzierl — a terminal that renders its own pieces." />
+  <meta name="description" content="Kilian Weinzierl — a terminal that reads you off your own GitHub." />
   <style>
     /* ---------- reset ---------- */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -55,6 +55,9 @@
     .msg--ai a { color: var(--fg); text-decoration: underline; text-decoration-color: #cfcfcf; text-underline-offset: 3px; transition: text-decoration-color .15s; }
     .msg--ai a:hover { text-decoration-color: var(--fg); }
     .dim { color: var(--muted); }
+    /* section lead — terminal-style marker before a block */
+    .msg--ai .lead { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin: 20px 0 10px; }
+    .msg--ai .lead:first-child { margin-top: 0; }
 
     .thinking { display: inline-flex; gap: 5px; padding: 4px 0; }
     .thinking span { width: 6px; height: 6px; border-radius: 50%; background: var(--faint); animation: bounce 1.2s infinite ease-in-out; }
@@ -71,12 +74,11 @@
     @keyframes spin { to { transform: rotate(360deg); } }
     .tool .check { color: var(--accent); font-weight: 700; }
 
-    /* inline component canvas */
+    /* inline canvas (shared by the github heatmap) */
     .canvas { border: 1px solid var(--line); background: #fff; margin: 4px 0 16px; max-width: 100%; }
     .canvas__bar { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-bottom: 1px solid var(--line); font-family: var(--mono); font-size: 12px; color: var(--muted); }
     .canvas__file { color: var(--fg); }
     .canvas__tag { text-transform: uppercase; letter-spacing: .06em; font-size: 11px; }
-    .canvas iframe { display: block; width: 100%; border: 0; background: #fff; }
 
     /* github contribution heatmap (monochrome) */
     .gh__body { padding: 16px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -94,7 +96,7 @@
     .gh__legend .sq { width: 11px; height: 11px; display: inline-block; }
     .gh__note { font-family: var(--mono); font-size: 12px; color: var(--muted); padding: 14px 16px; }
 
-    /* contact links */
+    /* contact / receipt links */
     .links { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 4px; }
     .link { font-family: var(--mono); font-size: 13px; color: var(--fg); text-decoration: none !important; border: 1px solid var(--line); padding: 8px 14px; background: #fff; transition: border-color .15s; }
     .link:hover { border-color: var(--accent); }
@@ -151,107 +153,6 @@
     github:"kwzrl",   // "" hides
     x:     "",        // handle without @, "" hides
   };
-  // your real projects — edit freely
-  const PROJECTS = ["Avoverse", "qoot", "the avogram apps"];
-
-  // ============================================================
-  //  COMPONENTS  —  self-contained live demos (own iframe). Monochrome.
-  //  Swap the `html` snippets for your real components.
-  // ============================================================
-  const COMPONENTS = [
-    {
-      cat: "sidebar", file: "sidebar.tsx", type: "component", h: 300,
-      html:
-        '<!doctype html><meta charset=utf-8><style>' +
-        '*{margin:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif}' +
-        'body{display:flex;height:300px;background:#fafafa;color:#1a1a1a}' +
-        '.sb{width:220px;background:#0f1113;color:#c9cdd3;display:flex;flex-direction:column;padding:18px 12px}' +
-        '.brand{display:flex;align-items:center;gap:10px;font-weight:600;color:#fff;font-size:14px;padding:6px 8px 18px}' +
-        '.brand .m{width:24px;height:24px;background:#fff;color:#0f1113;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700}' +
-        '.nav{display:flex;flex-direction:column;gap:2px}' +
-        '.item{display:flex;align-items:center;gap:12px;padding:10px 11px;font-size:13.5px;color:#9aa0a6;cursor:pointer;transition:.15s}' +
-        '.item:hover{background:#1b1e22;color:#e7e8ea}' +
-        '.item.on{background:rgba(255,255,255,.12);color:#fff}' +
-        '.ic{width:15px;height:15px;background:currentColor;opacity:.6;flex:0 0 auto}' +
-        '.spacer{flex:1}' +
-        '.user{display:flex;align-items:center;gap:10px;padding:12px 8px 4px;border-top:1px solid #1e2126;font-size:13px;color:#c9cdd3}' +
-        '.av{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#3a3a3a,#6f6f6f)}' +
-        '.main{flex:1;padding:26px}.h{height:14px;width:150px;background:#e6e6e6}' +
-        '.row{height:11px;background:#efefef;margin-top:12px}' +
-        '</style>' +
-        '<div class=sb><div class=brand><span class=m>k</span>kilian.ui</div>' +
-        '<div class=nav>' +
-        '<div class="item on"><span class=ic></span>Overview</div>' +
-        '<div class=item><span class=ic></span>Components</div>' +
-        '<div class=item><span class=ic></span>Motion</div>' +
-        '<div class=item><span class=ic></span>Settings</div></div>' +
-        '<div class=spacer></div>' +
-        '<div class=user><span class=av></span>Kilian W.</div></div>' +
-        '<div class=main><div class=h></div>' +
-        '<div class=row style=width:90%></div><div class=row style=width:74%></div><div class=row style=width:82%></div></div>'
-    },
-    {
-      cat: "logo", file: "logo.svg", type: "brand mark", h: 240,
-      html:
-        '<!doctype html><meta charset=utf-8><style>' +
-        '*{margin:0;box-sizing:border-box}' +
-        'body{height:240px;display:flex;align-items:center;justify-content:center;gap:18px;background:#fff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif}' +
-        '.mark{width:64px;height:64px;background:linear-gradient(135deg,#141414,#3d3d3d);display:flex;align-items:center;justify-content:center;color:#fff;font-size:40px;font-weight:700;line-height:1;opacity:0;transform:scale(.72);animation:pop .7s cubic-bezier(.2,.9,.3,1.35) .2s forwards}' +
-        '@keyframes pop{to{opacity:1;transform:scale(1)}}' +
-        '.word{display:flex;font-size:30px;font-weight:600;letter-spacing:-.01em;color:#141414}' +
-        '.word b{font-weight:600;opacity:0;transform:translateY(9px);animation:up .5s ease forwards}' +
-        '@keyframes up{to{opacity:1;transform:translateY(0)}}' +
-        '</style>' +
-        '<div class=mark>k</div>' +
-        '<div class=word>' +
-        '<b style="animation-delay:.50s">k</b><b style="animation-delay:.56s">i</b><b style="animation-delay:.62s">l</b>' +
-        '<b style="animation-delay:.68s">i</b><b style="animation-delay:.74s">a</b><b style="animation-delay:.80s">n</b>' +
-        '</div>'
-    },
-    {
-      cat: "font", file: "type-scale.css", type: "typography", h: 250,
-      html:
-        '<!doctype html><meta charset=utf-8><style>' +
-        '*{margin:0;box-sizing:border-box}' +
-        'body{height:250px;padding:30px;background:#fff;color:#141414;display:flex;flex-direction:column;justify-content:center;gap:14px}' +
-        '.sub{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#8c8c8c}' +
-        '.big{font-family:Georgia,"Times New Roman",serif;font-style:italic;font-size:52px;line-height:1;letter-spacing:-.01em}' +
-        '.scale{display:flex;align-items:baseline;gap:20px;font-family:Georgia,serif}' +
-        '.scale span:nth-child(1){font-size:13px}.scale span:nth-child(2){font-size:19px}.scale span:nth-child(3){font-size:27px}.scale span:nth-child(4){font-size:38px}' +
-        '.p{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif;font-size:14.5px;line-height:1.5;max-width:48ch;color:#3a3a3a}' +
-        '</style>' +
-        '<div class=sub>Typeface · display serif</div>' +
-        '<div class=big>Ship it.</div>' +
-        '<div class=scale><span>Aa</span><span>Aa</span><span>Aa</span><span>Aa</span></div>' +
-        '<div class=p>An italic display serif over a mono caption and a neutral sans body — the type system behind the pieces.</div>'
-    },
-    {
-      cat: "animation", file: "motion.css", type: "micro-interactions", h: 220,
-      html:
-        '<!doctype html><meta charset=utf-8><style>' +
-        '*{margin:0;box-sizing:border-box}' +
-        'body{height:220px;display:flex;align-items:center;justify-content:center;gap:44px;background:#fff;font-family:ui-monospace,"SF Mono",Menlo,monospace;color:#8c8c8c}' +
-        '@media(max-width:380px){body{gap:22px}}' +
-        '.cell{display:flex;flex-direction:column;align-items:center;gap:15px;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase}' +
-        '.spin{width:34px;height:34px;border-radius:50%;border:3px solid #ececec;border-top-color:#141414;animation:spin .8s linear infinite}' +
-        '@keyframes spin{to{transform:rotate(360deg)}}' +
-        '.pulse{width:16px;height:16px;border-radius:50%;background:#141414;position:relative}' +
-        '.pulse::after{content:"";position:absolute;inset:0;border-radius:50%;background:#141414;animation:pulse 1.6s ease-out infinite}' +
-        '@keyframes pulse{to{transform:scale(3);opacity:0}}' +
-        '.bar{width:62px;height:6px;background:#ececec;overflow:hidden}' +
-        '.bar::after{content:"";display:block;height:100%;width:38%;background:#141414;animation:load 1.8s ease-in-out infinite}' +
-        '@keyframes load{0%{transform:translateX(-110%)}100%{transform:translateX(300%)}}' +
-        '.tg{width:44px;height:24px;border-radius:999px;background:#dcdcdc;position:relative;animation:tgbg 2.4s ease infinite}' +
-        '.tg::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);animation:tgmove 2.4s ease infinite}' +
-        '@keyframes tgmove{0%,40%{left:3px}60%,100%{left:23px}}' +
-        '@keyframes tgbg{0%,40%{background:#dcdcdc}60%,100%{background:#141414}}' +
-        '</style>' +
-        '<div class=cell><div class=spin></div>loader</div>' +
-        '<div class=cell><div class=pulse></div>pulse</div>' +
-        '<div class=cell><div class=bar></div>progress</div>' +
-        '<div class=cell><div class=tg></div>toggle</div>'
-    },
-  ];
 
   // ============================================================
   const $log     = document.getElementById("log");
@@ -303,48 +204,24 @@
     await sleep(rand(600, 950));
     t.querySelector(".spin").outerHTML = '<span class="check">✓</span>';
   }
-  function renderComponent(container, c) {
-    const wrap = document.createElement("div"); wrap.className = "canvas";
-    wrap.innerHTML = '<div class="canvas__bar"><span class="canvas__file">' + c.file + '</span><span class="canvas__tag">' + c.type + '</span></div>' +
-      '<iframe title="' + c.file + '" scrolling="no" sandbox="" style="height:' + c.h + 'px"></iframe>';
-    container.appendChild(wrap);
-    wrap.querySelector("iframe").srcdoc = c.html;
-    scroll();
-  }
 
   // ---------- answers (the AI's honest read of you, in second person) ----------
-  async function answerAbout(ai) {
-    await streamText(ai, `Honest? You're 20 and you move — you'd rather build the thing than talk about building it. You don't do whole apps; you obsess over the pieces they're made of: sidebars, logos, type, motion.`);
-    await streamText(ai, `You ship faster than you overthink. The work is sharp; the patience is a work in progress.`);
-    await streamText(ai, `Ask what you're good at, or tell me to show your work.`, { cls: "dim" });
-  }
   async function answerStrengths(ai) {
-    await streamText(ai, `Interfaces — the small, tactile stuff most people skip: a sidebar's active state, a mark that still reads at 16px, motion you feel more than see.`);
-    await streamText(ai, `And speed. You get things in front of people while they're still deciding whether to start.`);
+    await streamText(ai, `Speed and taste. You're fast — in front of people while they're still deciding whether to start — and you finish the go-to-market layer most builders skip: waitlists, launch films, a YC video.`);
+    await streamText(ai, `Real range under it: Next.js, Swift, Flutter, mobile and desktop, German and English.`);
   }
   async function answerRoast(ai) {
-    await streamText(ai, `You asked for it. You'd start three pieces before finishing one, and "ship faster than I overthink" is a generous way to say you skip the planning.`);
-    await streamText(ai, `But for 20? That's the good kind of problem. Keep it.`, { cls: "dim" });
+    await streamText(ai, `You asked for it. Serial-starter syndrome — dozens of folders, most private, most never shipped. You'd rather begin the next thing than grind the last one to a release, and you install every new AI tool instead of committing to one.`);
+    await streamText(ai, `Focus is your scarcest resource, not ideas. But at 20, that's the good kind of problem. Keep moving.`, { cls: "dim" });
   }
   async function answerNext(ai) {
-    await streamText(ai, `Take one of these and make it real — turn the sidebar into a component library people can actually drop in. Keep it small and you'll finish it for once.`);
+    await streamText(ai, `Pick one — it's Avogram — and make everything else a feature or a graveyard. You've got the product, the waitlist, the YC video; the missing piece is a public v1 people can actually touch.`);
   }
-  async function answerCategory(ai, cat) {
-    const c = COMPONENTS.find(x => x.cat === cat);
-    const lead = {
-      sidebar: "Your sidebars — cleanest thing you make:",
-      logo: "The marks you built in code:",
-      font: "Your type system:",
-      animation: "The motion you sweat over:",
-    }[cat];
-    await streamText(ai, lead);
-    await runTool(ai, `render(${c.file})`);
-    renderComponent(ai, c);
-  }
-  async function answerEverything(ai) {
-    await streamText(ai, `Fine — here's what you've actually shipped. All live, not screenshots:`);
-    for (const c of COMPONENTS) { await runTool(ai, `render(${c.file})`); renderComponent(ai, c); await sleep(rand(200, 380)); }
-    await streamText(ai, `Ask for one on its own, or see how people reach you.`, { cls: "dim" });
+  async function answerWork(ai) {
+    await streamText(ai, `Can't — there's nothing public to hand you. The work lives in private repos, sealed on purpose.`);
+    await streamText(ai, `The one thing that leaks is the graph. That's the only receipt you get.`, { cls: "dim" });
+    await runTool(ai, `fetch(github.com/${CONFIG.github})`);
+    await renderGithub(ai);
   }
   async function answerContact(ai) {
     await streamText(ai, `People reach you here:`);
@@ -354,8 +231,35 @@
     const d = document.createElement("div"); d.className = "links"; d.innerHTML = links.join(""); ai.appendChild(d); scroll();
   }
   async function answerProjects(ai) {
-    await streamText(ai, `Ha — with the intel I've got? Lately we've been shipping ${PROJECTS.join(", ")} — plus this very site you're talking to right now.`);
-    await streamText(ai, `Want the receipts? Ask for my github, or tell me to show my work.`, { cls: "dim" });
+    await streamText(ai, `Give me a second — pulling from three places at once: my notes on you, your GitHub, and the ~/ folder on this machine.`);
+    await runTool(ai, `recall(memory)`);
+    await runTool(ai, `fetch(github.com/${CONFIG.github})`);
+    await runTool(ai, `ls(~/kilian)`);
+    await streamText(ai, `Good haul. Here's the file.`, { cls: "dim" });
+
+    await streamText(ai, `who you are`, { cls: "lead" });
+    await streamText(ai, `German, 20, out of Regensburg. A serial builder with founder energy — AI-native to the point your dotfiles rat you out: .codex .grok .gemini .cursor .windsurf .claude. You install every AI tool that ships.`);
+    await streamText(ai, `On GitHub since July 2023, but the public face is deliberately thin — a couple of repos, one follower, and this site. You don't plan, you build: six versions of a thing in two days, keep the one that feels right. This site is exhibit A; you rebuilt it more times than it has features.`);
+
+    await streamText(ai, `the graph gives you away`, { cls: "lead" });
+    await streamText(ai, `Here's the real tell. The repos are private — the graph isn't. A near-solid wall this year: about 2,100 commits, roughly 98% of them behind private repos, and GitHub lights every square anyway. The volume is public even when the code never is.`);
+    await streamText(ai, `And the break is clean: 39 commits in all of 2025, then 2026 landed and you never looked up.`);
+    await runTool(ai, `fetch(github.com/${CONFIG.github})`);
+    await renderGithub(ai);
+
+    await streamText(ai, `the bet — Avogram`, { cls: "lead" });
+    await streamText(ai, `Your flagship, everywhere in layers: an AI film studio for desktop, "ultra-realistic AI people that promote your thing," a quiet-launch waitlist, an intro film, a Video for YC. Not a product — a whole universe around generative AI for marketing and media.`);
+
+    await streamText(ai, `the iceberg`, { cls: "lead" });
+    await streamText(ai, `13 repos on GitHub, all but a couple private. The ~/ folder is the real story: forty-odd projects deep.`);
+    await streamText(ai, `A paid AI-risk report, a brand tool, an audio cutter, a handful of web experiments — and a graveyard of one-swing folders behind them. Names stay sealed; that's the point.`);
+
+    await streamText(ai, `the honest read`, { cls: "lead" });
+    await streamText(ai, `Strengths: fast, taste-driven, and you actually finish the go-to-market layer most builders skip — waitlists, launch films, a YC video. Real range too: Next.js, Swift, Flutter, mobile and desktop, two languages.`);
+    await streamText(ai, `The roast: serial-starter syndrome. You'd rather begin the next thing than grind the last one to a release — and you try every new AI tool instead of committing to one. Focus is your scarcest resource, not ideas.`);
+    await streamText(ai, `What's next is obvious: pick one — it's Avogram — and make everything else a feature or a graveyard. You have the product, the waitlist, the YC video; the missing piece is a public v1 people can actually touch.`);
+
+    await streamText(ai, `That's the file. The rest stays sealed — ask how people reach you, that's the one door that's open.`, { cls: "dim" });
   }
   async function answerGithub(ai) {
     await streamText(ai, `Proof you actually ship — your last year on GitHub:`);
@@ -407,7 +311,11 @@
       const days = all.filter(x => x.date >= startISO && x.date <= todayISO);
       const total = days.reduce((s, d) => s + (d.count || 0), 0);
       box.querySelector("#ghtotal").textContent = total.toLocaleString("en-US") + " in the last year";
-      box.querySelector("#ghbody").appendChild(buildHeatmap(days));
+      const gbody = box.querySelector("#ghbody");
+      gbody.appendChild(buildHeatmap(days));
+      // the interesting part (recent commits) is on the far right — start there
+      gbody.scrollLeft = gbody.scrollWidth;
+      requestAnimationFrame(() => { gbody.scrollLeft = gbody.scrollWidth; });
     } catch (e) {
       box.querySelector("#ghtotal").textContent = "unavailable";
       box.querySelector("#ghbody").innerHTML = '<div class="gh__note">⚠ couldn\'t reach GitHub right now.</div>';
@@ -419,10 +327,10 @@
     await streamText(ai, `— Alex Hormozi. Basically your whole operating system.`, { cls: "dim" });
   }
   async function answerHelp(ai) {
-    await streamText(ai, `Ask me: what am I good at? · roast me · show my work · sidebars · logos · type · motion · contact.`, { cls: "dim" });
+    await streamText(ai, `Ask me: what intel you've got on me · what am I good at? · roast me · show my work · github · what to build next · contact.`, { cls: "dim" });
   }
   async function answerFallback(ai, q) {
-    await streamText(ai, `I only really know you and your work — try "what am I good at?", or tell me to show your pieces.`, { cls: "dim" });
+    await streamText(ai, `I only really know you and your work — try "what intel you've got on me", "show my work", or "roast me".`, { cls: "dim" });
   }
 
   // ---------- routing ----------
@@ -431,23 +339,16 @@
     if (/(roast|brutal|weak|flaw|worst|bad at|critic|tear me|harsh)/.test(q)) return answerRoast;
     if (/(good at|strength|best at|great at|skill|talent|special)/.test(q)) return answerStrengths;
     if (/(should i|build next|next\b|do next|advice|improve|get better)/.test(q)) return answerNext;
-    if (/(project|working on|what have we|what we|intel)/.test(q)) return answerProjects;
     if (/(github|contribution|commit|stats|activity|streak|graph|heatmap)/.test(q)) return answerGithub;
-    if (/(everything|show.*work|my work|best work|portfolio|all my|^work$|^pieces$)/.test(q)) return answerEverything;
-    if (/(sidebar|nav|menu)/.test(q)) return ai => answerCategory(ai, "sidebar");
-    if (/(logo|brand|mark|icon)/.test(q)) return ai => answerCategory(ai, "logo");
-    if (/(font|type|typo|specimen)/.test(q)) return ai => answerCategory(ai, "font");
-    if (/(anim|motion|interaction|loader|toggle|hover)/.test(q)) return ai => answerCategory(ai, "animation");
+    if (/(work|receipt|portfolio|show me|shipped|live|projects\b|repos?|see it)/.test(q)) return answerWork;
     if (/(contact|email|reach|hire|twitter|dm)/.test(q)) return answerContact;
     if (/(motto|philosoph|quote|belief|principle|live by)/.test(q)) return answerMotto;
-    if (/(think of|about me|who am i|read me|sum me|assessment|opinion|impression|honest|what do you)/.test(q)) return answerAbout;
-    if (/(who|about|you|yourself|kilian|bio|me\b)/.test(q)) return answerAbout;
-    if (/(component|piece|show|made|ship|build)/.test(q)) return answerEverything;
+    if (/(intel|dossier|file on|project|working on|what have we|what we|who am i|about me|read me|sum me|assessment|opinion|impression|honest|what do you|who are you|yourself|kilian|bio|who\b|about\b|me\b)/.test(q)) return answerProjects;
     if (/(help|command|what can)/.test(q)) return answerHelp;
     return null;
   }
 
-  const SUGGESTIONS = ["what am I good at?", "roast me", "github", "show my work", "sidebars", "contact"];
+  const SUGGESTIONS = ["what am I good at?", "roast me", "show my work", "github", "contact"];
   function renderSuggestions() {
     $suggest.innerHTML = "";
     for (const s of SUGGESTIONS) { const b = document.createElement("button"); b.className = "chip"; b.type = "button"; b.textContent = s; b.onclick = () => { if (booting) return; ask(s); }; $suggest.appendChild(b); }
@@ -465,14 +366,11 @@
   }
   $form.addEventListener("submit", e => { e.preventDefault(); if (booting) return; ask($input.value); });
 
-  // ---------- boot: the demo types into the input below, then sends ----------
+  // ---------- boot: the demo types the opener into the input below, then sends ----------
   (async function boot() {
     renderSuggestions();
     await sleep(500);
-    await typeIntoInput("yo claude, tell me what intel you've got on me");
-    await ask($input.value);
-    await sleep(650);
-    await typeIntoInput("show me my github");
+    await typeIntoInput("hey claude, tell me what intel you've got on me");
     await ask($input.value);
     booting = false;
     $input.focus();
