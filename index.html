@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content" />
   <title>kilian — kwzrl</title>
   <meta name="description" content="Kilian Weinzierl — a terminal that renders its own pieces." />
   <style>
@@ -20,8 +20,8 @@
       --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
       --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Helvetica, Arial, sans-serif;
     }
-    html { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
-    body { font-family: var(--sans); color: var(--fg); background: var(--bg); }
+    html { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; -webkit-text-size-adjust: 100%; }
+    body { font-family: var(--sans); color: var(--fg); background: var(--bg); overflow-x: hidden; }
 
     /* ---------- terminal column (single pane, sharp) ---------- */
     .term {
@@ -36,8 +36,9 @@
     .term__title b { color: var(--fg); font-weight: 600; }
 
     /* ---------- log ---------- */
-    .log { flex: 1 1 auto; overflow-y: auto; padding: 24px 22px 10px; scroll-behavior: smooth; overscroll-behavior: contain; display: flex; flex-direction: column; }
-    .log__inner { margin-top: auto; }
+    .log { flex: 1 1 auto; min-width: 0; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; padding: 24px 22px 10px; scroll-behavior: smooth; overscroll-behavior: contain; display: flex; flex-direction: column; }
+    .log__inner { margin-top: auto; width: 100%; min-width: 0; }
+    .msg { max-width: 100%; }
     .log::-webkit-scrollbar { width: 10px; }
     .log::-webkit-scrollbar-thumb { background: #e2e2e2; border: 3px solid #fff; background-clip: padding-box; }
     .log::-webkit-scrollbar-thumb:hover { background: #cfcfcf; background-clip: padding-box; }
@@ -45,7 +46,7 @@
     .msg { margin-bottom: 20px; }
     .msg--user { font-family: var(--mono); font-size: 14px; color: var(--fg); display: flex; gap: 10px; align-items: baseline; }
     .msg--user .sqm { align-self: center; }
-    .msg--user .txt { word-break: break-word; }
+    .msg--user .txt { min-width: 0; overflow-wrap: anywhere; }
     .sqm { display: inline-block; width: 8px; height: 8px; background: var(--fg); flex: 0 0 auto; }
 
     .msg--ai { padding-left: 2px; }
@@ -71,14 +72,14 @@
     .tool .check { color: var(--accent); font-weight: 700; }
 
     /* inline component canvas */
-    .canvas { border: 1px solid var(--line); background: #fff; margin: 4px 0 16px; }
+    .canvas { border: 1px solid var(--line); background: #fff; margin: 4px 0 16px; max-width: 100%; }
     .canvas__bar { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-bottom: 1px solid var(--line); font-family: var(--mono); font-size: 12px; color: var(--muted); }
     .canvas__file { color: var(--fg); }
     .canvas__tag { text-transform: uppercase; letter-spacing: .06em; font-size: 11px; }
     .canvas iframe { display: block; width: 100%; border: 0; background: #fff; }
 
     /* github contribution heatmap (monochrome) */
-    .gh__body { padding: 16px; overflow-x: auto; }
+    .gh__body { padding: 16px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
     .gh__months { display: flex; margin-bottom: 6px; font-family: var(--mono); font-size: 10px; color: var(--muted); }
     .gh__months .m { flex: 0 0 14px; white-space: nowrap; }
     .gh__grid { display: grid; grid-template-rows: repeat(7, 11px); grid-auto-flow: column; grid-auto-columns: 11px; gap: 3px; width: max-content; }
@@ -116,6 +117,9 @@
       .log { padding: 20px 16px 6px; }
       .suggest { padding: 2px 16px 10px; }
       .prompt, .term__bar { padding-left: 16px; padding-right: 16px; }
+      .prompt input { font-size: 16px; }   /* >=16px prevents iOS zoom-on-focus */
+      .msg--ai p { font-size: 15px; }
+      .chip { padding: 7px 12px; }
     }
     @media (prefers-reduced-motion: reduce) {
       .cursor, .thinking span, .tool .spin { animation: none !important; }
@@ -227,6 +231,7 @@
         '<!doctype html><meta charset=utf-8><style>' +
         '*{margin:0;box-sizing:border-box}' +
         'body{height:220px;display:flex;align-items:center;justify-content:center;gap:44px;background:#fff;font-family:ui-monospace,"SF Mono",Menlo,monospace;color:#8c8c8c}' +
+        '@media(max-width:380px){body{gap:22px}}' +
         '.cell{display:flex;flex-direction:column;align-items:center;gap:15px;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase}' +
         '.spin{width:34px;height:34px;border-radius:50%;border:3px solid #ececec;border-top-color:#141414;animation:spin .8s linear infinite}' +
         '@keyframes spin{to{transform:rotate(360deg)}}' +
