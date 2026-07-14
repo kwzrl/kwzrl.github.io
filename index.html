@@ -36,8 +36,8 @@
     .term__title b { color: var(--fg); font-weight: 600; }
 
     /* ---------- log ---------- */
-    .log { flex: 1 1 auto; min-width: 0; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; padding: 24px 22px 10px; scroll-behavior: smooth; overscroll-behavior: contain; display: flex; flex-direction: column; }
-    .log__inner { margin-top: auto; width: 100%; min-width: 0; }
+    .log { flex: 1 1 auto; min-width: 0; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; padding: 24px 22px 10px; overscroll-behavior: contain; display: flex; flex-direction: column; }
+    .log__inner { width: 100%; min-width: 0; }
     .msg { max-width: 100%; }
     .log::-webkit-scrollbar { width: 10px; }
     .log::-webkit-scrollbar-thumb { background: #e2e2e2; border: 3px solid #fff; background-clip: padding-box; }
@@ -114,6 +114,16 @@
     .prompt.is-busy { opacity: .55; pointer-events: none; }
     .suggest.is-busy { opacity: .4; pointer-events: none; }
 
+    /* ↓ jump-to-latest — shown once an answer is done and there's more below */
+    .scrolldown { position: absolute; left: 50%; bottom: 96px; transform: translate(-50%, 6px);
+      width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
+      background: #fff; color: var(--fg); border: 1px solid var(--line); border-radius: 0;
+      box-shadow: 0 6px 18px rgba(0,0,0,.10); cursor: pointer; z-index: 5;
+      opacity: 0; pointer-events: none; transition: opacity .18s ease, transform .18s ease, border-color .15s; }
+    .scrolldown.is-show { opacity: 1; pointer-events: auto; transform: translate(-50%, 0); }
+    .scrolldown:hover { border-color: var(--accent); }
+    .scrolldown svg { width: 16px; height: 16px; }
+
     /* ---------- tabs (editor / browser style) ---------- */
     .term__bar { padding: 0; overflow: hidden; }
     .tabs { display: flex; align-items: stretch; width: 100%; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
@@ -126,7 +136,7 @@
     .tab__dot { width: 7px; height: 7px; border: 1.5px solid currentColor; flex: 0 0 auto; }
 
     /* ---------- panes ---------- */
-    .pane--chat { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+    .pane--chat { position: relative; display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
     .pane--browser { display: none; flex-direction: column; flex: 1 1 auto; min-height: 0; }
     .term--browser .pane--chat { display: none; }
     .term--browser .pane--browser { display: flex; }
@@ -344,6 +354,7 @@
     <!-- pane: terminal chat -->
     <div class="pane pane--chat">
       <div class="log" id="log"><div class="log__inner" id="loginner"></div></div>
+      <button class="scrolldown" id="scrollDown" type="button" tabindex="-1" aria-label="Jump to latest"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
       <div class="suggest" id="suggest"></div>
       <form class="prompt" id="promptForm" autocomplete="off">
         <span class="sqm"></span>
@@ -517,11 +528,43 @@
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const sleep  = ms => new Promise(r => setTimeout(r, reduce ? 0 : ms));
   const rand   = (a, b) => a + Math.random() * (b - a);
-  const scroll = () => { $log.scrollTop = $log.scrollHeight; };
+  // ---------- reading-anchored scrolling ----------
+  // Rather than yanking the view to the newest token, we hold the *reading start*
+  // near the top while the answer streams in below, and let the reader move freely.
+  //   "pin"    → keep the current answer's first line pinned near the top
+  //   "follow" → stick to the bottom (for once the reader has caught up to it)
+  //   "free"   → the reader is scrolling by hand; don't touch the view
+  const $down = document.getElementById("scrollDown");
+  let stick = "follow";
+  let anchorEl = null;
   let busy = false;
   let booting = true;
 
-  function setBusy(v) { busy = v; $form.classList.toggle("is-busy", v); $suggest.classList.toggle("is-busy", v); if (!v && !$term.classList.contains("term--browser")) $input.focus(); }
+  const atBottom = () => $log.scrollHeight - $log.scrollTop - $log.clientHeight < 24;
+  function updateArrow() {
+    const show = !busy && !atBottom() && $log.scrollHeight - $log.clientHeight > 24;
+    $down.classList.toggle("is-show", show);
+  }
+  function applyStick() {
+    if (stick === "follow") $log.scrollTop = $log.scrollHeight;
+    else if (stick === "pin" && anchorEl) {
+      const d = anchorEl.getBoundingClientRect().top - $log.getBoundingClientRect().top - 24;
+      if (Math.abs(d) > 1) $log.scrollTop += d;   // hold the anchor at the log's top inset (matches padding)
+    }
+    updateArrow();
+  }
+  const scroll = applyStick;                 // legacy call sites keep working
+  function anchorTop(el) { anchorEl = el; stick = "pin"; applyStick(); }
+
+  // the reader takes over the instant they scroll by hand
+  function onReaderScroll() { stick = atBottom() ? "follow" : "free"; updateArrow(); }
+  $log.addEventListener("wheel", onReaderScroll, { passive: true });
+  $log.addEventListener("touchmove", onReaderScroll, { passive: true });
+  $log.addEventListener("scroll", updateArrow, { passive: true });
+  window.addEventListener("resize", updateArrow);
+  $down.addEventListener("click", () => { stick = "follow"; $log.scrollTo({ top: $log.scrollHeight, behavior: reduce ? "auto" : "smooth" }); });
+
+  function setBusy(v) { busy = v; $form.classList.toggle("is-busy", v); $suggest.classList.toggle("is-busy", v); updateArrow(); if (!v && !$term.classList.contains("term--browser")) $input.focus(); }
 
   // ---------- tabs / in-app browser ----------
   function switchTab(pane) {
@@ -545,6 +588,7 @@
     el.innerHTML = '<span class="sqm"></span><span class="txt"></span>';
     el.querySelector(".txt").textContent = text;
     $logInner.appendChild(el); scroll();
+    return el;
   }
   // type into the real input field at the bottom (used by the boot demo)
   async function typeIntoInput(text) {
@@ -593,6 +637,7 @@
     const d = document.createElement("div"); d.className = "links"; d.innerHTML = links.join(""); ai.appendChild(d); scroll();
   }
   async function answerProjects(ai) {
+    getContrib().catch(() => {});   // warm the fetch early so the numbers are ready by the graph section
     await streamText(ai, `Give me a second — pulling from three places at once: my notes on you, your GitHub, and the ~/ folder on this machine.`);
     await runTool(ai, `recall(memory)`);
     await runTool(ai, `fetch(github.com/${CONFIG.github})`);
@@ -604,8 +649,14 @@
     await streamText(ai, `On GitHub since July 2023, but the public face is deliberately thin — a couple of repos, one follower, and this site. You don't plan, you build: six versions of a thing in two days, keep the one that feels right. This site is exhibit A; you rebuilt it more times than it has features.`);
 
     await streamText(ai, `the graph gives you away`, { cls: "lead" });
-    await streamText(ai, `Here's the real tell. The repos are private — the graph isn't. A near-solid wall this year: about 2,100 commits, roughly 98% of them behind private repos, and GitHub lights every square anyway. The volume is public even when the code never is.`);
-    await streamText(ai, `And the break is clean: 39 commits in all of 2025, then 2026 landed and you never looked up.`);
+    let gh = null; try { gh = await getContrib(); } catch (e) {}
+    if (gh) {
+      await streamText(ai, `Here's the real tell. The repos are private — the graph isn't. A near-solid wall: ${gh.total.toLocaleString("en-US")} in the last twelve months, almost all of it behind private repos, and GitHub lights every square anyway. The volume is public even when the code never is.`);
+      await streamText(ai, `And the break is clean: ${(gh.byYear["2025"] ?? 39).toLocaleString("en-US")} commits in all of 2025, then 2026 landed and you never looked up.`);
+    } else {
+      await streamText(ai, `Here's the real tell. The repos are private — the graph isn't. A near-solid wall this year, almost all of it behind private repos, and GitHub lights every square anyway. The volume is public even when the code never is.`);
+      await streamText(ai, `And the break is clean: a near-dead 2025, then 2026 landed and you never looked up.`);
+    }
     await runTool(ai, `fetch(github.com/${CONFIG.github})`);
     await renderGithub(ai);
 
@@ -655,15 +706,17 @@
     frag.appendChild(legend);
     return frag;
   }
-  async function renderGithub(container) {
-    const box = document.createElement("div"); box.className = "canvas gh";
-    box.innerHTML = '<div class="canvas__bar"><span class="canvas__file">github.contributions</span><span class="canvas__tag" id="ghtotal">loading…</span></div><div class="gh__body" id="ghbody"></div>';
-    container.appendChild(box); scroll();
-    try {
-      // NOTE: the ?y=last (rolling year) endpoint is cache-stale for a while; the full-year
-      // endpoint stays fresh, so we fetch all years and slice the trailing 365 days ourselves.
+  // ---------- github contribution data ----------
+  // Fetched once and shared by the dossier prose and the heatmap, so a live number can
+  // never contradict a hard-coded one on the same screen. NOTE: the ?y=last (rolling-year)
+  // endpoint is cache-stale for a while; the full-year endpoint stays fresh, so we pull
+  // every year and slice the trailing 365 days ourselves.
+  let _contrib;
+  function getContrib() {
+    if (_contrib) return _contrib;
+    _contrib = (async () => {
       const res = await fetch('https://github-contributions-api.jogruber.de/v4/' + CONFIG.github);
-      if (!res.ok) throw 0;
+      if (!res.ok) throw new Error("github " + res.status);
       const data = await res.json();
       const all = (data.contributions || []).slice().sort((a, b) => a.date < b.date ? -1 : 1);
       const iso = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
@@ -672,6 +725,18 @@
       const startISO = iso(start), todayISO = iso(today);
       const days = all.filter(x => x.date >= startISO && x.date <= todayISO);
       const total = days.reduce((s, d) => s + (d.count || 0), 0);
+      return { days, total, byYear: data.total || {} };
+    })();
+    _contrib.catch(() => { _contrib = null; });   // never cache a failure — allow a later retry
+    return _contrib;
+  }
+
+  async function renderGithub(container) {
+    const box = document.createElement("div"); box.className = "canvas gh";
+    box.innerHTML = '<div class="canvas__bar"><span class="canvas__file">github.contributions</span><span class="canvas__tag" id="ghtotal">loading…</span></div><div class="gh__body" id="ghbody"></div>';
+    container.appendChild(box); scroll();
+    try {
+      const { days, total } = await getContrib();
       box.querySelector("#ghtotal").textContent = total.toLocaleString("en-US") + " in the last year";
       const gbody = box.querySelector("#ghbody");
       gbody.appendChild(buildHeatmap(days));
@@ -723,8 +788,10 @@
     const fn = route(text);
     if (fn === OPEN_PORTFOLIO) { $input.value = ""; switchTab("browser"); return; }   // no friction — jump straight to the tab
     setBusy(true); $input.value = "";
-    commitUserMsg(text);            // the typed prompt moves up into the transcript
-    const ai = aiBlock(); await thinking(ai);
+    const userEl = commitUserMsg(text);   // the typed prompt moves up into the transcript
+    const ai = aiBlock();
+    anchorTop(userEl);                     // hold the reader at the question; the answer streams in below
+    await thinking(ai);
     if (fn) await fn(ai); else await answerFallback(ai, text);
     setBusy(false);
   }
