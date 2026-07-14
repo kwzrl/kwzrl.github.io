@@ -114,33 +114,383 @@
     .prompt.is-busy { opacity: .55; pointer-events: none; }
     .suggest.is-busy { opacity: .4; pointer-events: none; }
 
+    /* ---------- tabs (editor / browser style) ---------- */
+    .term__bar { padding: 0; overflow: hidden; }
+    .tabs { display: flex; align-items: stretch; width: 100%; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tab { display: flex; align-items: center; gap: 8px; padding: 12px 18px; font-family: var(--mono); font-size: 12px; color: var(--muted); background: var(--panel); border: 0; border-right: 1px solid var(--line); cursor: pointer; white-space: nowrap; flex: 0 0 auto; letter-spacing: .02em; transition: color .15s, background .15s; }
+    .tab:hover { color: var(--fg); }
+    .tab b { font-weight: 600; color: inherit; }
+    .tab--active { color: var(--fg); background: var(--bg); cursor: default; }
+    .tab .status { width: 7px; height: 7px; background: var(--accent); flex: 0 0 auto; }
+    .tab__dot { width: 7px; height: 7px; border: 1.5px solid currentColor; flex: 0 0 auto; }
+
+    /* ---------- panes ---------- */
+    .pane--chat { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+    .pane--browser { display: none; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+    .term--browser .pane--chat { display: none; }
+    .term--browser .pane--browser { display: flex; }
+
+    /* ---------- in-app browser chrome ---------- */
+    .browser__bar { display: flex; align-items: center; gap: 10px; padding: 9px 14px; border-bottom: 1px solid var(--line); flex: 0 0 auto; }
+    .browser__nav { display: flex; gap: 1px; flex: 0 0 auto; }
+    .browser__nav button { background: none; border: 0; color: var(--faint); cursor: pointer; font-family: var(--mono); font-size: 15px; line-height: 1; padding: 3px 5px; transition: color .15s; }
+    .browser__nav button:hover { color: var(--fg); }
+    .browser__url { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 8px; border: 1px solid var(--line); background: var(--panel); padding: 6px 12px; font-family: var(--mono); font-size: 12.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .browser__url .host { color: var(--fg); }
+    .browser__tag { font-family: var(--mono); font-size: 10.5px; color: var(--faint); text-transform: uppercase; letter-spacing: .08em; flex: 0 0 auto; }
+    .browser__body { flex: 1 1 auto; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; padding: 28px 24px 48px; scroll-behavior: smooth; overscroll-behavior: contain; }
+    .browser__body::-webkit-scrollbar { width: 10px; }
+    .browser__body::-webkit-scrollbar-thumb { background: #e2e2e2; border: 3px solid #fff; background-clip: padding-box; }
+
+    /* ---------- portfolio intro ---------- */
+    .pf__intro { max-width: 62ch; margin-bottom: 36px; }
+    .pf__title { font-size: 22px; font-weight: 600; letter-spacing: -.02em; margin-bottom: 10px; line-height: 1.2; }
+    .pf__lede { font-size: 14px; line-height: 1.6; color: #6a6a6a; max-width: 60ch; }
+
+    /* ---------- portfolio sections ---------- */
+    .sec { margin-bottom: 38px; }
+    .sec__head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--line); padding-bottom: 9px; margin-bottom: 16px; }
+    .sec__title { font-family: var(--mono); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--fg); }
+    .sec__count { font-family: var(--mono); font-size: 11px; color: var(--faint); }
+
+    .grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
+    .grid--wide { grid-template-columns: repeat(auto-fill, minmax(258px, 1fr)); }
+
+    .spec { border: 1px solid var(--line); background: #fff; display: flex; flex-direction: column; overflow: hidden; transition: border-color .15s; }
+    .spec:hover { border-color: #d2d2d2; }
+    .spec__view { position: relative; min-height: 132px; display: flex; align-items: center; justify-content: center; padding: 18px; overflow: hidden; }
+    .spec__cap { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 9px 12px; border-top: 1px solid var(--line); font-family: var(--mono); font-size: 11.5px; color: var(--muted); }
+    .spec__cap b { color: var(--fg); font-weight: 600; }
+    .spec__cap .t { color: var(--faint); text-transform: uppercase; letter-spacing: .06em; font-size: 10px; white-space: nowrap; }
+
+    /* sidebars — real component: interactive Avogram Studio sidebar (ported from
+       avogram-waitlist/components/layout/StudioSidebar.tsx). Colours are theme-
+       driven so the in-panel toggle flips it between the real dark & light skins.
+       --avo-fg is an rgb triplet: dark = warm "white" #FAF7F2, light = ink #1A1612. */
+    .spec--feature .spec__view { padding: 0; min-height: 0; display: block; }
+    .avo-stage {
+      --avo-w: 208px;
+      --avo-bg: #000;
+      --avo-fg: 250,247,242;
+      --avo-elev: inset 0 1px 0 rgba(255,255,255,.05), 0 10px 30px -14px rgba(0,0,0,.5);
+      --avo-pill-bg: rgba(250,247,242,.85);
+      --avo-pill-fg: #1a1612;
+      position: relative; height: 456px; background: var(--avo-bg); overflow: hidden;
+      font-family: var(--sans); transition: background .35s ease;
+    }
+    .avo-stage[data-avo-theme="light"] {
+      --avo-bg: #fbfaf8;
+      --avo-fg: 26,22,18;
+      --avo-elev: inset 0 1px 0 rgba(255,255,255,.6), 0 8px 24px -14px rgba(40,28,18,.14);
+      --avo-pill-bg: rgba(26,22,18,.9);
+      --avo-pill-fg: #faf7f2;
+    }
+    /* the app canvas the rail floats over (offset by the rail, like the real layout) */
+    .avo-canvas { height: 100%; padding: 44px 40px 44px calc(var(--avo-w) + 52px); }
+    .avo-canvas__kicker { font-family: var(--mono); font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: rgba(var(--avo-fg),.30); margin-bottom: 14px; }
+    .avo-canvas__h { font-size: 34px; font-weight: 300; letter-spacing: -.02em; color: rgba(var(--avo-fg),.14); line-height: 1.05; margin-bottom: 16px; }
+    .avo-canvas__sub { font-size: 13px; font-weight: 300; color: rgba(var(--avo-fg),.11); max-width: 32ch; line-height: 1.65; }
+
+    /* the floating panel — surface-elev, rounded-2xl, docked top-left 8px */
+    .avo-side { position: absolute; top: 8px; left: 8px; width: var(--avo-w); height: calc(100% - 16px);
+      background: var(--avo-bg); border: 1px solid rgba(var(--avo-fg),.08); border-radius: 16px;
+      box-shadow: var(--avo-elev); display: flex; flex-direction: column; padding: 20px 16px 16px;
+      transition: background .35s ease, border-color .35s ease; }
+    .avo-side__top { display: flex; align-items: center; justify-content: space-between; padding: 0 4px; }
+    .avo-side__brand { font-size: 15px; font-weight: 300; letter-spacing: -.01em; color: rgba(var(--avo-fg),.85); }
+    .avo-side__toggle { width: 24px; height: 24px; margin: -5px -6px -5px 0; border: 0; background: none; cursor: pointer;
+      color: rgba(var(--avo-fg),.45); display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; transition: color .15s, background .15s; }
+    .avo-side__toggle:hover { color: rgba(var(--avo-fg),.85); background: rgba(var(--avo-fg),.05); }
+    .avo-side__toggle svg { width: 13px; height: 13px; }
+
+    /* sliding nav — hover fill ("mouse is here") + thin left active stripe ("you are here") */
+    .avo-nav { position: relative; margin-top: 28px; flex: 1 1 auto; }
+    .avo-nav__list { position: relative; z-index: 2; display: flex; flex-direction: column; gap: 2px; }
+    .avo-hl { position: absolute; z-index: 1; pointer-events: none; }
+    .avo-hl--hover { border-radius: 6px; background: rgba(var(--avo-fg),.06); opacity: 0;
+      transition: left .3s ease-out, top .3s ease-out, width .3s ease-out, height .3s ease-out, opacity .2s ease-out; }
+    .avo-hl--stripe { width: 2px; border-radius: 999px; background: rgb(var(--avo-fg)); opacity: 0;
+      transition: left .3s ease-out, top .3s ease-out, height .3s ease-out, opacity .2s ease-out; }
+    .avo-nav.is-instant .avo-hl { transition: none !important; }
+
+    .avo-row { position: relative; display: flex; align-items: center; width: 100%; padding: 6px 8px; border-radius: 6px;
+      font-family: var(--sans); font-size: 12.5px; font-weight: 300; text-align: left; color: rgba(var(--avo-fg),.45);
+      background: none; border: 0; cursor: pointer; transition: color .2s ease; }
+    .avo-row:hover { color: rgba(var(--avo-fg),.85); }
+    .avo-row.is-active { color: rgb(var(--avo-fg)); }
+    .avo-row__label { flex: 1 1 auto; padding: 0; border: 0; background: none; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+    .avo-row__chev { width: 26px; height: 26px; margin-right: -4px; flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center;
+      border: 0; background: none; cursor: pointer; color: rgba(var(--avo-fg),.35); border-radius: 6px; transition: color .15s, background .15s; }
+    .avo-row__chev:hover { color: rgba(var(--avo-fg),.8); background: rgba(var(--avo-fg),.05); }
+    .avo-row__chev svg { width: 14px; height: 14px; transition: transform .2s ease; }
+    .avo-row__chev.is-open svg { transform: rotate(180deg); }
+
+    /* Product children — collapsible tree */
+    .avo-children { overflow: hidden; height: 0; transition: height .22s cubic-bezier(.32,.72,.28,1); }
+    .avo-childinner { margin: 4px 0 0 10px; padding-left: 10px; border-left: 1px solid rgba(var(--avo-fg),.08); display: flex; flex-direction: column; gap: 1px; }
+    .avo-row--child { padding: 5px 8px; font-size: 12px; color: rgba(var(--avo-fg),.4); }
+
+    .avo-side__cta { margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap;
+      padding: 8px 14px; border-radius: 999px; background: var(--avo-pill-bg); color: var(--avo-pill-fg); border: 0; cursor: pointer;
+      font-family: var(--sans); font-size: 11.5px; font-weight: 500; letter-spacing: -.01em;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 4px 14px rgba(0,0,0,.3); transition: transform .15s ease, background .35s ease, color .35s ease; }
+    .avo-side__cta:hover { transform: scale(1.02); }
+    .avo-side__cta:active { transform: scale(.99); }
+    .avo-side__cta svg { width: 12px; height: 12px; flex: 0 0 auto; }
+
+    /* components */
+    .cx { display: flex; flex-direction: column; gap: 9px; align-items: flex-start; width: 100%; }
+    .cx--row { flex-direction: row; align-items: center; flex-wrap: wrap; gap: 12px; justify-content: center; }
+    .cx--full { align-items: stretch; }
+    .btn { font-family: var(--mono); font-size: 12px; padding: 8px 15px; border: 1px solid var(--fg); cursor: default; }
+    .btn--solid { background: var(--fg); color: #fff; }
+    .btn--ghost { background: #fff; color: var(--fg); }
+    .field { font-family: var(--mono); font-size: 12px; color: var(--muted); border: 1px solid var(--line); padding: 9px 12px; width: 100%; background: #fff; display: flex; align-items: center; }
+    .field .cur { width: 1px; height: 13px; background: var(--fg); margin-left: 2px; animation: blink 1s steps(1) infinite; }
+    .switch { width: 40px; height: 22px; border: 1px solid var(--fg); background: var(--fg); position: relative; flex: 0 0 auto; }
+    .switch::after { content: ""; position: absolute; top: 2px; right: 2px; width: 16px; height: 16px; background: #fff; }
+    .switch--off { background: #fff; }
+    .switch--off::after { left: 2px; right: auto; background: var(--fg); }
+    .seg { display: flex; border: 1px solid var(--fg); font-family: var(--mono); font-size: 11.5px; color: var(--fg); }
+    .seg span { padding: 6px 12px; border-right: 1px solid var(--fg); }
+    .seg span:last-child { border-right: 0; }
+    .seg span.on { background: var(--fg); color: #fff; }
+    .tags { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+    .tagx { font-family: var(--mono); font-size: 11px; padding: 4px 9px; border: 1px solid var(--line); color: var(--muted); }
+    .tagx--solid { background: var(--fg); color: #fff; border-color: var(--fg); }
+    .check { display: flex; align-items: center; gap: 9px; font-family: var(--mono); font-size: 12px; color: var(--fg); }
+    .check .bx { width: 16px; height: 16px; border: 1px solid var(--fg); display: flex; align-items: center; justify-content: center; color: #fff; background: var(--fg); font-size: 11px; flex: 0 0 auto; }
+    .check .bx--off { background: #fff; }
+
+    /* backgrounds */
+    .spec--bg .spec__view { padding: 0; }
+    .bgw { width: 100%; height: 132px; }
+    .bg-dots  { background-image: radial-gradient(#c9c9c9 1.2px, transparent 1.3px); background-size: 12px 12px; }
+    .bg-grid  { background-image: linear-gradient(#ececec 1px, transparent 1px), linear-gradient(90deg, #ececec 1px, transparent 1px); background-size: 16px 16px; }
+    .bg-glow  { background: radial-gradient(120px 90px at 50% 42%, #d4d4d4, #fff 72%); }
+    .bg-hatch { background-image: repeating-linear-gradient(45deg, #e2e2e2 0 1px, transparent 1px 8px); }
+    .bg-grad  { background: linear-gradient(158deg, #f5f5f5, #c9c9c9); }
+    .bg-scan  { background-image: repeating-linear-gradient(0deg, #ececec 0 1px, transparent 1px 5px); }
+
+    /* animations */
+    .an-spin { width: 26px; height: 26px; border-radius: 50%; border: 2px solid #e2e2e2; border-top-color: var(--fg); animation: spin .8s linear infinite; }
+    .an-pulse { width: 22px; height: 22px; background: var(--fg); animation: anpulse 1.4s ease-in-out infinite; }
+    @keyframes anpulse { 0%,100% { transform: scale(.65); opacity: .35; } 50% { transform: scale(1); opacity: 1; } }
+    .an-shim { width: 82%; height: 12px; background: linear-gradient(90deg, #eee 0%, #d3d3d3 40%, #eee 80%); background-size: 200% 100%; animation: anshim 1.4s linear infinite; }
+    @keyframes anshim { to { background-position: -200% 0; } }
+    .an-dots { display: flex; gap: 6px; }
+    .an-dots span { width: 8px; height: 8px; border-radius: 50%; background: var(--faint); animation: bounce 1.2s infinite ease-in-out; }
+    .an-dots span:nth-child(2) { animation-delay: .15s; } .an-dots span:nth-child(3) { animation-delay: .3s; }
+    .an-prog { width: 82%; height: 4px; background: #ececec; overflow: hidden; }
+    .an-prog::after { content: ""; display: block; height: 100%; width: 40%; background: var(--fg); animation: anprog 1.6s ease-in-out infinite; }
+    @keyframes anprog { 0% { transform: translateX(-105%); } 100% { transform: translateX(315%); } }
+    .an-mq { width: 100%; overflow: hidden; font-family: var(--mono); font-size: 12px; color: var(--muted); white-space: nowrap; }
+    .an-mq span { display: inline-block; animation: anmq 7s linear infinite; }
+    @keyframes anmq { from { transform: translateX(45%); } to { transform: translateX(-100%); } }
+
+    /* apps */
+    .spec__view--app { padding: 14px; }
+    .appf { width: 100%; border: 1px solid var(--line); overflow: hidden; background: #fff; }
+    .appf__bar { display: flex; align-items: center; gap: 5px; padding: 7px 9px; border-bottom: 1px solid var(--line); background: var(--panel); }
+    .appf__bar i { width: 7px; height: 7px; border-radius: 50%; background: #d2d2d2; flex: 0 0 auto; }
+    .appf__bar .u { flex: 1; height: 8px; margin-left: 6px; background: #e6e6e6; }
+    .appf__ui { display: flex; height: 100px; position: relative; }
+    .appf__side { width: 42px; border-right: 1px solid var(--line); background: var(--panel); padding: 9px 0; display: flex; flex-direction: column; gap: 7px; align-items: center; flex: 0 0 auto; }
+    .appf__side i { width: 15px; height: 15px; background: #dedede; }
+    .appf__main { flex: 1; padding: 11px; display: flex; flex-direction: column; gap: 7px; }
+    .appf__main .b { height: 8px; background: #ededed; }
+    .appf__main .b1 { width: 52%; background: #d4d4d4; }
+    .appf__main .cards { display: flex; gap: 6px; margin-top: 3px; }
+    .appf__main .cards i { flex: 1; height: 30px; border: 1px solid var(--line); }
+    .appf__seal { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); background: rgba(255,255,255,.55); -webkit-backdrop-filter: blur(2.5px); backdrop-filter: blur(2.5px); }
+
     @media (max-width: 560px) {
       .term { max-width: none; border-left: 0; border-right: 0; }
       .log { padding: 20px 16px 6px; }
       .suggest { padding: 2px 16px 10px; }
-      .prompt, .term__bar { padding-left: 16px; padding-right: 16px; }
+      .prompt { padding-left: 16px; padding-right: 16px; }
       .prompt input { font-size: 16px; }   /* >=16px prevents iOS zoom-on-focus */
       .msg--ai p { font-size: 15px; }
       .chip { padding: 7px 12px; }
+      .tab { padding: 11px 14px; }
+      .browser__bar { padding: 8px 12px; gap: 8px; }
+      .browser__body { padding: 22px 16px 40px; }
+      .pf__title { font-size: 22px; }
+      .grid, .grid--wide { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+      .avo-stage { height: 420px; }
+      .avo-canvas { display: none; }        /* narrow: let the rail float on the bare canvas */
     }
     @media (prefers-reduced-motion: reduce) {
-      .cursor, .thinking span, .tool .spin { animation: none !important; }
-      .log { scroll-behavior: auto; }
+      .cursor, .thinking span, .tool .spin,
+      .an-spin, .an-pulse, .an-shim, .an-dots span, .an-prog::after, .an-mq span, .field .cur { animation: none !important; }
+      .log, .browser__body { scroll-behavior: auto; }
     }
   </style>
 </head>
 <body>
   <main class="term" role="log" aria-live="polite">
     <div class="term__bar">
-      <span class="status" title="online"></span>
-      <span class="term__title"><b>kilian weinzierl</b></span>
+      <div class="tabs" id="tabs">
+        <button class="tab tab--active" data-pane="chat" type="button">
+          <span class="status" title="online"></span><b>kilian weinzierl</b>
+        </button>
+        <button class="tab" data-pane="browser" id="tabPortfolio" type="button">
+          <span class="tab__dot"></span>portfolio
+        </button>
+      </div>
     </div>
-    <div class="log" id="log"><div class="log__inner" id="loginner"></div></div>
-    <div class="suggest" id="suggest"></div>
-    <form class="prompt" id="promptForm" autocomplete="off">
-      <span class="sqm"></span>
-      <input id="promptInput" type="text" placeholder="ask it anything about you…" aria-label="Ask the AI about yourself" />
-    </form>
+
+    <!-- pane: terminal chat -->
+    <div class="pane pane--chat">
+      <div class="log" id="log"><div class="log__inner" id="loginner"></div></div>
+      <div class="suggest" id="suggest"></div>
+      <form class="prompt" id="promptForm" autocomplete="off">
+        <span class="sqm"></span>
+        <input id="promptInput" type="text" placeholder="ask it anything about you…" aria-label="Ask the AI about yourself" />
+      </form>
+    </div>
+
+    <!-- pane: in-app browser — the design system -->
+    <div class="pane pane--browser">
+      <div class="browser__bar">
+        <div class="browser__nav">
+          <button type="button" title="back" tabindex="-1">‹</button>
+          <button type="button" title="forward" tabindex="-1">›</button>
+          <button type="button" id="pfReload" title="reload">⟳</button>
+        </div>
+        <div class="browser__url"><span class="host">kwzrl.com</span>/design-system</div>
+        <span class="browser__tag">curated</span>
+      </div>
+      <div class="browser__body" id="browserBody">
+
+        <div class="pf__intro">
+          <h1 class="pf__title">Design system</h1>
+          <p class="pf__lede">Curated from private projects — the parts I rebuild across everything I ship.</p>
+        </div>
+
+        <!-- SIDEBARS — the real Studio sidebar from Avogram (/studio) -->
+        <section class="sec">
+          <div class="sec__head"><span class="sec__title">Sidebars</span><span class="sec__count">01</span></div>
+          <div class="spec spec--feature">
+            <div class="spec__view">
+              <div class="avo-stage">
+                <div class="avo-canvas">
+                  <div class="avo-canvas__kicker">kwzrl.com /studio</div>
+                  <div class="avo-canvas__h">Studio</div>
+                  <div class="avo-canvas__sub">The film-studio workspace — the rail floats over the canvas, offset by its own width.</div>
+                </div>
+                <aside class="avo-side" aria-label="Studio">
+                  <div class="avo-side__top">
+                    <span class="avo-side__brand">Avo</span>
+                    <button class="avo-side__toggle" type="button" id="avoToggle" title="Switch theme" aria-label="Switch theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg></button>
+                  </div>
+                  <nav class="avo-nav" id="avoNav" aria-label="Studio sections">
+                    <div class="avo-hl avo-hl--hover" aria-hidden="true"></div>
+                    <div class="avo-hl avo-hl--stripe" aria-hidden="true"></div>
+                    <div class="avo-nav__list" id="avoList">
+                      <button class="avo-row" type="button" data-key="studio">Studio</button>
+                      <div class="avo-row avo-row--parent" data-key="product">
+                        <button class="avo-row__label" type="button" data-nav="product">Product</button>
+                        <button class="avo-row__chev" type="button" data-expand="product" aria-label="Expand Product" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
+                      </div>
+                      <div class="avo-children" id="avoChildren">
+                        <div class="avo-childinner">
+                          <button class="avo-row avo-row--child" type="button" data-key="product/story-doc">Story Doc</button>
+                          <button class="avo-row avo-row--child" type="button" data-key="product/worldbuilding">Worldbuilding</button>
+                          <button class="avo-row avo-row--child" type="button" data-key="product/story-board">Story Board</button>
+                          <button class="avo-row avo-row--child" type="button" data-key="product/scene-cards">Scene Cards</button>
+                          <button class="avo-row avo-row--child" type="button" data-key="product/image-gen">Image Gen</button>
+                          <button class="avo-row avo-row--child" type="button" data-key="product/audio-gen">Audio Gen</button>
+                          <button class="avo-row avo-row--child" type="button" data-key="product/media-pool">Media Pool</button>
+                          <button class="avo-row avo-row--child" type="button" data-key="product/video-editor">Video Editor</button>
+                        </div>
+                      </div>
+                      <button class="avo-row" type="button" data-key="models">Models</button>
+                      <button class="avo-row" type="button" data-key="pricing">Pricing</button>
+                      <button class="avo-row" type="button" data-key="resources">Resources</button>
+                      <button class="avo-row" type="button" data-key="library">Library</button>
+                      <button class="avo-row" type="button" data-key="blog">Blog</button>
+                    </div>
+                  </nav>
+                  <button class="avo-side__cta" type="button">Request Studio Access <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><path d="M7 7h10v10"/></svg></button>
+                </aside>
+              </div>
+            </div>
+            <div class="spec__cap"><b>Studio sidebar</b><span class="t">Avogram · sliding rail</span></div>
+          </div>
+        </section>
+
+        <!-- COMPONENTS -->
+        <section class="sec">
+          <div class="sec__head"><span class="sec__title">Components</span><span class="sec__count">06</span></div>
+          <div class="grid">
+            <div class="spec"><div class="spec__view"><div class="cx cx--row"><span class="btn btn--solid">Continue →</span><span class="btn btn--ghost">Cancel</span></div></div><div class="spec__cap"><b>Button</b><span class="t">solid · ghost</span></div></div>
+            <div class="spec"><div class="spec__view"><div class="cx cx--full"><span class="field">Search projects…<span class="cur"></span></span></div></div><div class="spec__cap"><b>Text field</b><span class="t">input</span></div></div>
+            <div class="spec"><div class="spec__view"><div class="cx cx--row"><span class="switch"></span><span class="switch switch--off"></span></div></div><div class="spec__cap"><b>Toggle</b><span class="t">on · off</span></div></div>
+            <div class="spec"><div class="spec__view"><div class="seg"><span class="on">Day</span><span>Week</span><span>Month</span></div></div><div class="spec__cap"><b>Segmented</b><span class="t">control</span></div></div>
+            <div class="spec"><div class="spec__view"><div class="tags"><span class="tagx tagx--solid">shipped</span><span class="tagx">draft</span><span class="tagx">private</span></div></div><div class="spec__cap"><b>Tag</b><span class="t">status</span></div></div>
+            <div class="spec"><div class="spec__view"><div class="cx"><span class="check"><span class="bx">✓</span> Enabled</span><span class="check"><span class="bx bx--off"></span> Disabled</span></div></div><div class="spec__cap"><b>Checkbox</b><span class="t">select</span></div></div>
+          </div>
+        </section>
+
+        <!-- BACKGROUNDS -->
+        <section class="sec">
+          <div class="sec__head"><span class="sec__title">Backgrounds</span><span class="sec__count">06</span></div>
+          <div class="grid">
+            <div class="spec spec--bg"><div class="spec__view"><div class="bgw bg-dots"></div></div><div class="spec__cap"><b>Dot grid</b><span class="t">surface</span></div></div>
+            <div class="spec spec--bg"><div class="spec__view"><div class="bgw bg-grid"></div></div><div class="spec__cap"><b>Line grid</b><span class="t">surface</span></div></div>
+            <div class="spec spec--bg"><div class="spec__view"><div class="bgw bg-glow"></div></div><div class="spec__cap"><b>Radial glow</b><span class="t">light</span></div></div>
+            <div class="spec spec--bg"><div class="spec__view"><div class="bgw bg-hatch"></div></div><div class="spec__cap"><b>Diagonal hatch</b><span class="t">texture</span></div></div>
+            <div class="spec spec--bg"><div class="spec__view"><div class="bgw bg-grad"></div></div><div class="spec__cap"><b>Gradient</b><span class="t">fade</span></div></div>
+            <div class="spec spec--bg"><div class="spec__view"><div class="bgw bg-scan"></div></div><div class="spec__cap"><b>Scanlines</b><span class="t">texture</span></div></div>
+          </div>
+        </section>
+
+        <!-- ANIMATIONS -->
+        <section class="sec">
+          <div class="sec__head"><span class="sec__title">Animations</span><span class="sec__count">06</span></div>
+          <div class="grid">
+            <div class="spec"><div class="spec__view"><div class="an-spin"></div></div><div class="spec__cap"><b>Spinner</b><span class="t">loading</span></div></div>
+            <div class="spec"><div class="spec__view"><div class="an-pulse"></div></div><div class="spec__cap"><b>Pulse</b><span class="t">status</span></div></div>
+            <div class="spec"><div class="spec__view"><div class="an-shim"></div></div><div class="spec__cap"><b>Shimmer</b><span class="t">skeleton</span></div></div>
+            <div class="spec"><div class="spec__view"><div class="an-dots"><span></span><span></span><span></span></div></div><div class="spec__cap"><b>Typing</b><span class="t">dots</span></div></div>
+            <div class="spec"><div class="spec__view"><div class="an-prog"></div></div><div class="spec__cap"><b>Progress</b><span class="t">indeterminate</span></div></div>
+            <div class="spec"><div class="spec__view"><div class="an-mq"><span>· deploying · building · shipping · deploying · building · shipping ·</span></div></div><div class="spec__cap"><b>Marquee</b><span class="t">ticker</span></div></div>
+          </div>
+        </section>
+
+        <!-- APPS -->
+        <section class="sec">
+          <div class="sec__head"><span class="sec__title">Apps</span><span class="sec__count">02</span></div>
+          <div class="grid grid--wide">
+            <div class="spec">
+              <div class="spec__view spec__view--app"><div class="appf">
+                <div class="appf__bar"><i></i><i></i><i></i><span class="u"></span></div>
+                <div class="appf__ui">
+                  <div class="appf__side"><i></i><i></i><i></i></div>
+                  <div class="appf__main"><span class="b b1"></span><span class="b"></span><div class="cards"><i></i><i></i><i></i></div></div>
+                  <div class="appf__seal">sealed</div>
+                </div>
+              </div></div>
+              <div class="spec__cap"><b>Avogram — studio</b><span class="t">desktop</span></div>
+            </div>
+            <div class="spec">
+              <div class="spec__view spec__view--app"><div class="appf">
+                <div class="appf__bar"><i></i><i></i><i></i><span class="u"></span></div>
+                <div class="appf__ui">
+                  <div class="appf__side"><i></i><i></i></div>
+                  <div class="appf__main"><span class="b b1"></span><span class="b"></span><span class="b"></span><div class="cards"><i></i><i></i></div></div>
+                  <div class="appf__seal">sealed</div>
+                </div>
+              </div></div>
+              <div class="spec__cap"><b>Risk report</b><span class="t">web</span></div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </div>
   </main>
 
   <script>
@@ -160,6 +510,9 @@
   const $suggest = document.getElementById("suggest");
   const $form    = document.getElementById("promptForm");
   const $input   = document.getElementById("promptInput");
+  const $term    = document.querySelector(".term");
+  const $tabs    = document.getElementById("tabs");
+  const $browserBody  = document.getElementById("browserBody");
 
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const sleep  = ms => new Promise(r => setTimeout(r, reduce ? 0 : ms));
@@ -168,7 +521,22 @@
   let busy = false;
   let booting = true;
 
-  function setBusy(v) { busy = v; $form.classList.toggle("is-busy", v); $suggest.classList.toggle("is-busy", v); if (!v) $input.focus(); }
+  function setBusy(v) { busy = v; $form.classList.toggle("is-busy", v); $suggest.classList.toggle("is-busy", v); if (!v && !$term.classList.contains("term--browser")) $input.focus(); }
+
+  // ---------- tabs / in-app browser ----------
+  function switchTab(pane) {
+    $term.classList.toggle("term--browser", pane === "browser");
+    for (const t of $tabs.children) t.classList.toggle("tab--active", t.dataset.pane === pane);
+    if (pane === "browser") $browserBody.scrollTop = 0;
+    else if (!busy) $input.focus();
+  }
+  $tabs.addEventListener("click", e => {
+    const tab = e.target.closest(".tab");
+    if (tab) switchTab(tab.dataset.pane);
+  });
+  document.getElementById("pfReload").addEventListener("click", () => {
+    $browserBody.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
+  });
 
   // ---------- streaming primitives ----------
   // append a submitted prompt to the transcript, instantly (no per-char animation)
@@ -217,12 +585,6 @@
   async function answerNext(ai) {
     await streamText(ai, `Pick one — it's Avogram — and make everything else a feature or a graveyard. You've got the product, the waitlist, the YC video; the missing piece is a public v1 people can actually touch.`);
   }
-  async function answerWork(ai) {
-    await streamText(ai, `Can't — there's nothing public to hand you. The work lives in private repos, sealed on purpose.`);
-    await streamText(ai, `The one thing that leaks is the graph. That's the only receipt you get.`, { cls: "dim" });
-    await runTool(ai, `fetch(github.com/${CONFIG.github})`);
-    await renderGithub(ai);
-  }
   async function answerContact(ai) {
     await streamText(ai, `People reach you here:`);
     const links = ['<a class="link" href="mailto:' + CONFIG.email + '">✉ email</a>'];
@@ -259,7 +621,7 @@
     await streamText(ai, `The roast: serial-starter syndrome. You'd rather begin the next thing than grind the last one to a release — and you try every new AI tool instead of committing to one. Focus is your scarcest resource, not ideas.`);
     await streamText(ai, `What's next is obvious: pick one — it's Avogram — and make everything else a feature or a graveyard. You have the product, the waitlist, the YC video; the missing piece is a public v1 people can actually touch.`);
 
-    await streamText(ai, `That's the file. The rest stays sealed — ask how people reach you, that's the one door that's open.`, { cls: "dim" });
+    await streamText(ai, `That's the file. The design work's in the portfolio tab up top — the rest stays sealed. Ask how to reach me.`, { cls: "dim" });
   }
   async function answerGithub(ai) {
     await streamText(ai, `Proof you actually ship — your last year on GitHub:`);
@@ -334,13 +696,14 @@
   }
 
   // ---------- routing ----------
+  const OPEN_PORTFOLIO = "open-portfolio";   // sentinel: a route hit that just flips to the browser tab
   function route(text) {
     const q = text.toLowerCase();
     if (/(roast|brutal|weak|flaw|worst|bad at|critic|tear me|harsh)/.test(q)) return answerRoast;
     if (/(good at|strength|best at|great at|skill|talent|special)/.test(q)) return answerStrengths;
     if (/(should i|build next|next\b|do next|advice|improve|get better)/.test(q)) return answerNext;
     if (/(github|contribution|commit|stats|activity|streak|graph|heatmap)/.test(q)) return answerGithub;
-    if (/(work|receipt|portfolio|show me|shipped|live|projects\b|repos?|see it)/.test(q)) return answerWork;
+    if (/(work|receipt|portfolio|show me|shipped|live|projects\b|repos?|see it|design)/.test(q)) return OPEN_PORTFOLIO;
     if (/(contact|email|reach|hire|twitter|dm)/.test(q)) return answerContact;
     if (/(motto|philosoph|quote|belief|principle|live by)/.test(q)) return answerMotto;
     if (/(intel|dossier|file on|project|working on|what have we|what we|who am i|about me|read me|sum me|assessment|opinion|impression|honest|what do you|who are you|yourself|kilian|bio|who\b|about\b|me\b)/.test(q)) return answerProjects;
@@ -357,10 +720,11 @@
   async function ask(text) {
     if (busy) return;
     text = text.trim(); if (!text) return;
+    const fn = route(text);
+    if (fn === OPEN_PORTFOLIO) { $input.value = ""; switchTab("browser"); return; }   // no friction — jump straight to the tab
     setBusy(true); $input.value = "";
     commitUserMsg(text);            // the typed prompt moves up into the transcript
     const ai = aiBlock(); await thinking(ai);
-    const fn = route(text);
     if (fn) await fn(ai); else await answerFallback(ai, text);
     setBusy(false);
   }
@@ -374,6 +738,117 @@
     await ask($input.value);
     booting = false;
     $input.focus();
+  })();
+  </script>
+
+  <script>
+  // ============================================================
+  //  Studio sidebar — the sliding-highlight interaction, ported from
+  //  the React SlidingNav to vanilla JS. Two absolutely-positioned layers
+  //  (hover fill + active stripe) are measured against the nav and glide
+  //  between rows via CSS transitions.
+  // ============================================================
+  (function avoSidebar() {
+    const stage = document.querySelector(".avo-stage");
+    if (!stage) return;
+    const nav      = document.getElementById("avoNav");
+    const list     = document.getElementById("avoList");
+    const hoverEl  = stage.querySelector(".avo-hl--hover");
+    const stripeEl = stage.querySelector(".avo-hl--stripe");
+    const children = document.getElementById("avoChildren");
+    const chev     = stage.querySelector(".avo-row__chev");
+    const toggle   = document.getElementById("avoToggle");
+    const reduced  = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    let activeEl = list.querySelector('[data-key="studio"]');
+    let hovered  = null;
+    let open     = false;
+    let laidOut  = false;
+
+    const visible = () => nav.offsetParent !== null;   // false while the portfolio pane is hidden
+    function boxOf(el) {
+      const n = nav.getBoundingClientRect(), r = el.getBoundingClientRect();
+      return { left: r.left - n.left, top: r.top - n.top, width: r.width, height: r.height };
+    }
+    function placeStripe() {
+      if (!activeEl || !visible()) return;
+      const b = boxOf(activeEl);
+      stripeEl.style.left   = Math.round(b.left) + "px";
+      stripeEl.style.top    = Math.round(b.top + b.height * 0.22) + "px";
+      stripeEl.style.height = Math.round(b.height * 0.56) + "px";
+      stripeEl.style.opacity = 1;
+    }
+    function placeHover() {
+      if (!hovered || !visible()) { hoverEl.style.opacity = 0; return; }
+      const b = boxOf(hovered);
+      hoverEl.style.left = b.left + "px";  hoverEl.style.top    = b.top + "px";
+      hoverEl.style.width = b.width + "px"; hoverEl.style.height = b.height + "px";
+      hoverEl.style.opacity = 1;
+    }
+    function setActive(el) {
+      if (!el || el === activeEl) return;
+      activeEl.classList.remove("is-active");
+      activeEl = el; el.classList.add("is-active");
+      placeStripe();
+    }
+    function setOpen(v) {
+      open = v;
+      chev.classList.toggle("is-open", v);
+      chev.setAttribute("aria-expanded", String(v));
+      if (reduced) { children.style.height = v ? "auto" : "0px"; placeStripe(); return; }
+      if (v) {
+        children.style.height = children.scrollHeight + "px";
+        const done = () => { if (open) children.style.height = "auto"; children.removeEventListener("transitionend", done); };
+        children.addEventListener("transitionend", done);
+      } else {
+        children.style.height = children.scrollHeight + "px";   // from auto → fixed, so it can animate to 0
+        requestAnimationFrame(() => { children.style.height = "0px"; });
+      }
+    }
+
+    // hover — the fill follows the pointer's row
+    list.addEventListener("mousemove", e => {
+      const r = e.target.closest(".avo-row");
+      if (r && r !== hovered) { hovered = r; placeHover(); }
+    });
+    nav.addEventListener("mouseleave", () => { hovered = null; hoverEl.style.opacity = 0; });
+
+    // clicks — chevron toggles the tree; any row becomes active (optimistic, no routing)
+    list.addEventListener("click", e => {
+      if (e.target.closest("[data-expand]")) { setOpen(!open); return; }
+      const r = e.target.closest(".avo-row");
+      if (!r) return;
+      setActive(r);
+      if (r.classList.contains("avo-row--parent") && !open) setOpen(true);
+    });
+
+    // theme toggle — flips the panel between the real dark & light skins
+    const MOON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>';
+    const SUN  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
+    toggle.addEventListener("click", () => {
+      const light = stage.getAttribute("data-avo-theme") === "light";
+      stage.setAttribute("data-avo-theme", light ? "dark" : "light");
+      toggle.innerHTML = light ? MOON : SUN;
+    });
+
+    // (re)position on show / resize / tree animation. First time visible we place
+    // instantly so the stripe doesn't slide in from the corner.
+    let raf = 0;
+    function relayout() {
+      if (!visible()) return;
+      if (!laidOut) {
+        laidOut = true;
+        nav.classList.add("is-instant");
+        placeStripe(); placeHover();
+        requestAnimationFrame(() => requestAnimationFrame(() => nav.classList.remove("is-instant")));
+      } else {
+        placeStripe(); if (hovered) placeHover();
+      }
+    }
+    const schedule = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(relayout); };
+    new ResizeObserver(schedule).observe(list);   // fires when the pane shows and while the tree expands
+    window.addEventListener("resize", schedule);
+    relayout();
   })();
   </script>
 </body>
