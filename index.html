@@ -114,8 +114,12 @@
     .prompt.is-busy { opacity: .55; pointer-events: none; }
     .suggest.is-busy { opacity: .4; pointer-events: none; }
 
-    /* ↓ jump-to-latest — shown once an answer is done and there's more below */
-    .scrolldown { position: absolute; left: 50%; bottom: 96px; transform: translate(-50%, 6px);
+    /* the chips + input live in one foot so the ↓ button can anchor to their top edge */
+    .pane__foot { position: relative; flex: 0 0 auto; padding-bottom: env(safe-area-inset-bottom, 0px); }
+
+    /* ↓ jump-to-latest — shown once an answer is done and there's more below;
+       anchored just above the chip zone so it never overlaps (chips may wrap to 2 rows) */
+    .scrolldown { position: absolute; left: 50%; bottom: 100%; margin-bottom: 10px; transform: translate(-50%, 6px);
       width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
       background: #fff; color: var(--fg); border: 1px solid var(--line); border-radius: 0;
       box-shadow: 0 6px 18px rgba(0,0,0,.10); cursor: pointer; z-index: 5;
@@ -316,7 +320,7 @@
     .appf__seal { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); background: rgba(255,255,255,.55); -webkit-backdrop-filter: blur(2.5px); backdrop-filter: blur(2.5px); }
 
     @media (max-width: 560px) {
-      .term { max-width: none; border-left: 0; border-right: 0; }
+      .term { max-width: none; border-left: 0; border-right: 0; height: 100svh; }
       .log { padding: 20px 16px 6px; }
       .suggest { padding: 2px 16px 10px; }
       .prompt { padding-left: 16px; padding-right: 16px; }
@@ -354,12 +358,14 @@
     <!-- pane: terminal chat -->
     <div class="pane pane--chat">
       <div class="log" id="log"><div class="log__inner" id="loginner"></div></div>
-      <button class="scrolldown" id="scrollDown" type="button" tabindex="-1" aria-label="Jump to latest"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
-      <div class="suggest" id="suggest"></div>
-      <form class="prompt" id="promptForm" autocomplete="off">
-        <span class="sqm"></span>
-        <input id="promptInput" type="text" placeholder="ask it anything about you…" aria-label="Ask the AI about yourself" />
-      </form>
+      <div class="pane__foot">
+        <button class="scrolldown" id="scrollDown" type="button" tabindex="-1" aria-label="Jump to latest"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
+        <div class="suggest" id="suggest"></div>
+        <form class="prompt" id="promptForm" autocomplete="off">
+          <span class="sqm"></span>
+          <input id="promptInput" type="text" placeholder="ask it anything about you…" aria-label="Ask the AI about yourself" />
+        </form>
+      </div>
     </div>
 
     <!-- pane: in-app browser — the design system -->
