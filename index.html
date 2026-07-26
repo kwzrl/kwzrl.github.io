@@ -5,20 +5,99 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content" />
   <title>kilian — kwzrl</title>
   <meta name="description" content="Kilian Weinzierl — a terminal that reads you off your own GitHub." />
+  <meta name="theme-color" content="#ffffff" />
+  <script>
+    // Stamp the theme before the first paint, so a dark reader never gets flashed
+    // a white page. A stored choice wins; with none, we follow the OS.
+    (function () {
+      var t = null;
+      try { t = localStorage.getItem("kwzrl:theme"); } catch (e) {}
+      if (t !== "light" && t !== "dark") t = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      document.documentElement.dataset.theme = t;
+    })();
+  </script>
   <style>
     /* ---------- reset ---------- */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    /* ---------- palette ----------
+       The site is one monochrome ramp, so the dark skin is that ramp read the other
+       way up rather than a second design. Everything below is a token: nothing paints
+       a literal colour, which is what makes the two skins stay in step.
+       Steps run --bg → --panel/--surface → --fill* → --line* → --faint → --muted →
+       --fg-3 → --fg-2 → --fg, i.e. page to ink. Triplets (--veil, --tint) exist so
+       translucent overlays can keep their own alphas. */
     :root {
-      --bg:     #ffffff;
-      --fg:     #141414;
-      --muted:  #8c8c8c;
-      --faint:  #bcbcbc;
-      --line:   #e6e6e6;
-      --panel:  #fafafa;
-      --accent: #141414;   /* monochrome — no green */
+      --bg:      #ffffff;
+      --fg:      #141414;
+      --fg-2:    #444444;   /* strong secondary ink — tool names */
+      --fg-3:    #6a6a6a;   /* body secondary — lede copy */
+      --muted:   #8c8c8c;
+      --faint:   #bcbcbc;
+      --line:    #e6e6e6;
+      --line-2:  #d2d2d2;   /* stronger rule: hover borders, underlines */
+      --panel:   #fafafa;   /* recessed: bars, tool rows, inactive tabs */
+      --surface: #ffffff;   /* raised: cards, inputs, chips, anything on the page */
+      --fill:    #ececec;   /* block fills and swatch rules */
+      --fill-2:  #e2e2e2;
+      --fill-3:  #d4d4d4;
+      --on-fg:   #ffffff;   /* text and knobs sitting on a solid --fg block */
+      --accent:  #141414;   /* monochrome — no green */
+      --shadow:  rgba(0,0,0,.10);
+      --veil:    255,255,255;   /* rgb of the scrim over blurred panels */
+      --tint:    20,20,20;      /* rgb of translucent ink overlays */
+      --ink:     #b4b4b4;       /* gutter dither dot — read by JS, not by CSS */
+      --sq-l:    #ffffff;       /* chess board squares */
+      --sq-d:    #ececec;
+      --pc-w:    #ffffff;       /* chess pieces: one glyph set, filled per side… */
+      --pc-b:    #141414;
+      --pc-w-edge: #141414;     /* …and knocked out with a stroke on whichever side
+                                    would otherwise vanish into the board */
+      --pc-b-edge: transparent;
+      --gh-0: #ececec;          /* contribution ramp, empty → busiest */
+      --gh-1: #c4c4c4;
+      --gh-2: #8f8f8f;
+      --gh-3: #4d4d4d;
+      --gh-4: #141414;
       --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
       --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Helvetica, Arial, sans-serif;
+      color-scheme: light;
+    }
+
+    /* Not a straight invert: pure black crushes the hairline borders this layout is
+       built from, so the page floors at #0e0e0e and the ink tops out at #ededed. */
+    :root[data-theme="dark"] {
+      --bg:      #0e0e0e;
+      --fg:      #ededed;
+      --fg-2:    #c9c9c9;
+      --fg-3:    #a2a2a2;
+      --muted:   #8a8a8a;
+      --faint:   #5c5c5c;
+      --line:    #262626;
+      --line-2:  #3a3a3a;
+      --panel:   #171717;
+      --surface: #131313;
+      --fill:    #1f1f1f;
+      --fill-2:  #2b2b2b;
+      --fill-3:  #3d3d3d;
+      --on-fg:   #0e0e0e;
+      --accent:  #ededed;
+      --shadow:  rgba(0,0,0,.55);
+      --veil:    14,14,14;
+      --tint:    237,237,237;
+      --ink:     #343434;
+      --sq-l:    #202020;
+      --sq-d:    #141414;
+      --pc-w:    #ededed;
+      --pc-b:    #101010;
+      --pc-w-edge: transparent;
+      --pc-b-edge: #ededed;
+      --gh-0: #1c1c1c;
+      --gh-1: #3a3a3a;
+      --gh-2: #6b6b6b;
+      --gh-3: #a6a6a6;
+      --gh-4: #ededed;
+      color-scheme: dark;
     }
     html { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; -webkit-text-size-adjust: 100%; }
     body { font-family: var(--sans); color: var(--fg); background: var(--bg); overflow-x: hidden; }
@@ -48,8 +127,8 @@
     .log__inner { width: 100%; min-width: 0; }
     .msg { max-width: 100%; }
     .log::-webkit-scrollbar { width: 10px; }
-    .log::-webkit-scrollbar-thumb { background: #e2e2e2; border: 3px solid #fff; background-clip: padding-box; }
-    .log::-webkit-scrollbar-thumb:hover { background: #cfcfcf; background-clip: padding-box; }
+    .log::-webkit-scrollbar-thumb { background: var(--fill-2); border: 3px solid var(--bg); background-clip: padding-box; }
+    .log::-webkit-scrollbar-thumb:hover { background: var(--line-2); background-clip: padding-box; }
 
     .msg { margin-bottom: 20px; }
     .msg--user { font-family: var(--mono); font-size: 14px; color: var(--fg); display: flex; gap: 10px; align-items: baseline; }
@@ -60,7 +139,7 @@
     .msg--ai { padding-left: 2px; }
     .msg--ai p { margin-bottom: 12px; max-width: 60ch; line-height: 1.62; }
     .msg--ai p:last-child { margin-bottom: 0; }
-    .msg--ai a { color: var(--fg); text-decoration: underline; text-decoration-color: #cfcfcf; text-underline-offset: 3px; transition: text-decoration-color .15s; }
+    .msg--ai a { color: var(--fg); text-decoration: underline; text-decoration-color: var(--line-2); text-underline-offset: 3px; transition: text-decoration-color .15s; }
     .msg--ai a:hover { text-decoration-color: var(--fg); }
     .dim { color: var(--muted); }
     /* section lead — terminal-style marker before a block */
@@ -77,13 +156,13 @@
 
     /* tool call */
     .tool { font-family: var(--mono); font-size: 12.5px; color: var(--muted); display: flex; align-items: center; gap: 9px; padding: 8px 12px; margin: 4px 0 14px; border: 1px solid var(--line); background: var(--panel); max-width: max-content; }
-    .tool .name { color: #444; }
-    .tool .spin { width: 12px; height: 12px; border-radius: 50%; border: 2px solid #e2e2e2; border-top-color: var(--accent); animation: spin .7s linear infinite; }
+    .tool .name { color: var(--fg-2); }
+    .tool .spin { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--fill-2); border-top-color: var(--accent); animation: spin .7s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
     .tool .check { color: var(--accent); font-weight: 700; }
 
     /* inline canvas (shared by the github heatmap) */
-    .canvas { border: 1px solid var(--line); background: #fff; margin: 4px 0 16px; max-width: 100%; }
+    .canvas { border: 1px solid var(--line); background: var(--surface); margin: 4px 0 16px; max-width: 100%; }
     .canvas__bar { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-bottom: 1px solid var(--line); font-family: var(--mono); font-size: 12px; color: var(--muted); }
     .canvas__file { color: var(--fg); }
     .canvas__tag { text-transform: uppercase; letter-spacing: .06em; font-size: 11px; }
@@ -95,23 +174,23 @@
     .gh__grid { display: grid; grid-template-rows: repeat(7, 11px); grid-auto-flow: column; grid-auto-columns: 11px; gap: 3px; width: max-content; }
     .gh__cell { width: 11px; height: 11px; }
     .gh__cell--pad { background: transparent !important; }
-    .gh [data-level="0"] { background: #ececec; }
-    .gh [data-level="1"] { background: #c4c4c4; }
-    .gh [data-level="2"] { background: #8f8f8f; }
-    .gh [data-level="3"] { background: #4d4d4d; }
-    .gh [data-level="4"] { background: #141414; }
+    .gh [data-level="0"] { background: var(--gh-0); }
+    .gh [data-level="1"] { background: var(--gh-1); }
+    .gh [data-level="2"] { background: var(--gh-2); }
+    .gh [data-level="3"] { background: var(--gh-3); }
+    .gh [data-level="4"] { background: var(--gh-4); }
     .gh__legend { display: flex; align-items: center; gap: 5px; margin-top: 14px; font-family: var(--mono); font-size: 11px; color: var(--muted); }
     .gh__legend .sq { width: 11px; height: 11px; display: inline-block; }
     .gh__note { font-family: var(--mono); font-size: 12px; color: var(--muted); padding: 14px 16px; }
 
     /* contact / receipt links */
     .links { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 4px; }
-    .link { font-family: var(--mono); font-size: 13px; color: var(--fg); text-decoration: none !important; border: 1px solid var(--line); padding: 8px 14px; background: #fff; transition: border-color .15s; }
+    .link { font-family: var(--mono); font-size: 13px; color: var(--fg); text-decoration: none !important; border: 1px solid var(--line); padding: 8px 14px; background: var(--surface); transition: border-color .15s; }
     .link:hover { border-color: var(--accent); }
 
     /* suggestions */
     .suggest { display: flex; flex-wrap: wrap; gap: 8px; padding: 2px 22px 12px; flex: 0 0 auto; }
-    .chip { font-family: var(--mono); font-size: 12.5px; color: var(--muted); background: #fff; border: 1px solid var(--line); padding: 6px 12px; cursor: pointer; transition: color .15s, border-color .15s; }
+    .chip { font-family: var(--mono); font-size: 12.5px; color: var(--muted); background: var(--surface); border: 1px solid var(--line); padding: 6px 12px; cursor: pointer; transition: color .15s, border-color .15s; }
     .chip:hover { color: var(--fg); border-color: var(--accent); }
     .chip::before { content: "→ "; color: var(--faint); }
 
@@ -129,17 +208,27 @@
        anchored just above the chip zone so it never overlaps (chips may wrap to 2 rows) */
     .scrolldown { position: absolute; left: 50%; bottom: 100%; margin-bottom: 10px; transform: translate(-50%, 6px);
       width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
-      background: #fff; color: var(--fg); border: 1px solid var(--line); border-radius: 0;
-      box-shadow: 0 6px 18px rgba(0,0,0,.10); cursor: pointer; z-index: 5;
+      background: var(--surface); color: var(--fg); border: 1px solid var(--line); border-radius: 0;
+      box-shadow: 0 6px 18px var(--shadow); cursor: pointer; z-index: 5;
       opacity: 0; pointer-events: none; transition: opacity .18s ease, transform .18s ease, border-color .15s; }
     .scrolldown.is-show { opacity: 1; pointer-events: auto; transform: translate(-50%, 0); }
     .scrolldown:hover { border-color: var(--accent); }
     .scrolldown svg { width: 16px; height: 16px; }
 
     /* ---------- tabs (editor / browser style) ---------- */
-    .term__bar { padding: 0; overflow: hidden; }
-    .tabs { display: flex; align-items: stretch; width: 100%; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
+    .term__bar { padding: 0; gap: 0; align-items: stretch; overflow: hidden; }
+    /* the tab strip scrolls; the theme toggle after it is pinned and always reachable */
+    .tabs { display: flex; align-items: stretch; flex: 1 1 auto; min-width: 0; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
     .tabs::-webkit-scrollbar { display: none; }
+
+    /* theme toggle — a half-filled square, in the same vocabulary as .status and
+       .tab__dot, so it reads as part of the chrome rather than a bolted-on control */
+    .themetog { flex: 0 0 auto; display: flex; align-items: center; justify-content: center; padding: 12px 16px;
+      background: var(--panel); color: var(--muted); border: 0; border-left: 1px solid var(--line);
+      cursor: pointer; transition: color .15s, background .15s; }
+    .themetog:hover { color: var(--fg); background: var(--bg); }
+    .themetog i { width: 11px; height: 11px; border: 1.5px solid currentColor;
+      background: linear-gradient(90deg, currentColor 50%, transparent 50%); }
     .tab { display: flex; align-items: center; gap: 8px; padding: 12px 18px; font-family: var(--mono); font-size: 12px; color: var(--muted); background: var(--panel); border: 0; border-right: 1px solid var(--line); cursor: pointer; white-space: nowrap; flex: 0 0 auto; letter-spacing: .02em; transition: color .15s, background .15s; }
     .tab:hover { color: var(--fg); }
     .tab b { font-weight: 600; color: inherit; }
@@ -163,12 +252,12 @@
     .browser__tag { font-family: var(--mono); font-size: 10.5px; color: var(--faint); text-transform: uppercase; letter-spacing: .08em; flex: 0 0 auto; }
     .browser__body { flex: 1 1 auto; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; padding: 28px 24px 48px; scroll-behavior: smooth; overscroll-behavior: contain; }
     .browser__body::-webkit-scrollbar { width: 10px; }
-    .browser__body::-webkit-scrollbar-thumb { background: #e2e2e2; border: 3px solid #fff; background-clip: padding-box; }
+    .browser__body::-webkit-scrollbar-thumb { background: var(--fill-2); border: 3px solid var(--bg); background-clip: padding-box; }
 
     /* ---------- portfolio intro ---------- */
     .pf__intro { max-width: 62ch; margin-bottom: 36px; }
     .pf__title { font-size: 22px; font-weight: 600; letter-spacing: -.02em; margin-bottom: 10px; line-height: 1.2; }
-    .pf__lede { font-size: 14px; line-height: 1.6; color: #6a6a6a; max-width: 60ch; }
+    .pf__lede { font-size: 14px; line-height: 1.6; color: var(--fg-3); max-width: 60ch; }
 
     /* ---------- portfolio sections ---------- */
     .sec { margin-bottom: 38px; }
@@ -179,8 +268,8 @@
     .grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
     .grid--wide { grid-template-columns: repeat(auto-fill, minmax(258px, 1fr)); }
 
-    .spec { border: 1px solid var(--line); background: #fff; display: flex; flex-direction: column; overflow: hidden; transition: border-color .15s; }
-    .spec:hover { border-color: #d2d2d2; }
+    .spec { border: 1px solid var(--line); background: var(--surface); display: flex; flex-direction: column; overflow: hidden; transition: border-color .15s; }
+    .spec:hover { border-color: var(--line-2); }
     .spec__view { position: relative; min-height: 132px; display: flex; align-items: center; justify-content: center; padding: 18px; overflow: hidden; }
     .spec__cap { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 9px 12px; border-top: 1px solid var(--line); font-family: var(--mono); font-size: 11.5px; color: var(--muted); }
     .spec__cap b { color: var(--fg); font-weight: 600; }
@@ -266,45 +355,45 @@
     .cx--row { flex-direction: row; align-items: center; flex-wrap: wrap; gap: 12px; justify-content: center; }
     .cx--full { align-items: stretch; }
     .btn { font-family: var(--mono); font-size: 12px; padding: 8px 15px; border: 1px solid var(--fg); cursor: default; }
-    .btn--solid { background: var(--fg); color: #fff; }
-    .btn--ghost { background: #fff; color: var(--fg); }
-    .field { font-family: var(--mono); font-size: 12px; color: var(--muted); border: 1px solid var(--line); padding: 9px 12px; width: 100%; background: #fff; display: flex; align-items: center; }
+    .btn--solid { background: var(--fg); color: var(--on-fg); }
+    .btn--ghost { background: var(--surface); color: var(--fg); }
+    .field { font-family: var(--mono); font-size: 12px; color: var(--muted); border: 1px solid var(--line); padding: 9px 12px; width: 100%; background: var(--surface); display: flex; align-items: center; }
     .field .cur { width: 1px; height: 13px; background: var(--fg); margin-left: 2px; animation: blink 1s steps(1) infinite; }
     .switch { width: 40px; height: 22px; border: 1px solid var(--fg); background: var(--fg); position: relative; flex: 0 0 auto; }
-    .switch::after { content: ""; position: absolute; top: 2px; right: 2px; width: 16px; height: 16px; background: #fff; }
-    .switch--off { background: #fff; }
+    .switch::after { content: ""; position: absolute; top: 2px; right: 2px; width: 16px; height: 16px; background: var(--on-fg); }
+    .switch--off { background: var(--surface); }
     .switch--off::after { left: 2px; right: auto; background: var(--fg); }
     .seg { display: flex; border: 1px solid var(--fg); font-family: var(--mono); font-size: 11.5px; color: var(--fg); }
     .seg span { padding: 6px 12px; border-right: 1px solid var(--fg); }
     .seg span:last-child { border-right: 0; }
-    .seg span.on { background: var(--fg); color: #fff; }
+    .seg span.on { background: var(--fg); color: var(--on-fg); }
     .tags { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
     .tagx { font-family: var(--mono); font-size: 11px; padding: 4px 9px; border: 1px solid var(--line); color: var(--muted); }
-    .tagx--solid { background: var(--fg); color: #fff; border-color: var(--fg); }
+    .tagx--solid { background: var(--fg); color: var(--on-fg); border-color: var(--fg); }
     .check { display: flex; align-items: center; gap: 9px; font-family: var(--mono); font-size: 12px; color: var(--fg); }
-    .check .bx { width: 16px; height: 16px; border: 1px solid var(--fg); display: flex; align-items: center; justify-content: center; color: #fff; background: var(--fg); font-size: 11px; flex: 0 0 auto; }
-    .check .bx--off { background: #fff; }
+    .check .bx { width: 16px; height: 16px; border: 1px solid var(--fg); display: flex; align-items: center; justify-content: center; color: var(--on-fg); background: var(--fg); font-size: 11px; flex: 0 0 auto; }
+    .check .bx--off { background: var(--surface); }
 
     /* backgrounds */
     .spec--bg .spec__view { padding: 0; }
     .bgw { width: 100%; height: 132px; }
-    .bg-dots  { background-image: radial-gradient(#c9c9c9 1.2px, transparent 1.3px); background-size: 12px 12px; }
-    .bg-grid  { background-image: linear-gradient(#ececec 1px, transparent 1px), linear-gradient(90deg, #ececec 1px, transparent 1px); background-size: 16px 16px; }
-    .bg-glow  { background: radial-gradient(120px 90px at 50% 42%, #d4d4d4, #fff 72%); }
-    .bg-hatch { background-image: repeating-linear-gradient(45deg, #e2e2e2 0 1px, transparent 1px 8px); }
-    .bg-grad  { background: linear-gradient(158deg, #f5f5f5, #c9c9c9); }
-    .bg-scan  { background-image: repeating-linear-gradient(0deg, #ececec 0 1px, transparent 1px 5px); }
+    .bg-dots  { background-image: radial-gradient(var(--fill-3) 1.2px, transparent 1.3px); background-size: 12px 12px; }
+    .bg-grid  { background-image: linear-gradient(var(--fill) 1px, transparent 1px), linear-gradient(90deg, var(--fill) 1px, transparent 1px); background-size: 16px 16px; }
+    .bg-glow  { background: radial-gradient(120px 90px at 50% 42%, var(--fill-3), var(--surface) 72%); }
+    .bg-hatch { background-image: repeating-linear-gradient(45deg, var(--fill-2) 0 1px, transparent 1px 8px); }
+    .bg-grad  { background: linear-gradient(158deg, var(--panel), var(--fill-3)); }
+    .bg-scan  { background-image: repeating-linear-gradient(0deg, var(--fill) 0 1px, transparent 1px 5px); }
 
     /* animations */
-    .an-spin { width: 26px; height: 26px; border-radius: 50%; border: 2px solid #e2e2e2; border-top-color: var(--fg); animation: spin .8s linear infinite; }
+    .an-spin { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--fill-2); border-top-color: var(--fg); animation: spin .8s linear infinite; }
     .an-pulse { width: 22px; height: 22px; background: var(--fg); animation: anpulse 1.4s ease-in-out infinite; }
     @keyframes anpulse { 0%,100% { transform: scale(.65); opacity: .35; } 50% { transform: scale(1); opacity: 1; } }
-    .an-shim { width: 82%; height: 12px; background: linear-gradient(90deg, #eee 0%, #d3d3d3 40%, #eee 80%); background-size: 200% 100%; animation: anshim 1.4s linear infinite; }
+    .an-shim { width: 82%; height: 12px; background: linear-gradient(90deg, var(--fill) 0%, var(--fill-3) 40%, var(--fill) 80%); background-size: 200% 100%; animation: anshim 1.4s linear infinite; }
     @keyframes anshim { to { background-position: -200% 0; } }
     .an-dots { display: flex; gap: 6px; }
     .an-dots span { width: 8px; height: 8px; border-radius: 50%; background: var(--faint); animation: bounce 1.2s infinite ease-in-out; }
     .an-dots span:nth-child(2) { animation-delay: .15s; } .an-dots span:nth-child(3) { animation-delay: .3s; }
-    .an-prog { width: 82%; height: 4px; background: #ececec; overflow: hidden; }
+    .an-prog { width: 82%; height: 4px; background: var(--fill); overflow: hidden; }
     .an-prog::after { content: ""; display: block; height: 100%; width: 40%; background: var(--fg); animation: anprog 1.6s ease-in-out infinite; }
     @keyframes anprog { 0% { transform: translateX(-105%); } 100% { transform: translateX(315%); } }
     .an-mq { width: 100%; overflow: hidden; font-family: var(--mono); font-size: 12px; color: var(--muted); white-space: nowrap; }
@@ -313,19 +402,19 @@
 
     /* apps */
     .spec__view--app { padding: 14px; }
-    .appf { width: 100%; border: 1px solid var(--line); overflow: hidden; background: #fff; }
+    .appf { width: 100%; border: 1px solid var(--line); overflow: hidden; background: var(--surface); }
     .appf__bar { display: flex; align-items: center; gap: 5px; padding: 7px 9px; border-bottom: 1px solid var(--line); background: var(--panel); }
-    .appf__bar i { width: 7px; height: 7px; border-radius: 50%; background: #d2d2d2; flex: 0 0 auto; }
-    .appf__bar .u { flex: 1; height: 8px; margin-left: 6px; background: #e6e6e6; }
+    .appf__bar i { width: 7px; height: 7px; border-radius: 50%; background: var(--line-2); flex: 0 0 auto; }
+    .appf__bar .u { flex: 1; height: 8px; margin-left: 6px; background: var(--line); }
     .appf__ui { display: flex; height: 100px; position: relative; }
     .appf__side { width: 42px; border-right: 1px solid var(--line); background: var(--panel); padding: 9px 0; display: flex; flex-direction: column; gap: 7px; align-items: center; flex: 0 0 auto; }
-    .appf__side i { width: 15px; height: 15px; background: #dedede; }
+    .appf__side i { width: 15px; height: 15px; background: var(--fill-2); }
     .appf__main { flex: 1; padding: 11px; display: flex; flex-direction: column; gap: 7px; }
-    .appf__main .b { height: 8px; background: #ededed; }
-    .appf__main .b1 { width: 52%; background: #d4d4d4; }
+    .appf__main .b { height: 8px; background: var(--fill); }
+    .appf__main .b1 { width: 52%; background: var(--fill-3); }
     .appf__main .cards { display: flex; gap: 6px; margin-top: 3px; }
     .appf__main .cards i { flex: 1; height: 30px; border: 1px solid var(--line); }
-    .appf__seal { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); background: rgba(255,255,255,.55); -webkit-backdrop-filter: blur(2.5px); backdrop-filter: blur(2.5px); }
+    .appf__seal { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); background: rgba(var(--veil),.55); -webkit-backdrop-filter: blur(2.5px); backdrop-filter: blur(2.5px); }
 
     /* ---------- chess ---------- */
     /* the bar mirrors .browser__bar so the third tab reads like the second */
@@ -336,7 +425,7 @@
 
     .chess__body { flex: 1 1 auto; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; padding: 22px 24px 26px; overscroll-behavior: contain; display: flex; flex-direction: column; gap: 14px; }
     .chess__body::-webkit-scrollbar { width: 10px; }
-    .chess__body::-webkit-scrollbar-thumb { background: #e2e2e2; border: 3px solid #fff; background-clip: padding-box; }
+    .chess__body::-webkit-scrollbar-thumb { background: var(--fill-2); border: 3px solid var(--bg); background-clip: padding-box; }
 
     /* cqw units size the pieces off the board itself, so one rule covers every screen */
     .board { position: relative; width: min(100%, 432px); margin: 0 auto; flex: 0 0 auto;
@@ -344,14 +433,14 @@
       grid-template-rows: repeat(8, 1fr); aspect-ratio: 1;   /* rows must be pinned too, or empty ranks collapse */
       border: 1px solid var(--line); touch-action: none; -webkit-user-select: none; user-select: none; }
     .sq { position: relative; display: flex; align-items: center; justify-content: center; }
-    .sq--l { background: #fff; }
-    .sq--d { background: #ececec; }
-    .sq--last::before { content: ""; position: absolute; inset: 0; background: rgba(20,20,20,.07); pointer-events: none; }
+    .sq--l { background: var(--sq-l); }
+    .sq--d { background: var(--sq-d); }
+    .sq--last::before { content: ""; position: absolute; inset: 0; background: rgba(var(--tint),.07); pointer-events: none; }
     .sq--sel { box-shadow: inset 0 0 0 2px var(--fg); }
     .sq--chk { outline: 2px dashed var(--fg); outline-offset: -3px; z-index: 1; }
     .sq__hint { position: absolute; border-radius: 50%; pointer-events: none; }
-    .sq--to  .sq__hint { width: 22%; height: 22%; background: rgba(20,20,20,.24); }
-    .sq--cap .sq__hint { width: 84%; height: 84%; border: 2px solid rgba(20,20,20,.22); }
+    .sq--to  .sq__hint { width: 22%; height: 22%; background: rgba(var(--tint),.24); }
+    .sq--cap .sq__hint { width: 84%; height: 84%; border: 2px solid rgba(var(--tint),.22); }
     .sq__co { position: absolute; font-family: var(--mono); font-size: max(8px, 2.1cqw); color: var(--faint); line-height: 1; pointer-events: none; }
     .sq__co--r { left: 3px; top: 3px; }
     .sq__co--f { right: 3px; bottom: 2px; }
@@ -360,15 +449,15 @@
        with a stroke, which keeps the board monochrome and consistent per platform */
     .pc { font-size: 9cqw; line-height: 1; pointer-events: none;
       font-family: "Apple Symbols", "Segoe UI Symbol", "Noto Sans Symbols 2", var(--sans); }
-    .pc--b { color: var(--fg); }
-    .pc--w { color: #fff; -webkit-text-stroke: max(1px, .3cqw) var(--fg); }
+    .pc--b { color: var(--pc-b); -webkit-text-stroke: max(1px, .3cqw) var(--pc-b-edge); }
+    .pc--w { color: var(--pc-w); -webkit-text-stroke: max(1px, .3cqw) var(--pc-w-edge); }
     .pc--drag { opacity: .25; }
     .ghost { position: fixed; z-index: 50; transform: translate(-50%, -50%); pointer-events: none; }
 
     .promo { position: absolute; inset: 0; z-index: 20; display: flex; align-items: center; justify-content: center;
-      background: rgba(255,255,255,.6); -webkit-backdrop-filter: blur(2.5px); backdrop-filter: blur(2.5px); }
-    .promo__box { display: flex; border: 1px solid var(--fg); background: #fff; }
-    .promo__b { width: 13cqw; height: 13cqw; display: flex; align-items: center; justify-content: center; border: 0; border-right: 1px solid var(--line); background: #fff; cursor: pointer; transition: background .15s; }
+      background: rgba(var(--veil),.6); -webkit-backdrop-filter: blur(2.5px); backdrop-filter: blur(2.5px); }
+    .promo__box { display: flex; border: 1px solid var(--fg); background: var(--surface); }
+    .promo__b { width: 13cqw; height: 13cqw; display: flex; align-items: center; justify-content: center; border: 0; border-right: 1px solid var(--line); background: var(--surface); cursor: pointer; transition: background .15s; }
     .promo__b:last-child { border-right: 0; }
     .promo__b:hover { background: var(--panel); }
 
@@ -385,7 +474,7 @@
     .seg--live button { font: inherit; color: inherit; background: none; border: 0; border-right: 1px solid var(--fg); padding: 6px 12px; cursor: pointer; transition: background .15s, color .15s; }
     .seg--live button:last-child { border-right: 0; }
     .seg--live button:hover:not(.on) { background: var(--panel); }
-    .seg--live button.on { background: var(--fg); color: #fff; }
+    .seg--live button.on { background: var(--fg); color: var(--on-fg); }
     button.link { cursor: pointer; }
 
     @media (max-width: 560px) {
@@ -430,6 +519,7 @@
              in the terminal opens it. Advertised in the nav it was a third of the page's
              navigation given to a toy; found by typing it, it is worth more. -->
       </div>
+      <button class="themetog" id="themeToggle" type="button" aria-pressed="false" aria-label="Switch to dark mode" title="Switch to dark mode"><i aria-hidden="true"></i></button>
     </div>
 
     <!-- pane: terminal chat -->
@@ -631,6 +721,41 @@
   const $input   = document.getElementById("promptInput");
   const $tabs    = document.getElementById("tabs");
   const $browserBody  = document.getElementById("browserBody");
+
+  // ---------- theme ----------
+  // The <head> boot script has already stamped data-theme, so this only has to keep
+  // the non-CSS bits in sync. A stored choice pins the skin; with nothing stored we
+  // stay live to the OS, so a reader who flips their system at dusk flips with it.
+  const THEME_KEY  = "kwzrl:theme";
+  const $themeTog  = document.getElementById("themeToggle");
+  const $themeMeta = document.querySelector('meta[name="theme-color"]');
+  const sysDark    = matchMedia("(prefers-color-scheme: dark)");
+  const storedTheme = () => { try { const v = localStorage.getItem(THEME_KEY); return v === "light" || v === "dark" ? v : null; } catch { return null; } };
+  const theme = () => document.documentElement.dataset.theme === "dark" ? "dark" : "light";
+
+  function applyTheme(name) {
+    document.documentElement.dataset.theme = name;
+    const dark = name === "dark";
+    // the browser chrome on mobile reads this, not the stylesheet
+    if ($themeMeta) $themeMeta.content = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim() || (dark ? "#0e0e0e" : "#ffffff");
+    if ($themeTog) {
+      $themeTog.setAttribute("aria-pressed", String(dark));
+      const label = dark ? "Switch to light mode" : "Switch to dark mode";
+      $themeTog.setAttribute("aria-label", label);
+      $themeTog.title = label;
+    }
+    // the dither paints pixels, not CSS — it has to be told
+    dispatchEvent(new CustomEvent("themechange", { detail: name }));
+  }
+  function setTheme(name) {
+    try { localStorage.setItem(THEME_KEY, name); } catch {}
+    applyTheme(name);
+  }
+  const toggleTheme = () => { const next = theme() === "dark" ? "light" : "dark"; setTheme(next); return next; };
+
+  sysDark.addEventListener("change", e => { if (!storedTheme()) applyTheme(e.matches ? "dark" : "light"); });
+  if ($themeTog) $themeTog.addEventListener("click", toggleTheme);
+  applyTheme(theme());
 
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const sleep  = ms => new Promise(r => setTimeout(r, reduce ? 0 : ms));
@@ -866,7 +991,17 @@
     await streamText(ai, `— Alex Hormozi. Basically your whole operating system.`, { cls: "dim" });
   }
   async function answerHelp(ai) {
-    await streamText(ai, `Ask me: what intel you've got on me · what am I good at? · roast me · show my work · github · what to build next · contact.`, { cls: "dim" });
+    await streamText(ai, `Ask me: what intel you've got on me · what am I good at? · roast me · show my work · github · what to build next · contact · dark mode.`, { cls: "dim" });
+  }
+  // "dark mode" is a command, not a question — flip first, then say so. An explicit
+  // "light"/"dark" is honoured as asked; a bare "theme" just toggles.
+  async function answerTheme(ai, q) {
+    const want = /(light|day|bright|white)/.test(q) ? "light" : /(dark|night|black)/.test(q) ? "dark" : null;
+    const before = theme();
+    const now = want ? (setTheme(want), want) : toggleTheme();
+    await streamText(ai, now === before
+      ? `Already in ${now} mode. The square up in the tab bar flips it back.`
+      : `${now === "dark" ? "Lights off" : "Lights on"}. Sticks on this browser — or use the square up in the tab bar.`, { cls: "dim" });
   }
   async function answerFallback(ai, q) {
     await streamText(ai, `I only really know you and your work — try "what intel you've got on me", "show my work", or "roast me".`, { cls: "dim" });
@@ -878,6 +1013,8 @@
   function route(text) {
     const q = text.toLowerCase();
     if (/(chess|schach)/.test(q)) return OPEN_CHESS;
+    // closure: the dispatcher only hands answers the block, and this one needs the words
+    if (/(?:dark|light|night)\s*(?:mode|theme)|\btheme\b|lights?\s*(?:on|off|out)|\bgo dark\b/.test(q)) return ai => answerTheme(ai, q);
     if (/(roast|brutal|weak|flaw|worst|bad at|critic|tear me|harsh)/.test(q)) return answerRoast;
     if (/(good at|strength|best at|great at|skill|talent|special)/.test(q)) return answerStrengths;
     if (/(should i|build next|next\b|do next|advice|improve|get better)/.test(q)) return answerNext;
@@ -1374,7 +1511,9 @@
     const PIX   = 3;         // one dither cell, in CSS px — finer reads as powder, not specks
     const FADE  = 300;       // px of clear white between the column and full texture
     const MAXD  = 0.24;      // resting coverage out at the screen edge
-    const INK   = "#b4b4b4"; // dot colour — the single biggest subtlety knob. #141414 = the loud version
+    // dot colour — the single biggest subtlety knob. Lives in CSS as --ink so the two
+    // skins can each set their own; on light it sits just under the text greys, on dark
+    // just above the page. Re-read whenever the theme flips.
     const EDGE  = 0.45;      // how much of the density survives at the top and bottom edges
     // The cursor clears a wake, not a disc. The cleared zone is the union of the last
     // NT cursor positions, each with its own radius, so its shape is drawn by how you
@@ -1420,9 +1559,13 @@
     for (let i = 0; i < N; i++) LUT[i] = Math.sin(i / N * Math.PI * 2);
     const S = a => LUT[((a * (N / (Math.PI * 2))) | 0) & (N - 1)];
 
-    // pack INK into a little-endian RGBA word: A<<24 | B<<16 | G<<8 | R
-    const _n = parseInt(INK.slice(1), 16);
-    const DOT = (0xff000000 | ((_n & 255) << 16) | (((_n >> 8) & 255) << 8) | ((_n >> 16) & 255)) >>> 0;
+    // pack the ink into a little-endian RGBA word: A<<24 | B<<16 | G<<8 | R
+    function packInk(hex) {
+      const n = parseInt(hex.replace("#", ""), 16);
+      return (0xff000000 | ((n & 255) << 16) | (((n >> 8) & 255) << 8) | ((n >> 16) & 255)) >>> 0;
+    }
+    const readInk = () => getComputedStyle(document.documentElement).getPropertyValue("--ink").trim() || "#b4b4b4";
+    let DOT = packInk(readInk());
     let cols = 0, rows = 0, img = null, buf = null, mask = null, vmask = null, rad = null, raf = 0, last = 0;
 
     // cursor: the drawn position trails the real one, so the bloom drifts after the
@@ -1608,6 +1751,13 @@
       if (reduce) { stop(); frame(0); return; }        // one static frame, no motion
       start();
     }
+
+    // A running loop picks the new ink up on its next frame; a stopped one (reduced
+    // motion, or a hidden tab that comes back) needs to be redrawn by hand.
+    addEventListener("themechange", () => {
+      DOT = packInk(readInk());
+      if (!raf && img) frame(last);
+    });
 
     let rz; addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(apply, 120); });
     document.addEventListener("visibilitychange", () => document.hidden ? stop() : apply());
