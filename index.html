@@ -140,10 +140,10 @@
     .tab__dot { width: 7px; height: 7px; border: 1.5px solid currentColor; flex: 0 0 auto; }
 
     /* ---------- panes ---------- */
-    .pane--chat { position: relative; display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
-    .pane--browser { display: none; flex-direction: column; flex: 1 1 auto; min-height: 0; }
-    .term--browser .pane--chat { display: none; }
-    .term--browser .pane--browser { display: flex; }
+    /* exactly one pane is on at a time; switchTab() owns the flag */
+    .pane { display: none; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+    .pane.is-on { display: flex; }
+    .pane--chat { position: relative; }
 
     /* ---------- in-app browser chrome ---------- */
     .browser__bar { display: flex; align-items: center; gap: 10px; padding: 9px 14px; border-bottom: 1px solid var(--line); flex: 0 0 auto; }
@@ -319,6 +319,67 @@
     .appf__main .cards i { flex: 1; height: 30px; border: 1px solid var(--line); }
     .appf__seal { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); background: rgba(255,255,255,.55); -webkit-backdrop-filter: blur(2.5px); backdrop-filter: blur(2.5px); }
 
+    /* ---------- chess ---------- */
+    /* the bar mirrors .browser__bar so the third tab reads like the second */
+    .chess__bar { display: flex; align-items: center; gap: 10px; padding: 9px 14px; border-bottom: 1px solid var(--line); flex: 0 0 auto; }
+    .chess__engine { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 12.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .chess__engine b { color: var(--fg); font-weight: 600; }
+    .chess__score { font-family: var(--mono); font-size: 10.5px; color: var(--faint); text-transform: uppercase; letter-spacing: .08em; flex: 0 0 auto; }
+
+    .chess__body { flex: 1 1 auto; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; padding: 22px 24px 26px; overscroll-behavior: contain; display: flex; flex-direction: column; gap: 14px; }
+    .chess__body::-webkit-scrollbar { width: 10px; }
+    .chess__body::-webkit-scrollbar-thumb { background: #e2e2e2; border: 3px solid #fff; background-clip: padding-box; }
+
+    /* cqw units size the pieces off the board itself, so one rule covers every screen */
+    .board { position: relative; width: min(100%, 432px); margin: 0 auto; flex: 0 0 auto;
+      container-type: inline-size; display: grid; grid-template-columns: repeat(8, 1fr);
+      grid-template-rows: repeat(8, 1fr); aspect-ratio: 1;   /* rows must be pinned too, or empty ranks collapse */
+      border: 1px solid var(--line); touch-action: none; -webkit-user-select: none; user-select: none; }
+    .sq { position: relative; display: flex; align-items: center; justify-content: center; }
+    .sq--l { background: #fff; }
+    .sq--d { background: #ececec; }
+    .sq--last::before { content: ""; position: absolute; inset: 0; background: rgba(20,20,20,.07); pointer-events: none; }
+    .sq--sel { box-shadow: inset 0 0 0 2px var(--fg); }
+    .sq--chk { outline: 2px dashed var(--fg); outline-offset: -3px; z-index: 1; }
+    .sq__hint { position: absolute; border-radius: 50%; pointer-events: none; }
+    .sq--to  .sq__hint { width: 22%; height: 22%; background: rgba(20,20,20,.24); }
+    .sq--cap .sq__hint { width: 84%; height: 84%; border: 2px solid rgba(20,20,20,.22); }
+    .sq__co { position: absolute; font-family: var(--mono); font-size: max(8px, 2.1cqw); color: var(--faint); line-height: 1; pointer-events: none; }
+    .sq__co--r { left: 3px; top: 3px; }
+    .sq__co--f { right: 3px; bottom: 2px; }
+
+    /* one filled glyph set for both sides; white is the same shape knocked out
+       with a stroke, which keeps the board monochrome and consistent per platform */
+    .pc { font-size: 9cqw; line-height: 1; pointer-events: none;
+      font-family: "Apple Symbols", "Segoe UI Symbol", "Noto Sans Symbols 2", var(--sans); }
+    .pc--b { color: var(--fg); }
+    .pc--w { color: #fff; -webkit-text-stroke: max(1px, .3cqw) var(--fg); }
+    .pc--drag { opacity: .25; }
+    .ghost { position: fixed; z-index: 50; transform: translate(-50%, -50%); pointer-events: none; }
+
+    .promo { position: absolute; inset: 0; z-index: 20; display: flex; align-items: center; justify-content: center;
+      background: rgba(255,255,255,.6); -webkit-backdrop-filter: blur(2.5px); backdrop-filter: blur(2.5px); }
+    .promo__box { display: flex; border: 1px solid var(--fg); background: #fff; }
+    .promo__b { width: 13cqw; height: 13cqw; display: flex; align-items: center; justify-content: center; border: 0; border-right: 1px solid var(--line); background: #fff; cursor: pointer; transition: background .15s; }
+    .promo__b:last-child { border-right: 0; }
+    .promo__b:hover { background: var(--panel); }
+
+    .chess__state { font-family: var(--mono); font-size: 12.5px; color: var(--muted); min-height: 18px; }
+    .chess__state b { color: var(--fg); font-weight: 600; }
+    .chess__state .tool { margin: 0; }                 /* reuses the transcript's tool row, unspaced */
+    .chess__moves { font-family: var(--mono); font-size: 12px; color: var(--muted); line-height: 1.85; max-height: 76px; overflow-y: auto; border-top: 1px solid var(--line); padding-top: 9px; overflow-wrap: anywhere; }
+    .chess__moves b { color: var(--fg); font-weight: 400; }
+    .chess__moves .n { color: var(--faint); }
+
+    .chess__foot { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 12px 22px; border-top: 1px solid var(--line); flex: 0 0 auto; padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
+    .chess__foot .link { margin-left: auto; }
+    /* .seg is a static swatch in the design system — this makes it operable without touching it */
+    .seg--live button { font: inherit; color: inherit; background: none; border: 0; border-right: 1px solid var(--fg); padding: 6px 12px; cursor: pointer; transition: background .15s, color .15s; }
+    .seg--live button:last-child { border-right: 0; }
+    .seg--live button:hover:not(.on) { background: var(--panel); }
+    .seg--live button.on { background: var(--fg); color: #fff; }
+    button.link { cursor: pointer; }
+
     @media (max-width: 560px) {
       .term { max-width: none; border-left: 0; border-right: 0; height: 100svh; }
       .log { padding: 20px 16px 6px; }
@@ -330,6 +391,10 @@
       .tab { padding: 11px 14px; }
       .browser__bar { padding: 8px 12px; gap: 8px; }
       .browser__body { padding: 22px 16px 40px; }
+      .chess__bar { padding: 8px 12px; gap: 8px; }
+      .chess__body { padding: 16px 16px 20px; }
+      .chess__foot { padding: 10px 16px; padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
+      .chess__foot .link { font-size: 12px; padding: 7px 12px; }
       .pf__title { font-size: 22px; }
       .grid, .grid--wide { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
       .avo-stage { height: 420px; }
@@ -352,11 +417,14 @@
         <button class="tab" data-pane="browser" id="tabPortfolio" type="button">
           <span class="tab__dot"></span>portfolio
         </button>
+        <button class="tab" data-pane="chess" id="tabChess" type="button">
+          <span class="tab__dot"></span>chess
+        </button>
       </div>
     </div>
 
     <!-- pane: terminal chat -->
-    <div class="pane pane--chat">
+    <div class="pane pane--chat is-on" data-pane="chat">
       <div class="log" id="log"><div class="log__inner" id="loginner"></div></div>
       <div class="pane__foot">
         <button class="scrolldown" id="scrollDown" type="button" tabindex="-1" aria-label="Jump to latest"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
@@ -369,7 +437,7 @@
     </div>
 
     <!-- pane: in-app browser — the design system -->
-    <div class="pane pane--browser">
+    <div class="pane pane--browser" data-pane="browser">
       <div class="browser__bar">
         <div class="browser__nav">
           <button type="button" title="back" tabindex="-1">‹</button>
@@ -508,6 +576,31 @@
 
       </div>
     </div>
+
+    <!-- pane: chess — rules + engine are fetched on first open, never before -->
+    <div class="pane pane--chess" data-pane="chess">
+      <div class="chess__bar">
+        <span class="chess__engine"><span class="status" id="chessLamp"></span><b>stockfish</b> 18 lite · wasm</span>
+        <span class="chess__score" id="chessScore">0W · 0L · 0D</span>
+      </div>
+      <div class="chess__body">
+        <div class="board" id="board" aria-label="Chess board"></div>
+        <div class="chess__state" id="chessState"></div>
+        <div class="chess__moves" id="chessMoves" hidden></div>
+      </div>
+      <div class="chess__foot">
+        <div class="seg seg--live" id="chessSide" role="group" aria-label="Play as">
+          <button type="button" data-side="w" class="on">white</button>
+          <button type="button" data-side="b">black</button>
+        </div>
+        <div class="seg seg--live" id="chessLevel" role="group" aria-label="Difficulty">
+          <button type="button" data-level="0">easy</button>
+          <button type="button" data-level="1" class="on">normal</button>
+          <button type="button" data-level="2">hard</button>
+        </div>
+        <button class="link" type="button" id="chessNew">new game</button>
+      </div>
+    </div>
   </main>
 
   <script>
@@ -527,7 +620,6 @@
   const $suggest = document.getElementById("suggest");
   const $form    = document.getElementById("promptForm");
   const $input   = document.getElementById("promptInput");
-  const $term    = document.querySelector(".term");
   const $tabs    = document.getElementById("tabs");
   const $browserBody  = document.getElementById("browserBody");
 
@@ -545,6 +637,7 @@
   let anchorEl = null;
   let busy = false;
   let booting = true;
+  let activePane = "chat";
 
   const atBottom = () => $log.scrollHeight - $log.scrollTop - $log.clientHeight < 24;
   function updateArrow() {
@@ -570,14 +663,18 @@
   window.addEventListener("resize", updateArrow);
   $down.addEventListener("click", () => { stick = "follow"; $log.scrollTo({ top: $log.scrollHeight, behavior: reduce ? "auto" : "smooth" }); });
 
-  function setBusy(v) { busy = v; $form.classList.toggle("is-busy", v); $suggest.classList.toggle("is-busy", v); updateArrow(); if (!v && !$term.classList.contains("term--browser")) $input.focus(); }
+  function setBusy(v) { busy = v; $form.classList.toggle("is-busy", v); $suggest.classList.toggle("is-busy", v); updateArrow(); if (!v && activePane === "chat") $input.focus(); }
 
-  // ---------- tabs / in-app browser ----------
+  // ---------- tabs / panes ----------
+  // Panes announce themselves via a "pane:show" event rather than being wired up
+  // here, so a pane's own module stays self-contained (see the chess block below).
   function switchTab(pane) {
-    $term.classList.toggle("term--browser", pane === "browser");
+    activePane = pane;
+    for (const p of document.querySelectorAll(".pane")) p.classList.toggle("is-on", p.dataset.pane === pane);
     for (const t of $tabs.children) t.classList.toggle("tab--active", t.dataset.pane === pane);
     if (pane === "browser") $browserBody.scrollTop = 0;
-    else if (!busy) $input.focus();
+    else if (pane === "chat" && !busy) $input.focus();
+    document.dispatchEvent(new CustomEvent("pane:show", { detail: pane }));
   }
   $tabs.addEventListener("click", e => {
     const tab = e.target.closest(".tab");
@@ -768,8 +865,10 @@
 
   // ---------- routing ----------
   const OPEN_PORTFOLIO = "open-portfolio";   // sentinel: a route hit that just flips to the browser tab
+  const OPEN_CHESS     = "open-chess";       //  …same, for the chess tab
   function route(text) {
     const q = text.toLowerCase();
+    if (/(chess|schach)/.test(q)) return OPEN_CHESS;
     if (/(roast|brutal|weak|flaw|worst|bad at|critic|tear me|harsh)/.test(q)) return answerRoast;
     if (/(good at|strength|best at|great at|skill|talent|special)/.test(q)) return answerStrengths;
     if (/(should i|build next|next\b|do next|advice|improve|get better)/.test(q)) return answerNext;
@@ -782,7 +881,7 @@
     return null;
   }
 
-  const SUGGESTIONS = ["what am I good at?", "roast me", "show my work", "github", "contact"];
+  const SUGGESTIONS = ["what am I good at?", "roast me", "show my work", "github", "play chess", "contact"];
   function renderSuggestions() {
     $suggest.innerHTML = "";
     for (const s of SUGGESTIONS) { const b = document.createElement("button"); b.className = "chip"; b.type = "button"; b.textContent = s; b.onclick = () => { if (booting) return; ask(s); }; $suggest.appendChild(b); }
@@ -793,6 +892,7 @@
     text = text.trim(); if (!text) return;
     const fn = route(text);
     if (fn === OPEN_PORTFOLIO) { $input.value = ""; switchTab("browser"); return; }   // no friction — jump straight to the tab
+    if (fn === OPEN_CHESS)     { $input.value = ""; switchTab("chess");   return; }
     setBusy(true); $input.value = "";
     const userEl = commitUserMsg(text);   // the typed prompt moves up into the transcript
     const ai = aiBlock();
@@ -922,6 +1022,318 @@
     new ResizeObserver(schedule).observe(list);   // fires when the pane shows and while the tree expands
     window.addEventListener("resize", schedule);
     relayout();
+  })();
+  </script>
+
+  <script>
+  // ============================================================
+  //  Chess — a real game against Stockfish, entirely on the client.
+  //
+  //  chess.js owns the rules; the engine runs in a Worker so the search can
+  //  never block the page. Both are import()ed on the first open of the tab —
+  //  nothing here costs the initial load a single byte.
+  //
+  //  Why the *lite single-threaded* engine: the threaded builds need
+  //  SharedArrayBuffer, which needs COOP/COEP headers, which GitHub Pages
+  //  cannot send. The full single-threaded net is 113MB and blows GitHub's
+  //  100MB/file limit. This one is 7.3MB and still far past human strength.
+  //  Vendored under /vendor (GPLv3, see vendor/stockfish.COPYING.txt).
+  // ============================================================
+  (function chess() {
+    const board = document.getElementById("board");
+    if (!board) return;
+    const $state = document.getElementById("chessState");
+    const $moves = document.getElementById("chessMoves");
+    const $score = document.getElementById("chessScore");
+    const $lamp  = document.getElementById("chessLamp");
+    const $side  = document.getElementById("chessSide");
+    const $level = document.getElementById("chessLevel");
+
+    // One filled glyph set for both colours (white is stroked in CSS). The
+    // U+FE0E selector forces text presentation — without it iOS renders emoji.
+    const GLYPH = { k: "♚︎", q: "♛︎", r: "♜︎", b: "♝︎", n: "♞︎", p: "♟︎" };
+    const LEVELS = [ { skill: 1, depth: 5 }, { skill: 8, depth: 9 }, { skill: 20, depth: 14 } ];
+    const FILES = "abcdefgh";
+    const STORE = "kwzrl.chess";
+
+    let Chess = null, game = null, engine = null;
+    let human = "w", level = 1;
+    let sel = null, last = null, drag = null, thinking = false, gen = 0;
+    let searching = null;                       // in-flight bestmove promise, or null
+    let stats = { w: 0, l: 0, d: 0 };
+
+    // ---------- local persistence (stats, preferences, unfinished game) ----------
+    let resumeFen = null;
+    try {
+      const s = JSON.parse(localStorage.getItem(STORE) || "{}");
+      if (s.stats && typeof s.stats.w === "number") stats = s.stats;
+      if (s.side === "w" || s.side === "b") human = s.side;
+      if (LEVELS[s.level]) level = s.level;
+      if (typeof s.fen === "string") resumeFen = s.fen;
+    } catch (e) {}
+    function save() {
+      try {
+        localStorage.setItem(STORE, JSON.stringify({
+          stats, side: human, level,
+          fen: game && !game.isGameOver() ? game.fen() : null,   // a finished game isn't worth resuming
+        }));
+      } catch (e) {}
+    }
+
+    // ---------- engine ----------
+    // A thin UCI wrapper: send a command, await the line you care about.
+    function makeEngine() {
+      const w = new Worker("vendor/stockfish-18-lite-single.js");
+      const waits = [];
+      w.onmessage = e => {
+        const line = typeof e.data === "string" ? e.data : "";
+        // FIFO on purpose: UCI answers in the order it was asked, so the oldest
+        // matching waiter owns this line. Newest-first would hand a stopped
+        // search's bestmove to the game that started after it.
+        for (let i = 0; i < waits.length; i++) {
+          if (waits[i].re.test(line)) { waits.splice(i, 1)[0].res(line); break; }
+        }
+      };
+      return { send: c => w.postMessage(c), wait: re => new Promise(res => waits.push({ re, res })) };
+    }
+
+    let booted = null;
+    function boot() {
+      if (booted) return booted;
+      booted = (async () => {
+        setState("loading engine · 7 MB, once", true);
+        ({ Chess } = await import("./vendor/chess.js"));
+        engine = makeEngine();
+        engine.send("uci");      await engine.wait(/uciok/);
+        engine.send("isready");  await engine.wait(/readyok/);
+        $lamp.style.background = "";
+        let resume = null;
+        if (resumeFen) { try { if (!new Chess(resumeFen).isGameOver()) resume = resumeFen; } catch (e) {} }
+        await newGame(resume);
+      })().catch(err => {
+        setState("engine unavailable — " + ((err && err.message) || "load failed"));
+        booted = null;           // let a later visit retry
+      });
+      return booted;
+    }
+    document.addEventListener("pane:show", e => { if (e.detail === "chess") boot(); });
+
+    // ---------- rendering ----------
+    function kingSquare(color) {
+      const rows = game.board();
+      for (let r = 0; r < 8; r++) for (let f = 0; f < 8; f++) {
+        const c = rows[r][f];
+        if (c && c.type === "k" && c.color === color) return FILES[f] + (8 - r);
+      }
+      return null;
+    }
+    function paint() {
+      if (!game) return;
+      const flip = human === "b";
+      const rows = game.board();
+      const chk  = game.isCheck() ? kingSquare(game.turn()) : null;
+      const hints = sel ? game.moves({ square: sel, verbose: true }) : [];
+      board.innerHTML = "";
+      for (let r = 0; r < 8; r++) for (let f = 0; f < 8; f++) {
+        const rr = flip ? 7 - r : r, ff = flip ? 7 - f : f;
+        const name = FILES[ff] + (8 - rr);
+        const cell = rows[rr][ff];
+        const sq = document.createElement("div");
+        sq.className = "sq " + ((rr + ff) % 2 ? "sq--d" : "sq--l");
+        sq.dataset.sq = name;
+        if (last && (last.from === name || last.to === name)) sq.classList.add("sq--last");
+        if (sel === name) sq.classList.add("sq--sel");
+        if (chk === name) sq.classList.add("sq--chk");
+        if (hints.some(m => m.to === name)) {
+          sq.classList.add(cell ? "sq--cap" : "sq--to");
+          const h = document.createElement("span"); h.className = "sq__hint"; sq.appendChild(h);
+        }
+        if (cell) {
+          const p = document.createElement("span");
+          p.className = "pc pc--" + cell.color;
+          p.textContent = GLYPH[cell.type];
+          sq.appendChild(p);
+        }
+        if (f === 0) { const c = document.createElement("span"); c.className = "sq__co sq__co--r"; c.textContent = 8 - rr; sq.appendChild(c); }
+        if (r === 7) { const c = document.createElement("span"); c.className = "sq__co sq__co--f"; c.textContent = FILES[ff]; sq.appendChild(c); }
+        board.appendChild(sq);
+      }
+      renderMoves();
+    }
+    function renderMoves() {
+      const h = game ? game.history() : [];
+      $moves.hidden = !h.length;
+      let out = "";
+      for (let i = 0; i < h.length; i += 2) {
+        out += '<span class="n">' + (i / 2 + 1) + '.</span> <b>' + h[i] + "</b> " + (h[i + 1] ? "<b>" + h[i + 1] + "</b> " : "");
+      }
+      $moves.innerHTML = out;
+      $moves.scrollTop = $moves.scrollHeight;
+    }
+    function setState(text, spin) {
+      $state.innerHTML = "";
+      if (!spin) { $state.textContent = text; return; }
+      const t = document.createElement("div"); t.className = "tool";   // the transcript's own tool row
+      t.innerHTML = '<span class="spin"></span><span class="name"></span>';
+      t.querySelector(".name").textContent = text;
+      $state.appendChild(t);
+    }
+    function statusText() {
+      if (game.isCheckmate())           return game.turn() === human ? "checkmate — stockfish wins" : "checkmate — you win";
+      if (game.isStalemate())           return "stalemate — draw";
+      if (game.isInsufficientMaterial())return "draw — insufficient material";
+      if (game.isThreefoldRepetition()) return "draw — threefold repetition";
+      if (game.isDraw())                return "draw — fifty-move rule";
+      if (game.isCheck())               return game.turn() === human ? "check — your move" : "check";
+      return game.turn() === human ? "your move" : "";
+    }
+    const paintScore = () => { $score.textContent = stats.w + "W · " + stats.l + "L · " + stats.d + "D"; };
+
+    // ---------- game flow ----------
+    const locked = () => !game || thinking || game.isGameOver() || game.turn() !== human;
+
+    // A stopped search still answers with a bestmove. Await it before starting the
+    // next one, otherwise the new game's waiter would swallow the old game's reply.
+    async function stopSearch() {
+      if (!searching) return;
+      engine.send("stop");
+      try { await searching; } catch (e) {}
+      searching = null;
+    }
+    async function newGame(fen) {
+      gen++;                       // invalidates any bestmove still in flight
+      await stopSearch();
+      try { game = fen ? new Chess(fen) : new Chess(); } catch (e) { game = new Chess(); }
+      sel = null; last = null; drag = null; thinking = false;
+      save(); paint();
+      // covers both a fresh game as black and a resumed position on the bot's turn
+      if (game.turn() !== human) queueBot(); else setState(statusText());
+    }
+    function tryMove(from, to) {
+      const legal = game.moves({ square: from, verbose: true }).filter(m => m.to === to);
+      if (!legal.length) return false;
+      if (legal.some(m => m.promotion)) { askPromo(from, to); return true; }
+      commit({ from, to });
+      return true;
+    }
+    // chess.js v1 throws on an illegal move rather than returning null.
+    function apply(mv) {
+      try { return game.move(mv); } catch (e) { return null; }
+    }
+    function commit(mv) {
+      const m = apply(mv);
+      if (!m) return;
+      last = { from: m.from, to: m.to }; sel = null;
+      save(); paint();
+      if (game.isGameOver()) return finish();
+      queueBot();
+    }
+    async function queueBot() {
+      if (!game || game.isGameOver() || game.turn() === human) return;
+      const my = gen;
+      thinking = true;
+      setState("stockfish · thinking", true);
+      const cfg = LEVELS[level];
+      engine.send("setoption name Skill Level value " + cfg.skill);
+      engine.send("position fen " + game.fen());
+      engine.send("go depth " + cfg.depth + " movetime 2500");
+      searching = engine.wait(/^bestmove/);
+      const line = await searching;
+      if (my !== gen) return;                       // a new game began while it searched
+      searching = null;
+      thinking = false;
+      const uci = line.split(/\s+/)[1] || "";
+      if (!uci || uci === "(none)") return finish();
+      const m = apply({ from: uci.slice(0, 2), to: uci.slice(2, 4), promotion: uci[4] || undefined });
+      if (!m) { setState("engine desync — start a new game"); return; }
+      last = { from: m.from, to: m.to };
+      save(); paint();
+      if (game.isGameOver()) return finish();
+      setState(statusText());
+    }
+    function finish() {
+      thinking = false;
+      stats[game.isCheckmate() ? (game.turn() === human ? "l" : "w") : "d"]++;
+      save(); paintScore();
+      setState(statusText());
+    }
+    function askPromo(from, to) {
+      const box = document.createElement("div"); box.className = "promo";
+      const inner = document.createElement("div"); inner.className = "promo__box";
+      for (const t of ["q", "r", "b", "n"]) {
+        const b = document.createElement("button");
+        b.type = "button"; b.className = "promo__b";
+        b.innerHTML = '<span class="pc pc--' + human + '">' + GLYPH[t] + "</span>";
+        b.onclick = () => { box.remove(); commit({ from, to, promotion: t }); };
+        inner.appendChild(b);
+      }
+      box.appendChild(inner); board.appendChild(box);
+    }
+
+    // ---------- input: click-to-move and drag, on one pointer path ----------
+    board.addEventListener("pointerdown", e => {
+      if (locked()) return;
+      const sq = e.target.closest(".sq"); if (!sq) return;
+      const name = sq.dataset.sq;
+      if (sel && sel !== name && tryMove(sel, name)) return;
+      const cell = game.get(name);
+      if (cell && cell.color === human) {
+        sel = name;
+        drag = { from: name, x: e.clientX, y: e.clientY, moved: false, ghost: null };
+        try { board.setPointerCapture(e.pointerId); } catch (err) {}
+        paint();
+      } else if (sel) { sel = null; paint(); }
+    });
+    board.addEventListener("pointermove", e => {
+      if (!drag) return;
+      if (!drag.moved) {
+        if (Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 5) return;   // a click, not a drag — yet
+        drag.moved = true;
+        const src = board.querySelector('[data-sq="' + drag.from + '"] .pc');
+        if (src) {
+          const g = src.cloneNode(true);
+          g.classList.add("ghost");
+          g.style.fontSize = getComputedStyle(src).fontSize;
+          document.body.appendChild(g);
+          drag.ghost = g;
+          src.classList.add("pc--drag");
+        }
+      }
+      if (drag.ghost) { drag.ghost.style.left = e.clientX + "px"; drag.ghost.style.top = e.clientY + "px"; }
+    });
+    board.addEventListener("pointerup", e => {
+      const d = drag; drag = null;
+      if (!d) return;
+      if (d.ghost) d.ghost.remove();
+      if (!d.moved) return;                          // plain click — the selection stands
+      const el = document.elementFromPoint(e.clientX, e.clientY);
+      const sq = el && el.closest ? el.closest(".sq") : null;
+      if (!(sq && sq.dataset.sq !== d.from && tryMove(d.from, sq.dataset.sq))) { sel = null; paint(); }
+    });
+    board.addEventListener("pointercancel", () => {
+      if (drag && drag.ghost) drag.ghost.remove();
+      drag = null; sel = null; paint();
+    });
+
+    // ---------- controls ----------
+    $side.addEventListener("click", e => {
+      const b = e.target.closest("[data-side]");
+      if (!b || b.dataset.side === human || !game) return;
+      human = b.dataset.side; save(); syncSeg(); newGame();
+    });
+    $level.addEventListener("click", e => {
+      const b = e.target.closest("[data-level]");
+      if (!b) return;
+      level = +b.dataset.level; save(); syncSeg();   // takes effect on the engine's next move
+    });
+    document.getElementById("chessNew").addEventListener("click", () => { if (game) newGame(); });
+    function syncSeg() {
+      for (const b of $side.children)  b.classList.toggle("on", b.dataset.side === human);
+      for (const b of $level.children) b.classList.toggle("on", +b.dataset.level === level);
+    }
+
+    $lamp.style.background = "var(--faint)";   // lights up once the engine answers
+    paintScore(); syncSeg();
   })();
   </script>
 </body>
