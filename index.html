@@ -47,13 +47,11 @@
       --veil:    255,255,255;   /* rgb of the scrim over blurred panels */
       --tint:    20,20,20;      /* rgb of translucent ink overlays */
       --ink:     #b4b4b4;       /* gutter dither dot — read by JS, not by CSS */
-      --sq-l:    #ffffff;       /* chess board squares */
-      --sq-d:    #ececec;
-      --pc-w:    #ffffff;       /* chess pieces: one glyph set, filled per side… */
-      --pc-b:    #141414;
-      --pc-w-edge: #141414;     /* …and knocked out with a stroke on whichever side
-                                    would otherwise vanish into the board */
-      --pc-b-edge: transparent;
+      /* The four knobs the control drawer turns. They live here rather than in the
+         script because two of them also have to reach the rail's gradient, and a value
+         two places need belongs in the place both can read. --dgain scales the whole
+         dither field; the rail three are its stroke geometry. */
+      --dgain: 1; --rail-stroke: 24px; --rail-gap: 8px; --rail-width: 2px;
       --gh-0: #ececec;          /* contribution ramp, empty → busiest */
       --gh-1: #c4c4c4;
       --gh-2: #8f8f8f;
@@ -86,12 +84,6 @@
       --veil:    14,14,14;
       --tint:    237,237,237;
       --ink:     #343434;
-      --sq-l:    #202020;
-      --sq-d:    #141414;
-      --pc-w:    #ededed;
-      --pc-b:    #101010;
-      --pc-w-edge: transparent;
-      --pc-b-edge: #ededed;
       --gh-0: #1c1c1c;
       --gh-1: #3a3a3a;
       --gh-2: #6b6b6b;
@@ -129,6 +121,130 @@
     .log::-webkit-scrollbar { width: 10px; }
     .log::-webkit-scrollbar-thumb { background: var(--fill-2); border: 3px solid var(--bg); background-clip: padding-box; }
     .log::-webkit-scrollbar-thumb:hover { background: var(--line-2); background-clip: padding-box; }
+
+    /* ---------- tick rail ----------
+       The scrollbar as a stack of upright strokes — 2px wide, 24px tall, an 8px gap: every
+       tick sits there unlit, and the run the viewport covers lights up. Two layers, one
+       repeating gradient, both anchored to the rail — the lit layer is the same lattice
+       in a brighter colour with a clip window over it, so the ticks can never drift out
+       of register with each other. A translated thumb would carry its own gradient
+       origin along and the strokes would crawl; here nothing moves but the window.
+
+       .scroller is built by JS around each scrollable pane, so the native bar above is
+       only hidden once its replacement actually exists — no script, no rail, and the
+       browser's own scrollbar is still there. */
+    .scroller { position: relative; flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+    .scroller > .log, .scroller > .browser__body { flex: 1 1 auto; min-height: 0; scrollbar-width: none; }
+    .scroller > .log::-webkit-scrollbar,
+    .scroller > .browser__body::-webkit-scrollbar { width: 0; height: 0; }
+    /* the rail overlays the strip the native bar used to occupy, so the measure is
+       exactly what it was: the padding takes back the 10px the scrollbar was holding */
+    .scroller > .log { padding-right: 32px; }
+    .scroller > .browser__body { padding-right: 34px; }
+
+    /* height comes from JS, rounded down to a whole number of ticks — with bottom:0 the
+       gradient draws a partial stroke in the leftover strip that the lit layer can never
+       reach, and one permanently dead mark at the end gives the whole thing away.
+       The rail stays 11px wide though the ink is 2px: the rest is grab area. */
+    .rail { position: absolute; top: 0; right: 0; height: 0; width: 11px; z-index: 3;
+            opacity: 1; transition: opacity .18s; touch-action: none; }
+    .rail[hidden] { display: block; opacity: 0; pointer-events: none; }
+    /* Geometry from custom properties. The pitch used to be written twice — once in this
+       gradient, once as a JS constant — and drifting them apart breaks the lit run
+       silently: nothing errors, the window just stops landing on the strokes. The script
+       now reads the pitch back out of these, so there is one source. `left` is gone on
+       purpose: with left, right and width all set the box is over-constrained and width
+       is the declaration that gets dropped. */
+    .rail::before, .rail > i {
+      content: ""; position: absolute; right: 4px; top: 0; bottom: 0; width: var(--rail-width);
+      background: repeating-linear-gradient(to bottom,
+        currentColor 0 var(--rail-stroke),
+        transparent var(--rail-stroke) calc(var(--rail-stroke) + var(--rail-gap)));
+    }
+    .rail::before { color: var(--line); }          /* unlit — a ruler you read past */
+    .rail > i     { color: var(--faint); transition: color .15s; }   /* the run you are in */
+    .rail:hover > i, .rail.is-grab > i { color: var(--muted); }
+    /* two other readings of "quieter", offered in the control drawer: soft narrows the
+       gap between track and run, bare drops the track and leaves only the run */
+    :root[data-rail="soft"] .rail::before { color: var(--line); }
+    :root[data-rail="soft"] .rail > i     { color: var(--line-2); }
+    :root[data-rail="soft"] .rail:hover > i,
+    :root[data-rail="soft"] .rail.is-grab > i { color: var(--faint); }
+    :root[data-rail="bare"] .rail::before { color: transparent; }
+    :root[data-rail="bare"] .rail > i     { color: var(--faint); }
+    /* not decoration: the level rules outrank the base hover rule, so without these
+       hovering the rail would stop doing anything at all */
+    :root[data-rail="bare"] .rail:hover > i,
+    :root[data-rail="bare"] .rail.is-grab > i { color: var(--muted); }
+
+    /* ---------- control drawer ----------
+       The handle is built to the theme square's measurements so the two read as one pair
+       of controls rather than a button next to a button: two faders at different
+       positions, on the same 1.5px hairline the rest of the page is drawn with, every
+       edge on a whole pixel so nothing softens at 11px. */
+    .ctrltog { flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
+      padding: 12px 16px; background: var(--panel); color: var(--muted); border: 0;
+      border-left: 1px solid var(--line); cursor: pointer;
+      transition: color .15s, background .15s; }
+    .ctrltog:hover, .ctrltog.is-on { color: var(--fg); background: var(--bg); }
+    .ctrltog i { width: 11px; height: 11px; flex: 0 0 auto; display: block; position: relative;
+      background:
+        linear-gradient(currentColor, currentColor) 0 3px / 11px 1.5px no-repeat,
+        linear-gradient(currentColor, currentColor) 0 8px / 11px 1.5px no-repeat; }
+    .ctrltog i::before, .ctrltog i::after { content: ""; position: absolute;
+      width: 3px; height: 5px; background: currentColor; }
+    .ctrltog i::before { left: 2px;  top: 1px; }
+    .ctrltog i::after  { right: 2px; top: 6px; }
+
+    /* Sits inside .term, which is position:relative and overflow:hidden — so the drawer
+       is clipped to the column by construction and can never spill into the gutter the
+       dither owns. `top` is measured off the bar rather than guessed, because the bar's
+       height comes from whichever child is tallest.
+
+       The drawer is drawn by subtraction: no rules between the groups (a heading and a
+       rule state the same thing twice, and space says it without drawing anything), no
+       boxes on the segment or the actions (type carries state fine — the tabs in this
+       same bar already work that way), no drop shadow (nothing else on this page floats;
+       an opaque panel on a hairline is how every other surface separates itself). A
+       row's number stays quiet until you hover or drag it, so at rest there is structure
+       rather than eleven black numbers. */
+    /* Width is measured, not chosen: the left edge continues the divider left of the
+       clock, so the drawer hangs under the whole right-hand cluster of the bar instead
+       of cutting through it. The literal is only the value before the script runs, or if
+       the clock is ever taken out of the bar. */
+    .ctrlpanel { position: absolute; right: 0; z-index: 30; width: var(--ctrl-w, 258px); max-width: 100%;
+      background: var(--panel); border: 1px solid var(--line); border-right: 0; border-top: 0;
+      font-family: var(--mono); font-size: 11px; color: var(--muted);
+      padding: 15px 15px 12px; display: none; }
+    .ctrlpanel.is-on { display: block; }
+    .ctrlgrp + .ctrlgrp { margin-top: 17px; }
+    .ctrlgrp h4 { font-size: 11px; color: var(--faint); font-weight: 400; margin-bottom: 8px; }
+    .ctrlrow { display: flex; align-items: center; gap: 10px; height: 20px; }
+    .ctrlrow label { flex: 0 0 56px; color: var(--fg-3); }
+    /* tabular so the column does not twitch as digits change under the thumb */
+    .ctrlrow output { flex: 0 0 40px; text-align: right; color: var(--fg-3);
+      font-variant-numeric: tabular-nums; transition: color .12s; }
+    .ctrlrow:hover output, .ctrlrow:focus-within output { color: var(--fg); }
+    .ctrlrow input[type="range"] { flex: 1 1 auto; min-width: 0; -webkit-appearance: none; appearance: none;
+      height: 20px; background: transparent; cursor: pointer; }
+    .ctrlrow input[type="range"]:focus { outline: 0; }
+    .ctrlrow input[type="range"]::-webkit-slider-runnable-track { height: 1px; background: var(--line-2); }
+    .ctrlrow input[type="range"]::-moz-range-track { height: 1px; background: var(--line-2); }
+    /* the thumb is 2px, the same stroke width it is setting — the drawer is drawn with
+       the thing it controls */
+    .ctrlrow input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none;
+      width: 2px; height: 11px; background: var(--fg); margin-top: -5px; border: 0; border-radius: 0; }
+    .ctrlrow input[type="range"]::-moz-range-thumb { width: 2px; height: 11px; background: var(--fg);
+      border: 0; border-radius: 0; }
+    .ctrlseg { flex: 1 1 auto; display: flex; gap: 13px; }
+    .ctrlseg button { font-family: var(--mono); font-size: 11px; padding: 0;
+      background: none; color: var(--faint); border: 0; cursor: pointer; transition: color .12s; }
+    .ctrlseg button:hover { color: var(--fg-3); }
+    .ctrlseg button.is-on { color: var(--fg); }
+    .ctrlfoot { display: flex; justify-content: flex-end; gap: 13px; margin-top: 15px; }
+    .ctrlfoot button { font-family: var(--mono); font-size: 11px; padding: 0;
+      background: none; color: var(--faint); border: 0; cursor: pointer; transition: color .12s; }
+    .ctrlfoot button:hover { color: var(--fg); }
 
     .msg { margin-bottom: 20px; }
     .msg--user { font-family: var(--mono); font-size: 14px; color: var(--fg); display: flex; gap: 10px; align-items: baseline; }
@@ -193,6 +309,9 @@
     .chip { font-family: var(--mono); font-size: 12.5px; color: var(--muted); background: var(--surface); border: 1px solid var(--line); padding: 6px 12px; cursor: pointer; transition: color .15s, border-color .15s; }
     .chip:hover { color: var(--fg); border-color: var(--accent); }
     .chip::before { content: "→ "; color: var(--faint); }
+    /* a chip that opens a page rather than answering — you can see which is which
+       before you click */
+    .chip--open::before { content: "↗ "; }
 
     /* prompt */
     .prompt { display: flex; align-items: center; gap: 10px; padding: 13px 22px; border-top: 1px solid var(--line); flex: 0 0 auto; }
@@ -221,8 +340,16 @@
     .tabs { display: flex; align-items: stretch; flex: 1 1 auto; min-width: 0; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
     .tabs::-webkit-scrollbar { display: none; }
 
-    /* theme toggle — a half-filled square, in the same vocabulary as .status and
-       .tab__dot, so it reads as part of the chrome rather than a bolted-on control */
+    /* theme toggle — a half-filled square, in the same vocabulary as .status and the
+       .sig bars, so it reads as part of the chrome rather than a bolted-on control */
+    /* ---------- clock ----------
+       tabular-nums so the digits do not jitter as the seconds roll, and the date drops
+       out on narrow screens where the tab strip needs the room. */
+    .clock { flex: 0 0 auto; display: flex; align-items: baseline; gap: 8px; padding: 12px 14px;
+      font-family: var(--mono); font-size: 11.5px; letter-spacing: .02em; white-space: nowrap;
+      color: var(--muted); font-variant-numeric: tabular-nums; border-left: 1px solid var(--line); }
+    .clock__d { color: var(--faint); }
+
     .themetog { flex: 0 0 auto; display: flex; align-items: center; justify-content: center; padding: 12px 16px;
       background: var(--panel); color: var(--muted); border: 0; border-left: 1px solid var(--line);
       cursor: pointer; transition: color .15s, background .15s; }
@@ -233,8 +360,31 @@
     .tab:hover { color: var(--fg); }
     .tab b { font-weight: 600; color: inherit; }
     .tab--active { color: var(--fg); background: var(--bg); cursor: default; }
+    /* The home tab stays put while the rest of the strip scrolls under it, so however
+       many pages are open the way back to the chat is never scrolled out of reach. */
+    .tab--home { position: sticky; left: 0; z-index: 2; }
+    .tabgrp { display: flex; align-items: stretch; flex: 0 1 auto; min-width: 0; }
+    /* past a few tabs they give up width rather than pushing the strip into a scroll */
+    .tabgrp .tab { min-width: 0; }
+    .tabgrp .tab > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .tabgrp .tab { border-right: 0; padding-right: 10px; }
+    .tabx { flex: 0 0 auto; padding: 0 12px 0 6px; font-family: var(--mono); font-size: 14px; line-height: 1;
+      color: var(--faint); background: var(--panel); border: 0; border-right: 1px solid var(--line);
+      cursor: pointer; transition: color .15s, background .15s; }
+    .tabx:hover { color: var(--fg); }
+    .tabgrp:has(.tab--active) .tabx { background: var(--bg); }
     .tab .status { width: 7px; height: 7px; background: var(--accent); flex: 0 0 auto; }
-    .tab__dot { width: 7px; height: 7px; border: 1.5px solid currentColor; flex: 0 0 auto; }
+    /* Connectivity bars, in the same drawn-geometry vocabulary as the ■ marker, the
+       status square and the half-filled theme square — four squared-off bars rather
+       than a rounded signal glyph. Not decoration: they read navigator.onLine, so a
+       reader who drops off the network sees why the graph never arrives. */
+    .sig { flex: 0 0 auto; display: inline-flex; align-items: flex-end; gap: 1.5px; height: 9px; }
+    .sig i { width: 2px; background: currentColor; transition: opacity .25s ease; }
+    .sig i:nth-child(1) { height: 3px; }
+    .sig i:nth-child(2) { height: 5px; }
+    .sig i:nth-child(3) { height: 7px; }
+    .sig i:nth-child(4) { height: 9px; }
+    :root.is-offline .sig i:nth-child(n+2) { opacity: .2; }
 
     /* ---------- panes ---------- */
     /* exactly one pane is on at a time; switchTab() owns the flag */
@@ -246,13 +396,35 @@
     .browser__bar { display: flex; align-items: center; gap: 10px; padding: 9px 14px; border-bottom: 1px solid var(--line); flex: 0 0 auto; }
     .browser__nav { display: flex; gap: 1px; flex: 0 0 auto; }
     .browser__nav button { background: none; border: 0; color: var(--faint); cursor: pointer; font-family: var(--mono); font-size: 15px; line-height: 1; padding: 3px 5px; transition: color .15s; }
-    .browser__nav button:hover { color: var(--fg); }
+    .browser__nav button:hover:not(:disabled) { color: var(--fg); }
+    .browser__nav button:disabled { opacity: .3; cursor: default; }
     .browser__url { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 8px; border: 1px solid var(--line); background: var(--panel); padding: 6px 12px; font-family: var(--mono); font-size: 12.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .browser__url .host { color: var(--fg); }
     .browser__tag { font-family: var(--mono); font-size: 10.5px; color: var(--faint); text-transform: uppercase; letter-spacing: .08em; flex: 0 0 auto; }
     .browser__body { flex: 1 1 auto; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; padding: 28px 24px 48px; scroll-behavior: smooth; overscroll-behavior: contain; }
     .browser__body::-webkit-scrollbar { width: 10px; }
     .browser__body::-webkit-scrollbar-thumb { background: var(--fill-2); border: 3px solid var(--bg); background-clip: padding-box; }
+
+    /* ---------- browser pages ----------
+       Exactly one is on at a time; navigate() owns the flag, the same contract the
+       panes use one level up. */
+    .page { display: none; }
+    .page.is-on { display: block; }
+
+    /* ---------- ledger ----------
+       A list, not a card grid: most of these rows are redacted, and a grid of mostly
+       blanked cards reads as a bug rather than as a choice. */
+    .led { border-top: 1px solid var(--line); }
+    .led__row { display: grid; grid-template-columns: minmax(9rem, 14rem) 1fr auto; gap: 10px 18px;
+      align-items: baseline; padding: 11px 0; border-bottom: 1px solid var(--line); }
+    .led__n { font-weight: 600; font-size: 14px; }
+    .led__d { font-size: 13.5px; color: var(--muted); line-height: 1.5; }
+    .led__s { font-family: var(--mono); font-size: 11px; color: var(--faint); text-transform: uppercase; letter-spacing: .08em; white-space: nowrap; }
+    .led--sealed .led__n { color: var(--faint); letter-spacing: -.08em; font-weight: 400; }
+
+    .pf__body { font-size: 14.5px; line-height: 1.65; color: var(--fg); max-width: 62ch; }
+    .pf__note { font-size: 13px; line-height: 1.6; color: var(--muted); margin-top: 12px; max-width: 62ch; }
+    .pf__lede code { font-family: var(--mono); font-size: .92em; }
 
     /* ---------- portfolio intro ---------- */
     .pf__intro { max-width: 62ch; margin-bottom: 36px; }
@@ -416,83 +588,26 @@
     .appf__main .cards i { flex: 1; height: 30px; border: 1px solid var(--line); }
     .appf__seal { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); background: rgba(var(--veil),.55); -webkit-backdrop-filter: blur(2.5px); backdrop-filter: blur(2.5px); }
 
-    /* ---------- chess ---------- */
-    /* the bar mirrors .browser__bar so the third tab reads like the second */
-    .chess__bar { display: flex; align-items: center; gap: 10px; padding: 9px 14px; border-bottom: 1px solid var(--line); flex: 0 0 auto; }
-    .chess__engine { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 12.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .chess__engine b { color: var(--fg); font-weight: 600; }
-    .chess__score { font-family: var(--mono); font-size: 10.5px; color: var(--faint); text-transform: uppercase; letter-spacing: .08em; flex: 0 0 auto; }
-
-    .chess__body { flex: 1 1 auto; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; padding: 22px 24px 26px; overscroll-behavior: contain; display: flex; flex-direction: column; gap: 14px; }
-    .chess__body::-webkit-scrollbar { width: 10px; }
-    .chess__body::-webkit-scrollbar-thumb { background: var(--fill-2); border: 3px solid var(--bg); background-clip: padding-box; }
-
-    /* cqw units size the pieces off the board itself, so one rule covers every screen */
-    .board { position: relative; width: min(100%, 432px); margin: 0 auto; flex: 0 0 auto;
-      container-type: inline-size; display: grid; grid-template-columns: repeat(8, 1fr);
-      grid-template-rows: repeat(8, 1fr); aspect-ratio: 1;   /* rows must be pinned too, or empty ranks collapse */
-      border: 1px solid var(--line); touch-action: none; -webkit-user-select: none; user-select: none; }
-    .sq { position: relative; display: flex; align-items: center; justify-content: center; }
-    .sq--l { background: var(--sq-l); }
-    .sq--d { background: var(--sq-d); }
-    .sq--last::before { content: ""; position: absolute; inset: 0; background: rgba(var(--tint),.07); pointer-events: none; }
-    .sq--sel { box-shadow: inset 0 0 0 2px var(--fg); }
-    .sq--chk { outline: 2px dashed var(--fg); outline-offset: -3px; z-index: 1; }
-    .sq__hint { position: absolute; border-radius: 50%; pointer-events: none; }
-    .sq--to  .sq__hint { width: 22%; height: 22%; background: rgba(var(--tint),.24); }
-    .sq--cap .sq__hint { width: 84%; height: 84%; border: 2px solid rgba(var(--tint),.22); }
-    .sq__co { position: absolute; font-family: var(--mono); font-size: max(8px, 2.1cqw); color: var(--faint); line-height: 1; pointer-events: none; }
-    .sq__co--r { left: 3px; top: 3px; }
-    .sq__co--f { right: 3px; bottom: 2px; }
-
-    /* one filled glyph set for both sides; white is the same shape knocked out
-       with a stroke, which keeps the board monochrome and consistent per platform */
-    .pc { font-size: 9cqw; line-height: 1; pointer-events: none;
-      font-family: "Apple Symbols", "Segoe UI Symbol", "Noto Sans Symbols 2", var(--sans); }
-    .pc--b { color: var(--pc-b); -webkit-text-stroke: max(1px, .3cqw) var(--pc-b-edge); }
-    .pc--w { color: var(--pc-w); -webkit-text-stroke: max(1px, .3cqw) var(--pc-w-edge); }
-    .pc--drag { opacity: .25; }
-    .ghost { position: fixed; z-index: 50; transform: translate(-50%, -50%); pointer-events: none; }
-
-    .promo { position: absolute; inset: 0; z-index: 20; display: flex; align-items: center; justify-content: center;
-      background: rgba(var(--veil),.6); -webkit-backdrop-filter: blur(2.5px); backdrop-filter: blur(2.5px); }
-    .promo__box { display: flex; border: 1px solid var(--fg); background: var(--surface); }
-    .promo__b { width: 13cqw; height: 13cqw; display: flex; align-items: center; justify-content: center; border: 0; border-right: 1px solid var(--line); background: var(--surface); cursor: pointer; transition: background .15s; }
-    .promo__b:last-child { border-right: 0; }
-    .promo__b:hover { background: var(--panel); }
-
-    .chess__state { font-family: var(--mono); font-size: 12.5px; color: var(--muted); min-height: 18px; }
-    .chess__state b { color: var(--fg); font-weight: 600; }
-    .chess__state .tool { margin: 0; }                 /* reuses the transcript's tool row, unspaced */
-    .chess__moves { font-family: var(--mono); font-size: 12px; color: var(--muted); line-height: 1.85; max-height: 76px; overflow-y: auto; border-top: 1px solid var(--line); padding-top: 9px; overflow-wrap: anywhere; }
-    .chess__moves b { color: var(--fg); font-weight: 400; }
-    .chess__moves .n { color: var(--faint); }
-
-    .chess__foot { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 12px 22px; border-top: 1px solid var(--line); flex: 0 0 auto; padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
-    .chess__foot .link { margin-left: auto; }
-    /* .seg is a static swatch in the design system — this makes it operable without touching it */
-    .seg--live button { font: inherit; color: inherit; background: none; border: 0; border-right: 1px solid var(--fg); padding: 6px 12px; cursor: pointer; transition: background .15s, color .15s; }
-    .seg--live button:last-child { border-right: 0; }
-    .seg--live button:hover:not(.on) { background: var(--panel); }
-    .seg--live button.on { background: var(--fg); color: var(--on-fg); }
-    button.link { cursor: pointer; }
-
     @media (max-width: 560px) {
       .term { max-width: none; border-left: 0; border-right: 0; height: 100svh; }
       .log { padding: 20px 16px 6px; }
+      /* no native bar to take space back from here — just enough to clear the rail */
+      .scroller > .log { padding-right: 22px; }
+      .scroller > .browser__body { padding-right: 22px; }
       .suggest { padding: 2px 16px 10px; }
       .prompt { padding-left: 16px; padding-right: 16px; }
       .prompt input { font-size: 16px; }   /* >=16px prevents iOS zoom-on-focus */
       .msg--ai p { font-size: 15px; }
       .chip { padding: 7px 12px; }
       .tab { padding: 11px 14px; }
+      .clock { padding: 11px 10px; font-size: 10.5px; gap: 6px; }
+      .ctrlpanel { width: 100%; border-left: 0; }
+      .clock__d { display: none; }
       .browser__bar { padding: 8px 12px; gap: 8px; }
       .browser__body { padding: 22px 16px 40px; }
-      .chess__bar { padding: 8px 12px; gap: 8px; }
-      .chess__body { padding: 16px 16px 20px; }
-      .chess__foot { padding: 10px 16px; padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
-      .chess__foot .link { font-size: 12px; padding: 7px 12px; }
       .pf__title { font-size: 22px; }
+      .led__row { grid-template-columns: 1fr auto; }
+      .led__d { grid-column: 1 / -1; }
       .grid, .grid--wide { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
       .avo-stage { height: 420px; }
       .avo-canvas { display: none; }        /* narrow: let the rail float on the bare canvas */
@@ -509,17 +624,65 @@
   <main class="term" role="log" aria-live="polite">
     <div class="term__bar">
       <div class="tabs" id="tabs">
-        <button class="tab tab--active" data-pane="chat" type="button">
+        <button class="tab tab--home tab--active" data-pane="chat" type="button">
           <span class="status" title="online"></span><b>kilian weinzierl</b>
         </button>
-        <button class="tab" data-pane="browser" id="tabPortfolio" type="button">
-          <span class="tab__dot"></span>portfolio
-        </button>
-        <!-- No chess tab on purpose. The pane and its route are still there — "play chess"
-             in the terminal opens it. Advertised in the nav it was a third of the page's
-             navigation given to a toy; found by typing it, it is worth more. -->
+        <!-- One tab per open page, rendered by renderTabs(). The × is a sibling button,
+             never nested inside the tab button: a button inside a button is invalid and
+             browsers un-nest it in ways you do not control. -->
       </div>
+      <div class="clock" id="clock" aria-hidden="true"><span class="clock__d"></span><span class="clock__t"></span></div>
+      <button class="ctrltog" id="ctrlTog" type="button" aria-expanded="false" aria-controls="ctrlPanel"
+              aria-label="Tuning controls" title="Tuning controls"><i aria-hidden="true"></i></button>
       <button class="themetog" id="themeToggle" type="button" aria-pressed="false" aria-label="Switch to dark mode" title="Switch to dark mode"><i aria-hidden="true"></i></button>
+    </div>
+
+    <!-- The tuning drawer. Lives in .term, not in .term__bar — the bar is overflow:hidden
+         and would guillotine it. -->
+    <div class="ctrlpanel" id="ctrlPanel" role="group" aria-label="Tuning controls">
+      <div class="ctrlgrp">
+        <h4>dither</h4>
+        <div class="ctrlrow">
+          <label for="cDensity">density</label>
+          <input type="range" id="cDensity" min="0" max="1.4" step=".02" value="1">
+          <output for="cDensity" id="oDensity">1.00</output>
+        </div>
+        <div class="ctrlrow">
+          <label for="cContrast">contrast</label>
+          <input type="range" id="cContrast" min="0" max="1.6" step=".02" value="1">
+          <output for="cContrast" id="oContrast">1.00</output>
+        </div>
+      </div>
+      <div class="ctrlgrp">
+        <h4>rail</h4>
+        <div class="ctrlrow">
+          <label for="cStroke">stroke</label>
+          <input type="range" id="cStroke" min="2" max="60" step="1" value="24">
+          <output for="cStroke" id="oStroke">24px</output>
+        </div>
+        <div class="ctrlrow">
+          <label for="cGap">gap</label>
+          <input type="range" id="cGap" min="1" max="24" step="1" value="8">
+          <output for="cGap" id="oGap">8px</output>
+        </div>
+        <div class="ctrlrow">
+          <label for="cWidth">width</label>
+          <input type="range" id="cWidth" min="1" max="6" step="1" value="2">
+          <output for="cWidth" id="oWidth">2px</output>
+        </div>
+        <div class="ctrlrow">
+          <label>colour</label>
+          <div class="ctrlseg" id="cRail">
+            <button type="button" data-v="now">now</button>
+            <button type="button" data-v="soft">soft</button>
+            <button type="button" data-v="bare">bare</button>
+          </div>
+        </div>
+      </div>
+      <div class="ctrlfoot">
+        <button type="button" id="ctrlCopy" title="Copy the values in the shape the real constants take">copy</button>
+        <button type="button" id="ctrlReset">reset</button>
+      </div>
     </div>
 
     <!-- pane: terminal chat -->
@@ -539,15 +702,17 @@
     <div class="pane pane--browser" data-pane="browser">
       <div class="browser__bar">
         <div class="browser__nav">
-          <button type="button" title="back" tabindex="-1">‹</button>
-          <button type="button" title="forward" tabindex="-1">›</button>
+          <button type="button" id="bBack" title="back">‹</button>
+          <button type="button" id="bFwd" title="forward">›</button>
           <button type="button" id="pfReload" title="reload">⟳</button>
         </div>
-        <div class="browser__url"><span class="host">kwzrl.com</span>/design-system</div>
-        <span class="browser__tag">curated</span>
+        <div class="browser__url"><span class="host">kwzrl.com</span><span id="bPath">/design-system</span></div>
+        <span class="browser__tag" id="bTag">curated</span>
       </div>
       <div class="browser__body" id="browserBody">
 
+      <!-- ===== page: design system ===== -->
+      <div class="page is-on" data-page="design-system">
         <div class="pf__intro">
           <h1 class="pf__title">Design system</h1>
           <p class="pf__lede">Curated from private projects — the parts I rebuild across everything I ship.</p>
@@ -672,34 +837,73 @@
             </div>
           </div>
         </section>
+      </div>
+
+      <!-- ===== page: Avogram =====
+           Everything stated here is drawn from the dossier copy that is already on the
+           site. The two slots marked TODO are the ones I cannot fill without inventing:
+           the waitlist URL and the film. -->
+      <div class="page" data-page="avogram">
+        <div class="pf__intro">
+          <h1 class="pf__title">Avogram</h1>
+          <p class="pf__lede">An AI film studio for desktop. Ultra-realistic AI people that promote your thing.</p>
+        </div>
+
+        <section class="sec">
+          <div class="sec__head"><span class="sec__title">The product</span></div>
+          <p class="pf__body">A desktop studio for generative film: you write the thing, cast the people, and it shoots it. Built around marketing and media rather than general-purpose video generation — the output is meant to sell something, not to be a demo.</p>
+        </section>
+
+        <section class="sec">
+          <div class="sec__head"><span class="sec__title">The launch layer</span><span class="sec__count">03</span></div>
+          <div class="led">
+            <div class="led__row"><span class="led__n">Waitlist</span><span class="led__d">Quiet launch, no announcement</span><span class="led__s">open</span></div>
+            <div class="led__row"><span class="led__n">Intro film</span><span class="led__d">Made with the thing it is selling</span><span class="led__s">done</span></div>
+            <div class="led__row"><span class="led__n">Video for YC</span><span class="led__d">Application film</span><span class="led__s">done</span></div>
+          </div>
+        </section>
+
+        <section class="sec">
+          <div class="sec__head"><span class="sec__title">Status</span></div>
+          <p class="pf__body">Pre-public. The product, the waitlist and the films exist; what is missing is a v1 that strangers can touch.</p>
+          <p class="pf__note">TODO — waitlist link, and the intro film embedded here.</p>
+        </section>
+      </div>
+
+      <!-- ===== page: projects =====
+           A ledger, not a portfolio grid: most of the work is private and stays that
+           way, so the redacted rows are the honest shape of it rather than padding. -->
+      <div class="page" data-page="projects">
+        <div class="pf__intro">
+          <h1 class="pf__title">Projects</h1>
+          <p class="pf__lede">Thirteen repos on GitHub, all but a couple private. The <code>~/</code> folder is forty-odd deep. Named below: the ones that are mine to name.</p>
+        </div>
+
+        <section class="sec">
+          <div class="sec__head"><span class="sec__title">Named</span><span class="sec__count">05</span></div>
+          <div class="led">
+            <div class="led__row"><span class="led__n">Avogram</span><span class="led__d">AI film studio for desktop</span><span class="led__s">building</span></div>
+            <div class="led__row"><span class="led__n">kwzrl.com</span><span class="led__d">This site — terminal, dossier, dithered margins</span><span class="led__s">live</span></div>
+            <div class="led__row"><span class="led__n">AI-risk report</span><span class="led__d">Paid research report</span><span class="led__s">shipped</span></div>
+            <div class="led__row"><span class="led__n">Brand tool</span><span class="led__d">TODO — one line on what it does</span><span class="led__s">private</span></div>
+            <div class="led__row"><span class="led__n">Audio cutter</span><span class="led__d">TODO — one line on what it does</span><span class="led__s">private</span></div>
+          </div>
+        </section>
+
+        <section class="sec">
+          <div class="sec__head"><span class="sec__title">Sealed</span><span class="sec__count">35+</span></div>
+          <div class="led led--sealed">
+            <div class="led__row"><span class="led__n">████████</span><span class="led__d">Web experiments, a handful</span><span class="led__s">private</span></div>
+            <div class="led__row"><span class="led__n">████████████</span><span class="led__d">One-swing folders, a graveyard of them</span><span class="led__s">private</span></div>
+            <div class="led__row"><span class="led__n">██████</span><span class="led__d">The rest</span><span class="led__s">private</span></div>
+          </div>
+          <p class="pf__note">Names stay sealed. That is the point — the volume is public even when the code never is.</p>
+        </section>
+      </div>
 
       </div>
     </div>
 
-    <!-- pane: chess — rules + engine are fetched on first open, never before -->
-    <div class="pane pane--chess" data-pane="chess">
-      <div class="chess__bar">
-        <span class="chess__engine"><span class="status" id="chessLamp"></span><b>stockfish</b> 18 lite · wasm</span>
-        <span class="chess__score" id="chessScore">0W · 0L · 0D</span>
-      </div>
-      <div class="chess__body">
-        <div class="board" id="board" aria-label="Chess board"></div>
-        <div class="chess__state" id="chessState"></div>
-        <div class="chess__moves" id="chessMoves" hidden></div>
-      </div>
-      <div class="chess__foot">
-        <div class="seg seg--live" id="chessSide" role="group" aria-label="Play as">
-          <button type="button" data-side="w" class="on">white</button>
-          <button type="button" data-side="b">black</button>
-        </div>
-        <div class="seg seg--live" id="chessLevel" role="group" aria-label="Difficulty">
-          <button type="button" data-level="0">easy</button>
-          <button type="button" data-level="1" class="on">normal</button>
-          <button type="button" data-level="2">hard</button>
-        </div>
-        <button class="link" type="button" id="chessNew">new game</button>
-      </div>
-    </div>
   </main>
 
   <script>
@@ -721,6 +925,44 @@
   const $input   = document.getElementById("promptInput");
   const $tabs    = document.getElementById("tabs");
   const $browserBody  = document.getElementById("browserBody");
+
+  // ---------- connectivity ----------
+  // The bars sit in each browser tab, where a favicon would be, and are wired to the real
+  // thing rather than drawn full and left there. The state lives on the root element, not
+  // on the bars themselves — tabs are re-rendered constantly, and a per-element flag would
+  // be lost every time one is rebuilt.
+  function paintNet() {
+    const on = navigator.onLine !== false;
+    document.documentElement.classList.toggle("is-offline", !on);
+    const t = on ? "online" : "offline — pages will still open, the GitHub graph will not load";
+    for (const s of document.querySelectorAll(".sig")) s.title = t;
+  }
+  addEventListener("online", paintNet);
+  addEventListener("offline", paintNet);
+  paintNet();
+
+  // ---------- clock ----------
+  // Re-armed against the next second boundary instead of a flat 1000ms interval: a naive
+  // interval drifts against the wall clock and the display starts skipping a digit.
+  // Paused while the tab is hidden so it is not waking the page in the background.
+  (function () {
+    const el = document.getElementById("clock");
+    if (!el) return;
+    const $d = el.querySelector(".clock__d"), $t = el.querySelector(".clock__t");
+    const p2 = n => String(n).padStart(2, "0");
+    let timer = 0;
+    function tick() {
+      const n = new Date();
+      $d.textContent = n.getFullYear() + "-" + p2(n.getMonth() + 1) + "-" + p2(n.getDate());
+      $t.textContent = p2(n.getHours()) + ":" + p2(n.getMinutes()) + ":" + p2(n.getSeconds());
+      timer = setTimeout(tick, 1000 - (Date.now() % 1000) + 8);
+    }
+    document.addEventListener("visibilitychange", () => {
+      clearTimeout(timer); timer = 0;
+      if (!document.hidden) tick();
+    });
+    tick();
+  })();
 
   // ---------- theme ----------
   // The <head> boot script has already stamped data-theme, so this only has to keep
@@ -797,26 +1039,231 @@
   window.addEventListener("resize", updateArrow);
   $down.addEventListener("click", () => { stick = "follow"; $log.scrollTo({ top: $log.scrollHeight, behavior: reduce ? "auto" : "smooth" }); });
 
+  // ---------- tick rail ----------
+  // Replaces the native scrollbar with a column of dashes. The maths is a scrollbar's,
+  // done in ticks instead of pixels: the run is round(visible/total × ticks), its top is
+  // round(scroll fraction × the ticks it can travel), and both are integers before they
+  // become a clip window. Rounding to whole ticks is the point — a tick is lit or it is
+  // not, never half, which is what keeps it reading as a row of marks instead of a bar
+  // with soft ends.
+  // The pitch is read back out of the CSS rather than restated here. It used to be a
+  // constant that had to agree with the gradient by hand, which is a silent failure
+  // waiting to happen — drift them and the lit window stops landing on the strokes
+  // without anything erroring. One source now, and the drawer can move it live.
+  let RAIL_PITCH = 32;
+  function readRailPitch() {
+    const cs = getComputedStyle(document.documentElement);
+    const s = parseFloat(cs.getPropertyValue("--rail-stroke"));
+    const g = parseFloat(cs.getPropertyValue("--rail-gap"));
+    return (s > 0 ? s : 24) + (g > 0 ? g : 8);
+  }
+  const railRepaint = [];    // every live rail's scheduler, for when the geometry moves
+  addEventListener("railchange", () => {
+    RAIL_PITCH = readRailPitch();
+    for (const f of railRepaint) f();
+  });
+  const RAIL_MIN   = 2;      // shortest run, in ticks. Longer strokes cover more ground,
+                             // so two of them already read as a run rather than a speck
+
+  function tickRail(sc, onGrab) {
+    // wrap in place, so the markup stays free of an element that only exists with JS
+    const wrap = document.createElement("div");
+    wrap.className = "scroller";
+    sc.parentNode.insertBefore(wrap, sc);
+    wrap.appendChild(sc);
+    const rail = document.createElement("div");
+    rail.className = "rail"; rail.setAttribute("aria-hidden", "true");
+    rail.appendChild(document.createElement("i"));
+    wrap.appendChild(rail);
+    const lit = rail.firstChild;
+
+    let raf = 0, ticks = 0, run = 0;
+    function paint() {
+      raf = 0;
+      const h = sc.clientHeight, sh = sc.scrollHeight, over = sh - h;
+      // nothing to scroll: the rail would be a full column of dead marks
+      if (over <= 4 || h < RAIL_PITCH * 2) { rail.hidden = true; return; }
+      rail.hidden = false;
+      ticks = Math.floor(h / RAIL_PITCH);
+      rail.style.height = ticks * RAIL_PITCH + "px";
+      // never the whole rail: capped at ticks-1 so there is always one dark mark left to
+      // travel into, and a page that scrolls by fifty pixels still says so
+      run = Math.max(1, Math.min(ticks - 1, Math.max(RAIL_MIN, Math.round(ticks * h / sh))));
+      const first = Math.round((ticks - run) * Math.min(1, sc.scrollTop / over));
+      lit.style.clipPath =
+        `inset(${first * RAIL_PITCH}px 0 ${(ticks - first - run) * RAIL_PITCH}px 0)`;
+    }
+    const sched = () => { if (!raf) raf = requestAnimationFrame(paint); };
+
+    sc.addEventListener("scroll", sched, { passive: true });
+    addEventListener("resize", sched);
+    // the transcript grows a message at a time and the browser pane lazy-builds its
+    // sections; both change scrollHeight without a scroll or a resize ever firing
+    if (window.ResizeObserver) new ResizeObserver(sched).observe(sc);
+    new MutationObserver(sched).observe(sc, { childList: true, subtree: true, characterData: true });
+    document.addEventListener("pane:show", sched);
+
+    // A scrollbar you cannot drag is a picture of a scrollbar. Grab anywhere and the run
+    // centres on the pointer; from there it scrubs.
+    rail.addEventListener("pointerdown", e => {
+      const over = sc.scrollHeight - sc.clientHeight;
+      if (over <= 0) return;
+      rail.classList.add("is-grab");
+      rail.setPointerCapture(e.pointerId);
+      const seek = ev => {
+        const box = rail.getBoundingClientRect();
+        const span = (ticks - run) * RAIL_PITCH;       // px the run can actually travel
+        const at = ev.clientY - box.top - run * RAIL_PITCH / 2;
+        sc.scrollTop = span > 0 ? Math.max(0, Math.min(1, at / span)) * over : 0;
+        if (onGrab) onGrab();
+      };
+      seek(e);
+      const move = ev => seek(ev);
+      const up = () => {
+        rail.classList.remove("is-grab");
+        rail.removeEventListener("pointermove", move);
+        rail.removeEventListener("pointerup", up);
+        rail.removeEventListener("pointercancel", up);
+      };
+      rail.addEventListener("pointermove", move);
+      rail.addEventListener("pointerup", up);
+      rail.addEventListener("pointercancel", up);
+      e.preventDefault();
+    });
+
+    railRepaint.push(sched);
+    paint();
+    return sched;
+  }
+
+  // the chat rail hands the reader the same control a wheel does, or the next render
+  // would snap the transcript back to the bottom under their hand
+  RAIL_PITCH = readRailPitch();   // before the first paint, or it lays out on the default
+  tickRail($log, onReaderScroll);
+  tickRail($browserBody);
+
   function setBusy(v) { busy = v; $form.classList.toggle("is-busy", v); $suggest.classList.toggle("is-busy", v); updateArrow(); if (!v && activePane === "chat") $input.focus(); }
 
   // ---------- tabs / panes ----------
   // Panes announce themselves via a "pane:show" event rather than being wired up
-  // here, so a pane's own module stays self-contained (see the chess block below).
+  // here, so a pane's own module can stay self-contained.
   function switchTab(pane) {
     activePane = pane;
     for (const p of document.querySelectorAll(".pane")) p.classList.toggle("is-on", p.dataset.pane === pane);
-    for (const t of $tabs.children) t.classList.toggle("tab--active", t.dataset.pane === pane);
+    for (const t of $tabs.querySelectorAll("[data-pane]")) t.classList.toggle("tab--active", t.dataset.pane === pane);
+    // the rendered browser tabs have no data-pane, so they need clearing by hand
+    if (pane !== "browser") for (const t of $tabs.querySelectorAll(".tabgrp .tab")) t.classList.remove("tab--active");
     if (pane === "browser") $browserBody.scrollTop = 0;
     else if (pane === "chat" && !busy) $input.focus();
     document.dispatchEvent(new CustomEvent("pane:show", { detail: pane }));
   }
   $tabs.addEventListener("click", e => {
+    // browser tabs carry data-tab and handle their own click; without this guard the
+    // event bubbles up here and calls switchTab(undefined), which hides every pane
     const tab = e.target.closest(".tab");
-    if (tab) switchTab(tab.dataset.pane);
+    if (tab && tab.dataset.pane) switchTab(tab.dataset.pane);
   });
+  // ---------- browser: tabs, pages, address bar, history ----------
+  // One tab per open page, side by side, each with its own history. Asking for a page
+  // that is already open focuses that tab instead of opening a second copy of it —
+  // with three destinations, duplicates would be noise rather than a feature.
+  const PAGES = {
+    "design-system": { label: "design system", path: "/design-system", tag: "curated",  say: "Opening the design system." },
+    "avogram":       { label: "avogram",       path: "/avogram",       tag: "flagship", say: "Opening Avogram." },
+    "projects":      { label: "projects",      path: "/projects",      tag: "ledger",   say: "Opening the project ledger." },
+  };
+  const $bPath = document.getElementById("bPath");
+  const $bTag  = document.getElementById("bTag");
+  const $bBack = document.getElementById("bBack");
+  const $bFwd  = document.getElementById("bFwd");
+
+  let tabs = [];        // [{ hist: [page…], hpos }] — per tab, like a real browser
+  let active = -1;      // index into tabs, or -1 for the chat
+  const cur = () => active >= 0 ? tabs[active] : null;
+  const pageOf = t => t.hist[t.hpos];
+
+  function renderTabs() {
+    for (const el of $tabs.querySelectorAll(".tabgrp")) el.remove();
+    tabs.forEach((t, i) => {
+      const p = PAGES[pageOf(t)];
+      const grp = document.createElement("span");
+      grp.className = "tabgrp";
+      const btn = document.createElement("button");
+      btn.type = "button"; btn.className = "tab" + (i === active ? " tab--active" : "");
+      btn.dataset.tab = String(i);
+      btn.innerHTML = '<span class="sig" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span></span>';
+      btn.lastChild.textContent = p.label;
+      const x = document.createElement("button");
+      x.type = "button"; x.className = "tabx"; x.textContent = "×";
+      x.setAttribute("aria-label", "Close " + p.label);
+      x.title = "Close tab";
+      x.addEventListener("click", ev => { ev.stopPropagation(); closeTab(i); });
+      btn.addEventListener("click", () => focusTab(i));
+      grp.append(btn, x);
+      $tabs.appendChild(grp);
+    });
+    // keep the tab you just touched in view — the strip scrolls, and a tab you cannot
+    // see is a tab you will not find
+    const on = $tabs.querySelector(".tabgrp .tab--active");
+    if (on) on.scrollIntoView({ block: "nearest", inline: "nearest" });
+    paintNet();   // the bars are rebuilt with the tabs, so re-apply the tooltip
+  }
+
+  function paintPage() {
+    const t = cur();
+    const name = t ? pageOf(t) : null;
+    for (const el of document.querySelectorAll(".page")) el.classList.toggle("is-on", el.dataset.page === name);
+    if (t) {
+      const p = PAGES[name];
+      $bPath.textContent = p.path;
+      $bTag.textContent  = p.tag;
+      $bBack.disabled = t.hpos === 0;
+      $bFwd.disabled  = t.hpos === t.hist.length - 1;
+      $browserBody.scrollTop = 0;
+    }
+    renderTabs();
+  }
+
+  function focusTab(i) {
+    if (i < 0 || i >= tabs.length) return;
+    active = i; paintPage(); switchTab("browser");
+  }
+  function openPage(name) {
+    if (!PAGES[name]) return;
+    const found = tabs.findIndex(t => pageOf(t) === name);
+    if (found >= 0) return focusTab(found);
+    tabs.push({ hist: [name], hpos: 0 });
+    focusTab(tabs.length - 1);
+  }
+  function closeTab(i) {
+    tabs.splice(i, 1);
+    if (!tabs.length) { active = -1; paintPage(); switchTab("chat"); return; }
+    // fall to the neighbour on the left, the way every browser does it
+    active = Math.min(active > i ? active - 1 : active, tabs.length - 1);
+    paintPage(); switchTab("browser");
+  }
+  // in-page navigation stays inside the tab it started in, so back/forward keep meaning
+  function navigate(name) {
+    const t = cur();
+    if (!t || !PAGES[name] || pageOf(t) === name) return;
+    t.hist = t.hist.slice(0, t.hpos + 1);
+    t.hist.push(name); t.hpos = t.hist.length - 1;
+    paintPage();
+  }
+  function histGo(step) {
+    const t = cur();
+    if (!t) return;
+    const n = t.hpos + step;
+    if (n < 0 || n >= t.hist.length) return;
+    t.hpos = n; paintPage();
+  }
+
+  $bBack.addEventListener("click", () => histGo(-1));
+  $bFwd.addEventListener("click", () => histGo(1));
   document.getElementById("pfReload").addEventListener("click", () => {
     $browserBody.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
   });
+  paintPage();
 
   // ---------- streaming primitives ----------
   // append a submitted prompt to the transcript, instantly (no per-char animation)
@@ -991,7 +1438,7 @@
     await streamText(ai, `— Alex Hormozi. Basically your whole operating system.`, { cls: "dim" });
   }
   async function answerHelp(ai) {
-    await streamText(ai, `Ask me: what intel you've got on me · what am I good at? · roast me · show my work · github · what to build next · contact · dark mode.`, { cls: "dim" });
+    await streamText(ai, `Ask me: what intel you've got on me · what am I good at? · roast me · avogram · projects · design system · github · what to build next · contact · dark mode.`, { cls: "dim" });
   }
   // "dark mode" is a command, not a question — flip first, then say so. An explicit
   // "light"/"dark" is honoured as asked; a bare "theme" just toggles.
@@ -1008,18 +1455,18 @@
   }
 
   // ---------- routing ----------
-  const OPEN_PORTFOLIO = "open-portfolio";   // sentinel: a route hit that just flips to the browser tab
-  const OPEN_CHESS     = "open-chess";       //  …same, for the chess tab
+  const PAGE_HIT = /^page:/;   // sentinel: a route hit that opens a page in the browser pane
   function route(text) {
     const q = text.toLowerCase();
-    if (/(chess|schach)/.test(q)) return OPEN_CHESS;
     // closure: the dispatcher only hands answers the block, and this one needs the words
     if (/(?:dark|light|night)\s*(?:mode|theme)|\btheme\b|lights?\s*(?:on|off|out)|\bgo dark\b/.test(q)) return ai => answerTheme(ai, q);
     if (/(roast|brutal|weak|flaw|worst|bad at|critic|tear me|harsh)/.test(q)) return answerRoast;
     if (/(good at|strength|best at|great at|skill|talent|special)/.test(q)) return answerStrengths;
     if (/(should i|build next|next\b|do next|advice|improve|get better)/.test(q)) return answerNext;
     if (/(github|contribution|commit|stats|activity|streak|graph|heatmap)/.test(q)) return answerGithub;
-    if (/(work|receipt|portfolio|show me|shipped|live|projects\b|repos?|see it|design)/.test(q)) return OPEN_PORTFOLIO;
+    if (/(avogram|film studio|flagship|the bet)/.test(q)) return "page:avogram";
+    if (/(projects?\b|ledger|repos?|what have you built|what else|iceberg|sealed)/.test(q)) return "page:projects";
+    if (/(work|receipt|portfolio|browser|show me|shipped|live|see it|design)/.test(q)) return "page:design-system";
     if (/(contact|email|reach|hire|twitter|dm)/.test(q)) return answerContact;
     if (/(motto|philosoph|quote|belief|principle|live by)/.test(q)) return answerMotto;
     if (/(intel|dossier|file on|project|working on|what have we|what we|who am i|about me|read me|sum me|assessment|opinion|impression|honest|what do you|who are you|yourself|kilian|bio|who\b|about\b|me\b)/.test(q)) return answerProjects;
@@ -1027,18 +1474,40 @@
     return null;
   }
 
-  const SUGGESTIONS = ["what am I good at?", "roast me", "show my work", "github", "play chess", "contact"];
+  // three that answer, three that open a page — and the github chip went out because the
+  // opener already renders that exact heatmap, so it was a chip that repeated itself
+  const SUGGESTIONS = ["what am I good at?", "roast me", "contact", "avogram", "projects", "design system"];
   function renderSuggestions() {
     $suggest.innerHTML = "";
-    for (const s of SUGGESTIONS) { const b = document.createElement("button"); b.className = "chip"; b.type = "button"; b.textContent = s; b.onclick = () => { if (booting) return; ask(s); }; $suggest.appendChild(b); }
+    for (const s of SUGGESTIONS) {
+      const b = document.createElement("button");
+      const dest = route(s);
+      // ↗ for the ones that open a page, → for the ones that answer, so you can see
+      // which is which before you click
+      b.className = "chip" + (typeof dest === "string" && PAGE_HIT.test(dest) ? " chip--open" : "");
+      b.type = "button"; b.textContent = s;
+      b.onclick = () => { if (booting) return; ask(s); };
+      $suggest.appendChild(b);
+    }
   }
 
   async function ask(text) {
     if (busy) return;
     text = text.trim(); if (!text) return;
     const fn = route(text);
-    if (fn === OPEN_PORTFOLIO) { $input.value = ""; switchTab("browser"); return; }   // no friction — jump straight to the tab
-    if (fn === OPEN_CHESS)     { $input.value = ""; switchTab("chess");   return; }
+    if (typeof fn === "string" && PAGE_HIT.test(fn)) {
+      // no waiting — but the transcript still records what the agent did, so the log
+      // reads as a session rather than losing every navigation
+      const name = fn.slice(5);
+      $input.value = "";
+      commitUserMsg(text);
+      const ai = aiBlock();
+      const line = document.createElement("p");
+      line.className = "dim"; line.textContent = PAGES[name].say;
+      ai.appendChild(line); scroll();
+      openPage(name);
+      return;
+    }
     setBusy(true); $input.value = "";
     const userEl = commitUserMsg(text);   // the typed prompt moves up into the transcript
     const ai = aiBlock();
@@ -1171,317 +1640,6 @@
   })();
   </script>
 
-  <script>
-  // ============================================================
-  //  Chess — a real game against Stockfish, entirely on the client.
-  //
-  //  chess.js owns the rules; the engine runs in a Worker so the search can
-  //  never block the page. Both are import()ed on the first open of the tab —
-  //  nothing here costs the initial load a single byte.
-  //
-  //  Why the *lite single-threaded* engine: the threaded builds need
-  //  SharedArrayBuffer, which needs COOP/COEP headers, which GitHub Pages
-  //  cannot send. The full single-threaded net is 113MB and blows GitHub's
-  //  100MB/file limit. This one is 7.3MB and still far past human strength.
-  //  Vendored under /vendor (GPLv3, see vendor/stockfish.COPYING.txt).
-  // ============================================================
-  (function chess() {
-    const board = document.getElementById("board");
-    if (!board) return;
-    const $state = document.getElementById("chessState");
-    const $moves = document.getElementById("chessMoves");
-    const $score = document.getElementById("chessScore");
-    const $lamp  = document.getElementById("chessLamp");
-    const $side  = document.getElementById("chessSide");
-    const $level = document.getElementById("chessLevel");
-
-    // One filled glyph set for both colours (white is stroked in CSS). The
-    // U+FE0E selector forces text presentation — without it iOS renders emoji.
-    const GLYPH = { k: "♚︎", q: "♛︎", r: "♜︎", b: "♝︎", n: "♞︎", p: "♟︎" };
-    const LEVELS = [ { skill: 1, depth: 5 }, { skill: 8, depth: 9 }, { skill: 20, depth: 14 } ];
-    const FILES = "abcdefgh";
-    const STORE = "kwzrl.chess";
-
-    let Chess = null, game = null, engine = null;
-    let human = "w", level = 1;
-    let sel = null, last = null, drag = null, thinking = false, gen = 0;
-    let searching = null;                       // in-flight bestmove promise, or null
-    let stats = { w: 0, l: 0, d: 0 };
-
-    // ---------- local persistence (stats, preferences, unfinished game) ----------
-    let resumeFen = null;
-    try {
-      const s = JSON.parse(localStorage.getItem(STORE) || "{}");
-      if (s.stats && typeof s.stats.w === "number") stats = s.stats;
-      if (s.side === "w" || s.side === "b") human = s.side;
-      if (LEVELS[s.level]) level = s.level;
-      if (typeof s.fen === "string") resumeFen = s.fen;
-    } catch (e) {}
-    function save() {
-      try {
-        localStorage.setItem(STORE, JSON.stringify({
-          stats, side: human, level,
-          fen: game && !game.isGameOver() ? game.fen() : null,   // a finished game isn't worth resuming
-        }));
-      } catch (e) {}
-    }
-
-    // ---------- engine ----------
-    // A thin UCI wrapper: send a command, await the line you care about.
-    function makeEngine() {
-      const w = new Worker("vendor/stockfish-18-lite-single.js");
-      const waits = [];
-      w.onmessage = e => {
-        const line = typeof e.data === "string" ? e.data : "";
-        // FIFO on purpose: UCI answers in the order it was asked, so the oldest
-        // matching waiter owns this line. Newest-first would hand a stopped
-        // search's bestmove to the game that started after it.
-        for (let i = 0; i < waits.length; i++) {
-          if (waits[i].re.test(line)) { waits.splice(i, 1)[0].res(line); break; }
-        }
-      };
-      return { send: c => w.postMessage(c), wait: re => new Promise(res => waits.push({ re, res })) };
-    }
-
-    let booted = null;
-    function boot() {
-      if (booted) return booted;
-      booted = (async () => {
-        setState("loading engine · 7 MB, once", true);
-        ({ Chess } = await import("./vendor/chess.js"));
-        engine = makeEngine();
-        engine.send("uci");      await engine.wait(/uciok/);
-        engine.send("isready");  await engine.wait(/readyok/);
-        $lamp.style.background = "";
-        let resume = null;
-        if (resumeFen) { try { if (!new Chess(resumeFen).isGameOver()) resume = resumeFen; } catch (e) {} }
-        await newGame(resume);
-      })().catch(err => {
-        setState("engine unavailable — " + ((err && err.message) || "load failed"));
-        booted = null;           // let a later visit retry
-      });
-      return booted;
-    }
-    document.addEventListener("pane:show", e => { if (e.detail === "chess") boot(); });
-
-    // ---------- rendering ----------
-    function kingSquare(color) {
-      const rows = game.board();
-      for (let r = 0; r < 8; r++) for (let f = 0; f < 8; f++) {
-        const c = rows[r][f];
-        if (c && c.type === "k" && c.color === color) return FILES[f] + (8 - r);
-      }
-      return null;
-    }
-    function paint() {
-      if (!game) return;
-      const flip = human === "b";
-      const rows = game.board();
-      const chk  = game.isCheck() ? kingSquare(game.turn()) : null;
-      const hints = sel ? game.moves({ square: sel, verbose: true }) : [];
-      board.innerHTML = "";
-      for (let r = 0; r < 8; r++) for (let f = 0; f < 8; f++) {
-        const rr = flip ? 7 - r : r, ff = flip ? 7 - f : f;
-        const name = FILES[ff] + (8 - rr);
-        const cell = rows[rr][ff];
-        const sq = document.createElement("div");
-        sq.className = "sq " + ((rr + ff) % 2 ? "sq--d" : "sq--l");
-        sq.dataset.sq = name;
-        if (last && (last.from === name || last.to === name)) sq.classList.add("sq--last");
-        if (sel === name) sq.classList.add("sq--sel");
-        if (chk === name) sq.classList.add("sq--chk");
-        if (hints.some(m => m.to === name)) {
-          sq.classList.add(cell ? "sq--cap" : "sq--to");
-          const h = document.createElement("span"); h.className = "sq__hint"; sq.appendChild(h);
-        }
-        if (cell) {
-          const p = document.createElement("span");
-          p.className = "pc pc--" + cell.color;
-          p.textContent = GLYPH[cell.type];
-          sq.appendChild(p);
-        }
-        if (f === 0) { const c = document.createElement("span"); c.className = "sq__co sq__co--r"; c.textContent = 8 - rr; sq.appendChild(c); }
-        if (r === 7) { const c = document.createElement("span"); c.className = "sq__co sq__co--f"; c.textContent = FILES[ff]; sq.appendChild(c); }
-        board.appendChild(sq);
-      }
-      renderMoves();
-    }
-    function renderMoves() {
-      const h = game ? game.history() : [];
-      $moves.hidden = !h.length;
-      let out = "";
-      for (let i = 0; i < h.length; i += 2) {
-        out += '<span class="n">' + (i / 2 + 1) + '.</span> <b>' + h[i] + "</b> " + (h[i + 1] ? "<b>" + h[i + 1] + "</b> " : "");
-      }
-      $moves.innerHTML = out;
-      $moves.scrollTop = $moves.scrollHeight;
-    }
-    function setState(text, spin) {
-      $state.innerHTML = "";
-      if (!spin) { $state.textContent = text; return; }
-      const t = document.createElement("div"); t.className = "tool";   // the transcript's own tool row
-      t.innerHTML = '<span class="spin"></span><span class="name"></span>';
-      t.querySelector(".name").textContent = text;
-      $state.appendChild(t);
-    }
-    function statusText() {
-      if (game.isCheckmate())           return game.turn() === human ? "checkmate — stockfish wins" : "checkmate — you win";
-      if (game.isStalemate())           return "stalemate — draw";
-      if (game.isInsufficientMaterial())return "draw — insufficient material";
-      if (game.isThreefoldRepetition()) return "draw — threefold repetition";
-      if (game.isDraw())                return "draw — fifty-move rule";
-      if (game.isCheck())               return game.turn() === human ? "check — your move" : "check";
-      return game.turn() === human ? "your move" : "";
-    }
-    const paintScore = () => { $score.textContent = stats.w + "W · " + stats.l + "L · " + stats.d + "D"; };
-
-    // ---------- game flow ----------
-    const locked = () => !game || thinking || game.isGameOver() || game.turn() !== human;
-
-    // A stopped search still answers with a bestmove. Await it before starting the
-    // next one, otherwise the new game's waiter would swallow the old game's reply.
-    async function stopSearch() {
-      if (!searching) return;
-      engine.send("stop");
-      try { await searching; } catch (e) {}
-      searching = null;
-    }
-    async function newGame(fen) {
-      gen++;                       // invalidates any bestmove still in flight
-      await stopSearch();
-      try { game = fen ? new Chess(fen) : new Chess(); } catch (e) { game = new Chess(); }
-      sel = null; last = null; drag = null; thinking = false;
-      save(); paint();
-      // covers both a fresh game as black and a resumed position on the bot's turn
-      if (game.turn() !== human) queueBot(); else setState(statusText());
-    }
-    function tryMove(from, to) {
-      const legal = game.moves({ square: from, verbose: true }).filter(m => m.to === to);
-      if (!legal.length) return false;
-      if (legal.some(m => m.promotion)) { askPromo(from, to); return true; }
-      commit({ from, to });
-      return true;
-    }
-    // chess.js v1 throws on an illegal move rather than returning null.
-    function apply(mv) {
-      try { return game.move(mv); } catch (e) { return null; }
-    }
-    function commit(mv) {
-      const m = apply(mv);
-      if (!m) return;
-      last = { from: m.from, to: m.to }; sel = null;
-      save(); paint();
-      if (game.isGameOver()) return finish();
-      queueBot();
-    }
-    async function queueBot() {
-      if (!game || game.isGameOver() || game.turn() === human) return;
-      const my = gen;
-      thinking = true;
-      setState("stockfish · thinking", true);
-      const cfg = LEVELS[level];
-      engine.send("setoption name Skill Level value " + cfg.skill);
-      engine.send("position fen " + game.fen());
-      engine.send("go depth " + cfg.depth + " movetime 2500");
-      searching = engine.wait(/^bestmove/);
-      const line = await searching;
-      if (my !== gen) return;                       // a new game began while it searched
-      searching = null;
-      thinking = false;
-      const uci = line.split(/\s+/)[1] || "";
-      if (!uci || uci === "(none)") return finish();
-      const m = apply({ from: uci.slice(0, 2), to: uci.slice(2, 4), promotion: uci[4] || undefined });
-      if (!m) { setState("engine desync — start a new game"); return; }
-      last = { from: m.from, to: m.to };
-      save(); paint();
-      if (game.isGameOver()) return finish();
-      setState(statusText());
-    }
-    function finish() {
-      thinking = false;
-      stats[game.isCheckmate() ? (game.turn() === human ? "l" : "w") : "d"]++;
-      save(); paintScore();
-      setState(statusText());
-    }
-    function askPromo(from, to) {
-      const box = document.createElement("div"); box.className = "promo";
-      const inner = document.createElement("div"); inner.className = "promo__box";
-      for (const t of ["q", "r", "b", "n"]) {
-        const b = document.createElement("button");
-        b.type = "button"; b.className = "promo__b";
-        b.innerHTML = '<span class="pc pc--' + human + '">' + GLYPH[t] + "</span>";
-        b.onclick = () => { box.remove(); commit({ from, to, promotion: t }); };
-        inner.appendChild(b);
-      }
-      box.appendChild(inner); board.appendChild(box);
-    }
-
-    // ---------- input: click-to-move and drag, on one pointer path ----------
-    board.addEventListener("pointerdown", e => {
-      if (locked()) return;
-      const sq = e.target.closest(".sq"); if (!sq) return;
-      const name = sq.dataset.sq;
-      if (sel && sel !== name && tryMove(sel, name)) return;
-      const cell = game.get(name);
-      if (cell && cell.color === human) {
-        sel = name;
-        drag = { from: name, x: e.clientX, y: e.clientY, moved: false, ghost: null };
-        try { board.setPointerCapture(e.pointerId); } catch (err) {}
-        paint();
-      } else if (sel) { sel = null; paint(); }
-    });
-    board.addEventListener("pointermove", e => {
-      if (!drag) return;
-      if (!drag.moved) {
-        if (Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 5) return;   // a click, not a drag — yet
-        drag.moved = true;
-        const src = board.querySelector('[data-sq="' + drag.from + '"] .pc');
-        if (src) {
-          const g = src.cloneNode(true);
-          g.classList.add("ghost");
-          g.style.fontSize = getComputedStyle(src).fontSize;
-          document.body.appendChild(g);
-          drag.ghost = g;
-          src.classList.add("pc--drag");
-        }
-      }
-      if (drag.ghost) { drag.ghost.style.left = e.clientX + "px"; drag.ghost.style.top = e.clientY + "px"; }
-    });
-    board.addEventListener("pointerup", e => {
-      const d = drag; drag = null;
-      if (!d) return;
-      if (d.ghost) d.ghost.remove();
-      if (!d.moved) return;                          // plain click — the selection stands
-      const el = document.elementFromPoint(e.clientX, e.clientY);
-      const sq = el && el.closest ? el.closest(".sq") : null;
-      if (!(sq && sq.dataset.sq !== d.from && tryMove(d.from, sq.dataset.sq))) { sel = null; paint(); }
-    });
-    board.addEventListener("pointercancel", () => {
-      if (drag && drag.ghost) drag.ghost.remove();
-      drag = null; sel = null; paint();
-    });
-
-    // ---------- controls ----------
-    $side.addEventListener("click", e => {
-      const b = e.target.closest("[data-side]");
-      if (!b || b.dataset.side === human || !game) return;
-      human = b.dataset.side; save(); syncSeg(); newGame();
-    });
-    $level.addEventListener("click", e => {
-      const b = e.target.closest("[data-level]");
-      if (!b) return;
-      level = +b.dataset.level; save(); syncSeg();   // takes effect on the engine's next move
-    });
-    document.getElementById("chessNew").addEventListener("click", () => { if (game) newGame(); });
-    function syncSeg() {
-      for (const b of $side.children)  b.classList.toggle("on", b.dataset.side === human);
-      for (const b of $level.children) b.classList.toggle("on", +b.dataset.level === level);
-    }
-
-    $lamp.style.background = "var(--faint)";   // lights up once the engine answers
-    paintScore(); syncSeg();
-  })();
-  </script>
 
   <script>
   // ============================================================
@@ -1499,8 +1657,12 @@
   //  piles up along the edge. The wake is masked by the column fade like everything
   //  else, so it can never reach into the clear strip beside the text.
   //
+  //  A click in the gutter lets that pile go: the rim leaves as a ring and the wake
+  //  grows a new one over the next half second. See the pointerdown handler.
+  //
   //  Knobs worth touching: INK, MAXD and FADE for the resting texture; REACH, NT,
-  //  CLEAR and RING for the cursor; the four frequency/speed pairs inside frame().
+  //  CLEAR and RING for the cursor; R_* for the click; the four frequency/speed
+  //  pairs inside frame().
   // ============================================================
   (function () {
     const cv = document.getElementById("dither");
@@ -1530,6 +1692,25 @@
     const WOB2  = 0.18;      // finer roughness on top
     const COLW  = 720;       // .term max-width — the strip we must stay out of
     const GUT   = 140;       // below this much gutter, don't bother at all
+
+    // The click ring. It is not born at the cursor: the rim sits where the wake's
+    // falloff crosses the RING peak — 0.866 of REACH out — so that is where the ring
+    // starts, and the pixel you actually hit stays empty. Anything else looks like a
+    // circle drawn on top of the texture rather than the texture letting go.
+    const RMAX  = 3;         // concurrent rings; a fourth click drops the oldest
+    const R_LIFE = 1.05;     // seconds from release to gone
+    const R_R0  = REACH * 0.866;   // birth radius — the rim's own radius
+    const R_RUN = 340;       // px travelled over that life. Sized to a gutter, not to a
+                             // screen: at 600 the ring spends its whole second half past
+                             // the window edge, so what you see is it being clipped
+                             // rather than it thinning out.
+    const R_HW0 = 22, R_HW1 = 72;  // band half-width, birth → death. It disperses.
+    // Crest density at birth. Not picked by eye: the rim it replaces is RING over a
+    // 1-s² profile ~44px to either side of its peak, and the ring is a (1-s²)² profile
+    // R_HW0 wide, so 0.13·44·4/3 = R_AMP·22·16/15 conserves the pile exactly. The pile
+    // compacts as it lets go, which is why the crest lands well above MAXD.
+    const R_AMP = RING * 44 * (4 / 3) / (R_HW0 * (16 / 15));
+    const RW1   = 20, RW2 = 8;     // px of edge warp, from the wake's own two noise fields
 
     // Three travelling waves, each deliberately off-axis. Plain sin(x) + sin(y) terms
     // put the field's own structure on the horizontal and vertical, which is what made
@@ -1566,6 +1747,18 @@
     }
     const readInk = () => getComputedStyle(document.documentElement).getPropertyValue("--ink").trim() || "#b4b4b4";
     let DOT = packInk(readInk());
+    // A straight multiplier on the whole field — resting texture, the wake's rim and the
+    // click ring alike, since all three pass through the same mask. Folded into vmask at
+    // layout time rather than applied per cell, so the inner loop is untouched and a
+    // quieter setting costs exactly what a loud one does.
+    // `>= 0`, not `> 0`: zero is a legitimate setting — it means "no texture at all" —
+    // and treating it as invalid handed the slider's far left end the loudest field
+    // instead of an empty one. The guard is only here to survive a missing property.
+    const readGain = () => {
+      const v = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--dgain"));
+      return Number.isFinite(v) && v >= 0 ? v : 1;
+    };
+    let GAIN = readGain();
     let cols = 0, rows = 0, img = null, buf = null, mask = null, vmask = null, rad = null, raf = 0, last = 0;
 
     // cursor: the drawn position trails the real one, so the bloom drifts after the
@@ -1587,12 +1780,51 @@
       tW[n] = 1 - (1 - FADE_T) * u;
     }
     let filled = false;
+
+    // the click rings: origin and birth time, oldest first. -1 as a birth time means
+    // "the next frame decides" — the handler has no clock the field agrees with.
+    const rpX = new Float32Array(RMAX), rpY = new Float32Array(RMAX), rpT = new Float64Array(RMAX);
+    let nrip = 0;
+    // per-frame geometry, derived from the above; per-row spans, derived from those
+    const gCX = new Float32Array(RMAX), gCY = new Float32Array(RMAX), gR = new Float32Array(RMAX),
+          gPAD = new Float32Array(RMAX), gIHW = new Float32Array(RMAX), gA = new Float32Array(RMAX);
+    const sCX = new Float32Array(RMAX), sDY = new Float32Array(RMAX), sR = new Float32Array(RMAX),
+          sIHW = new Float32Array(RMAX), sA = new Float32Array(RMAX),
+          sLO = new Float32Array(RMAX), sHI = new Float32Array(RMAX),
+          sGLO = new Float32Array(RMAX), sGHI = new Float32Array(RMAX);
+    let nact = 0;
+    let rimG = 1;            // the wake's rim, knocked to 0 by a click and rebuilding
+
     addEventListener("pointermove", e => {
       if (e.pointerType === "touch") return;
       tx = e.clientX; ty = e.clientY; tnear = 1;
     }, { passive: true });
     document.addEventListener("pointerleave", () => { tnear = 0; });
     addEventListener("blur", () => { tnear = 0; });
+
+    // A click in the gutter releases the rim. The dots piled along the edge of the wake
+    // stop being a rim and leave as a ring — same radius, same density, now travelling —
+    // while the wake grows a new one over the next half second. Both outlines are warped
+    // by the same two noise fields, so the ring arrives as part of the texture instead of
+    // as a circle laid over it. Nothing here touches the page: the canvas is
+    // pointer-events:none and the handler is passive, so the click still does whatever it
+    // was going to do.
+    addEventListener("pointerdown", e => {
+      if (reduce || e.pointerType === "touch" || e.button !== 0) return;
+      if (cv.style.display === "none") return;
+      // never over the reading column, and never on something you meant to click
+      const colW = Math.min(COLW, innerWidth), l = (innerWidth - colW) / 2;
+      if (e.clientX > l && e.clientX < l + colW) return;
+      if (e.target && e.target.closest &&
+          e.target.closest("a,button,input,textarea,select,summary,[role='button']")) return;
+      if (nrip === RMAX) {
+        for (let n = 1; n < RMAX; n++) { rpX[n - 1] = rpX[n]; rpY[n - 1] = rpY[n]; rpT[n - 1] = rpT[n]; }
+        nrip--;
+      }
+      rpX[nrip] = e.clientX; rpY[nrip] = e.clientY; rpT[nrip] = -1; nrip++;
+      rimG = 0;
+      start();                 // a click on a tab that just came back still gets its ring
+    }, { passive: true });
 
     function layout() {
       const w = innerWidth, h = innerHeight;
@@ -1617,7 +1849,7 @@
       for (let j = 0; j < rows; j++) {
         const p = (j * PIX + PIX / 2) / h;
         const e = Math.min(1, Math.min(p, 1 - p) / 0.22);
-        vmask[j] = EDGE + (1 - EDGE) * (e * e * (3 - 2 * e));
+        vmask[j] = GAIN * (EDGE + (1 - EDGE) * (e * e * (3 - 2 * e)));
       }
       // radius per cell for the ripple term — constant until the next resize
       rad = new Float32Array(cols * rows);
@@ -1665,7 +1897,31 @@
         loY -= REACH * PAD; hiY += REACH * PAD;
       } else { filled = false; }
 
-      const rpl = CLEAR * near, rng = RING * near;
+      // Age the rings and drop the finished ones, compacting in place. Radius eases out
+      // — an impulse against drag, most of the travel in the first third — and the crest
+      // thins both with age and with its own circumference, which is why it fades from
+      // the middle of its life rather than switching off at the end of it.
+      nact = 0;
+      let keep = 0;
+      for (let n = 0; n < nrip; n++) {
+        if (rpT[n] < 0) rpT[n] = T;
+        const u = (T - rpT[n]) / R_LIFE;
+        if (u >= 1) continue;
+        const k1 = 1 - u;
+        const r = R_R0 + R_RUN * (1 - k1 * k1);
+        const hw = R_HW0 + (R_HW1 - R_HW0) * u;
+        gCX[nact] = rpX[n]; gCY[nact] = rpY[n];
+        gR[nact]  = r;
+        gPAD[nact] = hw + RW1 + RW2;      // outer reach once the warp has had its say
+        gIHW[nact] = 1 / hw;
+        gA[nact]  = R_AMP * k1 * Math.sqrt(R_R0 / r);
+        nact++;
+        rpX[keep] = rpX[n]; rpY[keep] = rpY[n]; rpT[keep] = rpT[n]; keep++;
+      }
+      nrip = keep;
+      rimG += (1 - rimG) * 0.045;         // ~0.4s to half, about as long as the ring lives
+
+      const rpl = CLEAR * near, rng = RING * near * rimG;
 
       for (let j = 0, k = 0; j < rows; j++) {
         const y = j * PIX / 150, vm = vmask[j];
@@ -1691,6 +1947,23 @@
           }
           if (xlo > xhi) rowLive = false;
         }
+        // …same idea for the rings, except a ring is a band, not a disc: rows keep the
+        // hole in the middle as an explicit gap to skip, or the interior of a 700px ring
+        // costs more per frame than the entire rest of the screen.
+        let nr = 0;
+        for (let n = 0; n < nact; n++) {
+          const dy = py - gCY[n], dq = dy * dy, ro = gR[n] + gPAD[n];
+          if (dq >= ro * ro) continue;
+          const out = Math.sqrt(ro * ro - dq);
+          sCX[nr] = gCX[n]; sDY[nr] = dq; sR[nr] = gR[n]; sIHW[nr] = gIHW[n]; sA[nr] = gA[n];
+          sLO[nr] = gCX[n] - out; sHI[nr] = gCX[n] + out;
+          const ri = gR[n] - gPAD[n];
+          if (ri > 0 && dq < ri * ri) {
+            const inn = Math.sqrt(ri * ri - dq);
+            sGLO[nr] = gCX[n] - inn; sGHI[nr] = gCX[n] + inn;
+          } else { sGLO[nr] = 1e9; sGHI[nr] = -1e9; }
+          nr++;
+        }
         for (let i = 0; i < cols; i++, k++) {
           const m = mask[i] * vm;
           if (m <= 0) { buf[k] = 0; continue; }        // under the column: nothing at all
@@ -1706,6 +1979,10 @@
           let d = MAXD * g * g * g;
 
           const px = i * PIX + PIX / 2;
+          // the two noise fields that roughen every outline in here. Computed at most
+          // once per cell and shared by the wake and the rings — separate noise would
+          // let the ring leave along an edge the wake never had.
+          let nz1 = 0, nz2 = 0, nz = false;
           if (rowLive && px >= xlo && px <= xhi) {
             // the wake is the union of the trail points — whichever one reaches this
             // cell hardest wins, which is what welds them into one flowing shape
@@ -1717,7 +1994,8 @@
             }
             if (t > 0) {
               // roughen the outline so even a standing cursor is not a clean disc
-              t += WOB * S(W2X * 1.9 * x + wq + T * 0.13) + WOB2 * S(4.7 * x + wr - T * 0.45);
+              nz1 = S(W2X * 1.9 * x + wq + T * 0.13); nz2 = S(4.7 * x + wr - T * 0.45); nz = true;
+              t += WOB * nz1 + WOB2 * nz2;
               if (t > 0) {
                 if (t > 1) t = 1;
                 const b = t * t;
@@ -1726,6 +2004,15 @@
                 if (rim > 0) d += rng * rim;
               }
             }
+          }
+          // the rings add, and add after the wake's clearing: a ring is born inside the
+          // hole it was released from and has to survive crossing it
+          for (let n = 0; n < nr; n++) {
+            if (px < sLO[n] || px > sHI[n] || (px > sGLO[n] && px < sGHI[n])) continue;
+            if (!nz) { nz1 = S(W2X * 1.9 * x + wq + T * 0.13); nz2 = S(4.7 * x + wr - T * 0.45); nz = true; }
+            const q = px - sCX[n];
+            const s = (Math.sqrt(q * q + sDY[n]) - sR[n] - RW1 * nz1 - RW2 * nz2) * sIHW[n];
+            if (s > -1 && s < 1) { const b = 1 - s * s; d += sA[n] * b * b; }
           }
           buf[k] = (d * m) > THR[trow | (i & TMASK)] ? DOT : 0;
         }
@@ -1737,7 +2024,7 @@
     // hand no matter how little it lags. Back to 30 when nobody is pointing at it.
     function loop(ts) {
       raf = requestAnimationFrame(loop);
-      if (ts - last < (near > 0.01 ? 15 : 32)) return;
+      if (ts - last < (near > 0.01 || nrip ? 15 : 32)) return;
       last = ts; frame(ts);
     }
     function stop()  { if (raf) { cancelAnimationFrame(raf); raf = 0; } }
@@ -1756,11 +2043,144 @@
     // motion, or a hidden tab that comes back) needs to be redrawn by hand.
     addEventListener("themechange", () => {
       DOT = packInk(readInk());
+      // the gain lives in vmask, so a change to it means a relayout — but only when it
+      // actually moved. A plain theme flip has to stay as cheap as it was.
+      const g = readGain();
+      if (g !== GAIN) { GAIN = g; if (img) layout(); }
       if (!raf && img) frame(last);
     });
 
     let rz; addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(apply, 120); });
     document.addEventListener("visibilitychange", () => document.hidden ? stop() : apply());
+    apply();
+  })();
+  </script>
+
+  <script>
+  // ============================================================
+  //  CONTROL DRAWER
+  // ============================================================
+  //  Runs after the dither and the rail so its first apply() already has both listeners
+  //  to talk to. It never touches either module directly: it writes custom properties on
+  //  :root and fires the events they already listen for — "themechange" for the canvas,
+  //  "railchange" for the rail. That is the whole coupling.
+  //
+  //  Contrast is the one control that is not a raw variable. It interpolates the ink
+  //  between the page colour (0 = the dot is the page, i.e. gone) and the skin's own ink
+  //  (1 = the default), and keeps extrapolating past 1. Both endpoints are per-theme, so
+  //  the slider means the same thing in both skins and has to be recomputed when the
+  //  theme flips — which is what the guarded themechange listener at the bottom is for.
+  //  Without that guard it would answer its own event forever.
+  // ============================================================
+  (function () {
+    const root = document.documentElement, panel = document.getElementById("ctrlPanel");
+    const tog = document.getElementById("ctrlTog"), bar = document.querySelector(".term__bar");
+    if (!panel || !tog) return;
+
+    // per-skin endpoints for the contrast slider: [page, ink at full strength]
+    const INK = { light: ["#ffffff", "#b4b4b4"], dark: ["#0e0e0e", "#343434"] };
+    const DEF = { density: 1, contrast: 1, stroke: 24, gap: 8, width: 2, rail: "now" };
+    const S = { ...DEF };
+    let applying = false;
+
+    const rgb = hex => [1, 3, 5].map(i => parseInt(hex.substr(i, 2), 16));
+    const hex = c => "#" + c.map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, "0")).join("");
+    function inkFor(theme, t) {
+      const [bg, full] = INK[theme] || INK.light, a = rgb(bg), b = rgb(full);
+      return hex(a.map((v, i) => v + (b[i] - v) * t));   // t may exceed 1 — it extrapolates
+    }
+
+    const el = id => document.getElementById(id);
+    const rows = [
+      { k: "density",  inp: el("cDensity"),  out: el("oDensity"),  fmt: v => v.toFixed(2) },
+      { k: "contrast", inp: el("cContrast"), out: el("oContrast"), fmt: v => v.toFixed(2) },
+      { k: "stroke",   inp: el("cStroke"),   out: el("oStroke"),   fmt: v => v + "px" },
+      { k: "gap",      inp: el("cGap"),      out: el("oGap"),      fmt: v => v + "px" },
+      { k: "width",    inp: el("cWidth"),    out: el("oWidth"),    fmt: v => v + "px" },
+    ];
+
+    function apply(what) {
+      const theme = root.getAttribute("data-theme") === "dark" ? "dark" : "light";
+      root.style.setProperty("--dgain", String(S.density));
+      root.style.setProperty("--ink", inkFor(theme, S.contrast));
+      root.style.setProperty("--rail-stroke", S.stroke + "px");
+      root.style.setProperty("--rail-gap", S.gap + "px");
+      root.style.setProperty("--rail-width", S.width + "px");
+      if (S.rail === "now") root.removeAttribute("data-rail");
+      else root.setAttribute("data-rail", S.rail);
+
+      for (const r of rows) { if (r.inp) { r.inp.value = S[r.k]; r.out.textContent = r.fmt(S[r.k]); } }
+      for (const b of el("cRail").children) b.classList.toggle("is-on", b.dataset.v === S.rail);
+
+      applying = true;
+      // the canvas relayouts only when the gain actually moved, so firing this on every
+      // slider tick is cheap; the rail repaints unconditionally but that is one clip-path
+      if (what !== "rail") dispatchEvent(new CustomEvent("themechange", { detail: "control" }));
+      if (what !== "dither") dispatchEvent(new CustomEvent("railchange"));
+      applying = false;
+      try { localStorage.setItem("kwzrl:control", JSON.stringify(S)); } catch (e) {}
+    }
+
+    for (const r of rows) {
+      if (!r.inp) continue;
+      r.inp.addEventListener("input", () => {
+        S[r.k] = parseFloat(r.inp.value);
+        apply(r.k === "density" || r.k === "contrast" ? "dither" : "rail");
+      });
+    }
+    el("cRail").addEventListener("click", e => {
+      const b = e.target.closest("button"); if (!b) return;
+      S.rail = b.dataset.v; apply("rail");
+    });
+    el("ctrlReset").addEventListener("click", () => { Object.assign(S, DEF); apply(); });
+
+    // the values in the shape the real constants take. Deliberately not also printed
+    // into the drawer: that made it state everything twice and wrap doing it
+    const report = () =>
+      `--dgain: ${S.density}\n--ink:   ${inkFor("light", S.contrast)} / ${inkFor("dark", S.contrast)}\n` +
+      `rail:    ${S.stroke}px stroke + ${S.gap}px gap = ${S.stroke + S.gap}px pitch, ${S.width}px wide\n` +
+      `colour:  ${S.rail}`;
+
+    el("ctrlCopy").addEventListener("click", async () => {
+      const btn = el("ctrlCopy"), was = btn.textContent;
+      try { await navigator.clipboard.writeText(report()); btn.textContent = "copied"; }
+      catch (e) { btn.textContent = "blocked"; console.log(report()); }
+      setTimeout(() => { btn.textContent = was; }, 1100);
+    });
+
+    // open / close
+    // Both the drawer's top and its width come off the bar rather than out of the
+    // stylesheet. The bar's height is whatever its tallest child makes it, and its right
+    // cluster is as wide as the clock's text renders — neither is a number worth writing
+    // down twice. The width lands the drawer's left edge on the divider left of the
+    // clock; .term is the offsetParent of both, so the two measurements share an origin.
+    const clock = document.getElementById("clock");
+    function place() {
+      panel.style.top = bar.offsetHeight + "px";
+      const term = panel.offsetParent;
+      if (clock && term) panel.style.setProperty("--ctrl-w", (term.clientWidth - clock.offsetLeft) + "px");
+    }
+    function open(v) {
+      panel.classList.toggle("is-on", v);
+      tog.classList.toggle("is-on", v);
+      tog.setAttribute("aria-expanded", v ? "true" : "false");
+      if (v) place();
+    }
+    tog.addEventListener("click", e => { e.stopPropagation(); open(!panel.classList.contains("is-on")); });
+    document.addEventListener("click", e => {
+      if (panel.classList.contains("is-on") && !panel.contains(e.target)) open(false);
+    });
+    addEventListener("keydown", e => { if (e.key === "Escape") open(false); });
+    addEventListener("resize", () => { if (panel.classList.contains("is-on")) place(); });
+
+    // the theme square changes what "contrast 1" resolves to, so the ink has to be
+    // recomputed — but only for a real theme flip, or this reacts to its own events
+    addEventListener("themechange", e => {
+      if (applying || e.detail === "control") return;
+      apply("dither");
+    });
+
+    try { Object.assign(S, JSON.parse(localStorage.getItem("kwzrl:control") || "{}")); } catch (e) {}
     apply();
   })();
   </script>
