@@ -27,97 +27,109 @@
     <meta name="twitter:image" content="https://kwzrl.com/share.png">
 
     <style>
-        /* Apple Garamond, self-hosted — the family is on nobody's machine, so naming
-           it in a stack alone would silently fall through to Times. Both original
-           families (Apple Garamond, Apple Garamond Light) are folded into one CSS
-           family across three weights; a browser only downloads the cuts the page
-           actually paints, so declaring the unused ones costs nothing. */
+        /* Source Serif 4, self-hosted from Adobe's OFL release; the licence
+           travels with it in fonts/OFL.txt. This is the variable build with
+           the weight pinned to 400 and only the optical size axis left in it —
+           the half this page actually uses. Carrying the weights too would
+           have made the file two and a half times the size for nothing.
+
+           The axis that stayed earns its keep on its own: it fits the drawing
+           to the size the text renders at instead of scaling one drawing to
+           every size, and no CSS is needed to ask for it, because
+           font-optical-sizing: auto is already the default. */
         @font-face {
-            font-family: "Apple Garamond";
-            src: url("fonts/AppleGaramond-Light.woff2") format("woff2");
-            font-weight: 300; font-style: normal; font-display: swap;
-        }
-        @font-face {
-            font-family: "Apple Garamond";
-            src: url("fonts/AppleGaramond-LightItalic.woff2") format("woff2");
-            font-weight: 300; font-style: italic; font-display: swap;
-        }
-        @font-face {
-            font-family: "Apple Garamond";
-            src: url("fonts/AppleGaramond.woff2") format("woff2");
-            font-weight: 400; font-style: normal; font-display: swap;
-        }
-        @font-face {
-            font-family: "Apple Garamond";
-            src: url("fonts/AppleGaramond-Italic.woff2") format("woff2");
-            font-weight: 400; font-style: italic; font-display: swap;
-        }
-        @font-face {
-            font-family: "Apple Garamond";
-            src: url("fonts/AppleGaramond-Bold.woff2") format("woff2");
-            font-weight: 700; font-style: normal; font-display: swap;
-        }
-        @font-face {
-            font-family: "Apple Garamond";
-            src: url("fonts/AppleGaramond-BoldItalic.woff2") format("woff2");
-            font-weight: 700; font-style: italic; font-display: swap;
+            font-family: "Source Serif 4";
+            src: url("fonts/SourceSerif4.woff2") format("woff2");
+            font-weight: 400;
+            font-style: normal;
+            font-display: swap;
         }
 
         /* Everything else is the browser's own stylesheet: one column, black on
-           white, default blue underlined links, default paragraph rhythm. Apple
-           Garamond is ITC Garamond condensed to 80%, so it sets narrower than
-           Times; 20px here reads like 16px there. */
+           white, default blue underlined links, default paragraph rhythm.
+           Source Serif is a text face with a generous x-height and needs no
+           compensating, so 17px sets about seventy characters to this measure.
+
+           The column is centred both ways. Horizontally that is the auto
+           margin. Vertically it is body becoming a single-cell grid as tall as
+           the viewport with main parked in the middle of it — which is what a
+           vertical `auto` margin cannot do, since it resolves to zero in
+           normal flow no matter how much room is left over.
+
+           `safe` is the word that matters on a phone. Plain centring pushes
+           the overflow out of both ends once the text is taller than the
+           screen, and the top of it can then never be scrolled to; safe
+           centring falls back to top alignment exactly then, which is also
+           where browsers too old for the keyword land when they drop the
+           declaration.
+
+           min-height subtracts the vertical padding by hand because max-width
+           measures the content box — body cannot also be border-box without
+           the measure quietly swallowing its own 40px of padding. That padding
+           sitting outside max-width is what lets the column hold its measure
+           exactly on a wide screen while the same 20px keeps the text off the
+           edge of a phone, with no breakpoint that has to know the number. */
         body {
-            max-width: 600px;
-            margin: auto;
-            font-family: "Apple Garamond", Cochin, "Hoefler Text",
-                         "Times New Roman", Times, serif;
-            font-size: 20px;
-            line-height: 1.55;
+            max-width: 560px;
+            margin: 0 auto;
+            padding: 24px 20px;
+            min-height: calc(100vh - 48px);
+            min-height: calc(100svh - 48px);
+            display: grid;
+            align-content: safe center;
+            font-family: "Source Serif 4", Georgia, "Times New Roman", Times, serif;
+            font-size: 17px;
+            line-height: 1.5;
         }
 
-        @media screen and (max-width: 600px) {
-            body {
-                margin: 10px;
-            }
-        }
-
-        /* The name, in the light cut Apple set its own display type in, upright. */
-        h1 {
-            color: #000;
-            font-size: 2.5em;
-            font-weight: 300;
-            padding-block: 2px;
+        /* The name and the one section heading set exactly like the prose around
+           them — same size, same cut, same weight. They stay headings so the
+           document keeps its outline; only the browser's default display
+           treatment is undone, including the margin, which would otherwise
+           scale off its own font-size and break the paragraph rhythm. */
+        h1, h2 {
+            color: inherit;
+            font-size: inherit;
+            font-weight: inherit;
+            margin-block: 1em;
         }
     </style>
 </head>
 
 <body>
 
-    <!-- DEMOTEXT — Platzhalter zum Überschreiben. -->
+    <h1>Hi, I’m Kilian.</h1>
 
-    <h1>Kilian Weinzierl</h1>
+    <p>I’m 21 and live in Regensburg, Germany. I like building things across design,
+        engineering, film, and the internet.</p>
 
-    <p>I'm twenty, I live in Regensburg, and I build AI products end to end — the thing
-        itself, and the launch around it.</p>
+    <p>Right now, I’m building <a href="https://avogram.com">Avo</a>.</p>
 
-    <p>At the moment I'm building <a href="https://github.com/kwzrl">Avogram</a>, a film
-        studio workspace that runs in the browser.</p>
+    <p>We believe filmmaking is about to become a medium for everyone. As machines take over
+        more of production, far more people will be able to create entire films. Avo is built
+        around one principle: automate the production, preserve the direction.</p>
 
-    <p>Most of what I make starts as a folder on a Tuesday and is online by the weekend. The
-        part I care about is the part most builders skip: the landing page, the launch film,
-        the last ten percent that turns a folder on a laptop into something a stranger can
-        actually use. Next.js on the web, Swift on iOS, Flutter when it has to be both.
-        German and English.</p>
+    <p>Before this, I worked at BMW. I left in 2026 to focus full time on building my own
+        things.</p>
 
-    <p>I'm most interested in small tools that do one thing well. If you're building
-        something, write to me.</p>
+    <h2>Work I’m proud of</h2>
+
+    <ul>
+        <li><a href="https://avogram.com">Avogram.com</a></li>
+        <li>A 220,000-word book about filmmaking</li>
+        <li>Film as a Journey</li>
+        <li>Essays about film, creativity, and technology</li>
+    </ul>
+
+    <p>Most of my time is spent designing, coding, writing, and exploring what new creative
+        tools can make possible.</p>
 
     <p>&nbsp;</p>
 
     <p style="text-align: center;">
         <a href="mailto:kilianweinzierl7@gmail.com">Email</a> ·
-        <a href="https://github.com/kwzrl">GitHub</a>
+        <a href="https://github.com/kwzrl">GitHub</a> ·
+        <a href="https://x.com/kwzrl">X</a>
     </p>
 
 </body>
