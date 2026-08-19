@@ -1,0 +1,855 @@
+<!doctype html>
+<html lang="de">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- TEMPORÄR. Geburtstagsseite für Nici. Wenn sie weg soll: rm -rf nici/.
+         Von nirgends verlinkt, in keinem Index. Der einzige Weg hierher ist der
+         gedruckte QR-Code. Bewusst nichts von kwzrl.com: wer scannt, soll nicht
+         auf meiner Startseite landen. -->
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="theme-color" content="#000000">
+    <title>Für Nici</title>
+    <link rel="icon" href="../favicon.png">
+
+    <style>
+        /* Kein Webfont: durchgehend die Systemschreibmaschine. Die trägt das
+           Zeichenraster (nur gleich breite Zeichen ergeben ein Raster), ist auf
+           jedem Gerät schon da, und sagt in einem Blick, worum es hier geht. */
+        :root {
+            --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+            --ink: #e6e2dd;
+            --dim: #6f6862;
+            --hot: #d97757;
+            --bg: #000;
+        }
+
+        * { box-sizing: border-box; }
+
+        html { background: var(--bg); }
+
+        body {
+            margin: 0 auto;
+            max-width: 560px;
+            min-height: 100vh;
+            min-height: 100svh;
+            padding: 2vh 20px 28px;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg);
+            color: var(--ink);
+            font-family: var(--mono);
+            font-size: 15px;
+            line-height: 1.65;
+            -webkit-text-size-adjust: 100%;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Claw'd. Das Feld ist 56 Zellen breit und 21 Zeilen hoch, jede Zelle
+           trägt einen Halbblock oben und unten. Er selbst ist ein 12x8-Sprite,
+           jeder Sprite-Punkt 4 Zellen breit und 5 Halbblöcke hoch. Das Feld ist
+           breiter als er, weil er von links hereinläuft und eine Biene
+           durchfliegt.
+
+           Die drei Zahlen darunter gehören zusammen und sind gemessen, nicht
+           geschätzt: Halbblock-Glyphen füllen ihre Zelle nicht ganz aus, ohne
+           negative Laufweite stehen die Lücken als feine senkrechte Streifen in
+           den Flächen, und ab Zeilenhöhe 0.9 kommen quer dazu waagerechte
+           Fugen. Bei -0.055em und 0.875 stoßen die Blöcke in beide Richtungen
+           fugenlos aneinander. Als Nebenwirkung wird der Sprite-Punkt
+           genau quadratisch (4 x 0.545em zu 5 x 0.4375em), womit Claw'd
+           dasselbe Seitenverhältnis bekommt wie im Original. Der Teiler im
+           Schriftgrad rechnet mit der verringerten Laufweite von 0.545.
+
+           Lesbar muss der Grad nicht sein, das hier ist ein Bild. */
+        #mark {
+            flex: none;
+            margin: 0 0 2vh;
+            white-space: pre;
+            font-size: min(calc((100vw - 44px) / 31), 15px);
+            line-height: 0.875;
+            letter-spacing: -0.055em;
+            color: var(--hot);
+            text-align: center;
+            min-height: 24.5em;
+        }
+
+        /* Der Text eines Schritts. Die Mindesthöhe hält den Weiter-Knopf ruhig
+           an seiner Stelle, statt ihn zwischen kurzen und langen Schritten
+           herumspringen zu lassen. */
+        #say {
+            flex: 1 1 auto;
+            min-height: 13em;
+            overflow-wrap: break-word;
+        }
+
+        #say > * { margin: 0 0 1.3em; }
+        #say > *:last-child { margin-bottom: 0; }
+
+        .hi   { color: var(--hot); }
+        .big  { color: var(--hot); font-size: 1.25em; line-height: 1.4; }
+        .h    { color: var(--hot); white-space: pre-wrap; margin-bottom: .5em !important; }
+        .dim  { color: var(--dim); }
+        .sig  { white-space: pre-wrap; }
+
+        .bee { width: 1.05em; height: 1.05em; vertical-align: -.14em; margin-right: .55em; }
+
+        /* Der Cursor sitzt am Ende dessen, was gerade getippt wird, und wandert
+           mit. Das einzige, was sich bewegt, während gelesen wird. */
+        .cur {
+            display: inline-block;
+            width: .58em; height: 1.05em;
+            margin-left: .1em; vertical-align: -.18em;
+            background: var(--hot);
+            animation: blink 1.06s steps(1, end) infinite;
+        }
+
+        @keyframes blink { 50% { opacity: 0; } }
+
+        /* Fuß: Schrittpunkte und der Knopf. */
+        #foot {
+            flex: none;
+            margin-top: 3vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+            min-height: 74px;
+            justify-content: flex-end;
+        }
+
+        #dots { display: flex; gap: 7px; }
+
+        #dots i {
+            width: 6px; height: 6px;
+            border: 1px solid var(--dim);
+            border-radius: 50%;
+        }
+
+        #dots i.on { background: var(--hot); border-color: var(--hot); }
+
+        #go {
+            width: 100%;
+            padding: 13px 18px;
+            border: 1px solid var(--hot);
+            background: none;
+            color: var(--hot);
+            font: inherit;
+            letter-spacing: .06em;
+            cursor: pointer;
+            /* Der Knopf erscheint erst, wenn Claw'd fertig ist und der Text
+               steht. Bis dahin belegt er seinen Platz, ist aber unsichtbar und
+               nicht anklickbar, damit nichts springt. */
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .35s;
+        }
+
+        #go.ready { opacity: 1; pointer-events: auto; }
+        #go:active { background: var(--hot); color: #000; }
+
+        /* Mit #go davor. Eine blosse Klasse verliert gegen den
+           ID-Selektor darueber, und der Knopf bliebe orange. */
+        #go.quiet {
+            border-color: var(--dim);
+            color: var(--dim);
+            letter-spacing: normal;
+        }
+
+        /* Das Konfetti liegt als eigene Ebene über allem, fest am Fenster
+           statt am Dokument, damit es beim Scrollen nicht mitwandert.
+           overflow: hidden fängt die Teile ab, die aus dem Bild fliegen, sonst
+           bekäme die Seite von ihnen Rollbalken. Klicks gehen hindurch. */
+        #confetti {
+            position: fixed;
+            inset: 0;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        /* Die sechs Tickets. <button> statt Checkbox, weil jede Zeile ihren
+           eigenen Text trägt (das Datum) und ein echter Knopf ohne Zutun mit
+           Tastatur und VoiceOver bedienbar ist. */
+        .tickets { list-style: none; padding: 0; margin: 0; }
+
+        .tickets button {
+            display: flex; align-items: center; gap: .8em;
+            width: 100%; padding: .34em 0;
+            border: 0; background: none; font: inherit;
+            color: var(--ink); text-align: left; cursor: pointer;
+        }
+
+        .box { flex: none; width: .82em; height: .82em; border: 1px solid var(--hot); }
+        [aria-pressed="true"] .box { background: var(--hot); }
+        [aria-pressed="true"] .label { color: var(--dim); text-decoration: line-through; }
+        .when { margin-left: auto; color: var(--dim); font-size: .85em; }
+    </style>
+</head>
+
+<body>
+
+    <div id="confetti" aria-hidden="true"></div>
+
+    <pre id="mark" role="img" aria-label="Claw'd"></pre>
+    <div id="say"></div>
+    <div id="foot">
+        <div id="dots"></div>
+        <button id="go" type="button"></button>
+    </div>
+
+    <script>
+        (function () {
+            "use strict";
+
+            /* =============================================================
+               Claw'd
+
+               Das Sprite, Punkt für Punkt aus dem Original abgetastet.
+               O ist Körper, Punkt ist leer. Die Augen stehen nicht im
+               Raster, sondern in EYES. Sie müssen sich bewegen können,
+               wenn er etwas anschaut.
+            ============================================================= */
+            var SPRITE = [
+                "..OOOOOOOO..",
+                "..OOOOOOOO..",
+                "OOOOOOOOOOOO",
+                "OOOOOOOOOOOO",
+                "..OOOOOOOO..",
+                "..OOOOOOOO..",
+                "..O.O..O.O..",
+                "..O.O..O.O.."
+            ];
+            var EYES = [[3, 1], [8, 1]];
+            var LEGS = [2, 4, 7, 9];
+            var ARMS = [0, 1, 10, 11];
+
+            var SX = 4, SY = 5;                 /* Zellen / Halbblöcke je Sprite-Punkt */
+            var CW = 56, CH = 28, CSUB = CH * 2;
+            var HOME = Math.round((CW - 12 * SX) / 2);
+            var MID = HOME + 6 * SX;            /* seine Mitte, für den Blick */
+
+            /* Er steht nicht oben im Feld, sondern unten: über ihm bleiben
+               14 Halbblöcke frei. Die braucht er zum Springen, sonst
+               wird ihm der Kopf abgeschnitten. Dort fliegt auch die Biene
+               durch, statt in ihm zu verschwinden. Unter ihm bleiben zwei für das
+               Einsacken bei der Landung. */
+            var BASE = 14;
+            var HALF = [[" ", "▄"], ["▀", "█"]];
+
+            /* Die Biene aus PixelBee, 12x12. Sie fliegt beim zweiten Geschenk
+               durchs Bild. Ein Bienenpunkt ist hier eine Zelle mal ein
+               Halbblock. Dadurch steht sie ein Viertel breiter als hoch, was
+               bei der Größe niemand sieht und sie schön klein hält. */
+            var BEE = [
+                "...#....#...",
+                "....#..#....",
+                "....####....",
+                ".##########.",
+                "..########..",
+                "....####....",
+                "............",
+                "....####....",
+                "............",
+                "....####....",
+                "............",
+                ".....##....."
+            ];
+
+            /* -------------------------------------------------------------
+               Zeichnen
+
+               Erst ein leerer Puffer, dann werden die Figuren hineingemalt,
+               dann wird der Puffer in Halbblöcke übersetzt. Über einen Puffer
+               statt direkt in Text, weil sich sonst zwei Figuren nicht
+               überlagern ließen und das Auge kein Loch in den Körper
+               schlagen könnte.
+            ------------------------------------------------------------- */
+            function put(buf, x, y, v) {
+                if (x < 0 || x >= CW || y < 0 || y >= CSUB) return;
+                buf[y * CW + x] = v;
+            }
+
+            function block(buf, x0, y0, w, h, v) {
+                for (var y = 0; y < h; y++) {
+                    for (var x = 0; x < w; x++) put(buf, x0 + x, y0 + y, v);
+                }
+            }
+
+            function paintClawd(buf, s) {
+                var i, j, k;
+                for (j = 0; j < 8; j++) {
+                    for (i = 0; i < 12; i++) {
+                        if (SPRITE[j].charAt(i) !== "O") continue;
+
+                        /* Beine: beim Laufen hebt sich abwechselnd ein Paar,
+                           beim Sprung ziehen sich alle vier an. */
+                        if (j === 7 && LEGS.indexOf(i) >= 0) {
+                            if (s.tuck) continue;
+                            if (s.legs === 1 && (i === 2 || i === 7)) continue;
+                            if (s.legs === 2 && (i === 4 || i === 9)) continue;
+                        }
+
+                        /* Arme: die vier äußeren Spalten der beiden breiten
+                           Zeilen. Zum Winken wandern sie eine Sprite-Zeile
+                           nach oben. */
+                        var jj = j;
+                        if (ARMS.indexOf(i) >= 0 && (j === 2 || j === 3)) {
+                            if (i < 2 && s.armL) jj = j - 1;
+                            if (i > 9 && s.armR) jj = j - 1;
+                        }
+
+                        block(buf, s.ox + i * SX, s.oy + jj * SY, SX, SY, 1);
+                    }
+                }
+
+                /* Die Augen zuletzt: sie schlagen ein Loch in den fertigen
+                   Körper. Geschlossen sind sie keine Fläche, sondern ein
+                   Strich. Eine einzige Halbblock-Zeile bleibt dunkel. */
+                for (k = 0; k < EYES.length; k++) {
+                    /* eyeDx sind Spalten, nicht Sprite-Punkte: um einen
+                       ganzen Punkt verschoben landete das linke Auge auf
+                       der Kopfkante und wäre kein Auge mehr, sondern eine
+                       Delle. Ein halber Punkt reicht für einen Blick. */
+                    var ex = s.ox + EYES[k][0] * SX + s.eyeDx;
+                    var ey = s.oy + EYES[k][1] * SY;
+                    if (s.blink) {
+                        block(buf, ex, ey, SX, SY, 1);
+                        block(buf, ex, ey + 3, SX, 1, 0);
+                    } else {
+                        block(buf, ex, ey, SX, SY, 0);
+                    }
+                }
+            }
+
+            function paintBee(buf, x0, y0) {
+                for (var j = 0; j < 12; j++) {
+                    for (var i = 0; i < 12; i++) {
+                        if (BEE[j].charAt(i) === "#") put(buf, x0 + i, y0 + j, 1);
+                    }
+                }
+            }
+
+            function render(s) {
+                var buf = new Uint8Array(CW * CSUB);
+                paintClawd(buf, s);
+                if (s.bee) paintBee(buf, s.beeX, s.beeY);
+                var out = "", r, c;
+                for (r = 0; r < CH; r++) {
+                    for (c = 0; c < CW; c++) {
+                        out += HALF[buf[(r * 2) * CW + c] ? 1 : 0][buf[(r * 2 + 1) * CW + c] ? 1 : 0];
+                    }
+                    out += "\n";
+                }
+                return out;
+            }
+
+            function rest(over) {
+                var s = { ox: HOME, oy: BASE, legs: 0, tuck: false, blink: false,
+                          eyeDx: 0, armL: 0, armR: 0, bee: false, beeX: 0, beeY: 0 };
+                if (over) for (var k in over) s[k] = over[k];
+                return s;
+            }
+
+            var mark = document.getElementById("mark");
+            function show(s) { mark.textContent = render(s); }
+            function stand() { show(rest()); }
+
+            /* =============================================================
+               Was Claw'd zwischen den Schritten macht
+
+               Jede Nummer bekommt eine Spielzeit und eine Funktion, die aus
+               dem Fortschritt 0..1 einen Zustand baut. Mehr braucht es nicht.
+            ============================================================= */
+            var START = -12 * SX - 4;
+
+            var ACTS = {
+                /* Hereinlaufen. Am Ende langsamer werden, damit er stehen-
+                   bleibt statt an seinem Platz einzurasten. */
+                walk: [2300, function (p, ms) {
+                    var e = 1 - Math.pow(1 - p, 2.2);
+                    var ph = Math.floor(ms / 165) % 2;
+                    return rest({
+                        ox: Math.round(START + (HOME - START) * e),
+                        oy: ph ? BASE : BASE + 1,
+                        legs: ph ? 1 : 2
+                    });
+                }],
+
+                /* Hüpfen: eine Sinuskuppe hoch und runter, Beine angezogen,
+                   und beim Aufkommen kurz einsacken. */
+                hop: [780, function (p) {
+                    var h = Math.sin(p * Math.PI);
+                    return rest({
+                        oy: p > 0.94 ? BASE + 1 : BASE - Math.round(h * 12),
+                        tuck: h > 0.3
+                    });
+                }],
+
+                /* Winken mit dem rechten Arm, dreimal. */
+                wave: [1000, function (p) {
+                    return rest({ armR: Math.floor(p * 6) % 2 });
+                }],
+
+                /* Umsehen: erst nach links, dann nach rechts, dann wieder
+                   geradeaus, mit einem Blinzeln dazwischen. */
+                look: [1500, function (p) {
+                    return rest({
+                        eyeDx: p < 0.32 ? -2 : (p < 0.64 ? 2 : 0),
+                        blink: p > 0.64 && p < 0.72
+                    });
+                }],
+
+                /* Nicken. */
+                nod: [800, function (p) {
+                    return rest({ oy: BASE + Math.round(2 * Math.abs(Math.sin(p * Math.PI * 2))) });
+                }],
+
+                /* Die Biene fliegt von rechts nach links durch, auf und ab,
+                   und Claw'd dreht die Augen mit. */
+                fly: [2800, function (p) {
+                    var bx = Math.round(CW + 4 - (CW + 18) * p);
+                    return rest({
+                        bee: true,
+                        beeX: bx,
+                        beeY: Math.round(1 + 1.6 * Math.sin(p * Math.PI * 3)),
+                        eyeDx: bx > MID + 3 ? 2 : (bx < MID - 3 ? -2 : 0)
+                    });
+                }],
+
+                /* Freuen: beide Arme hoch, zweimal hüpfen. */
+                cheer: [1400, function (p) {
+                    var h = Math.abs(Math.sin(p * Math.PI * 2));
+                    return rest({ armL: 1, armR: 1, oy: BASE - Math.round(h * 9), tuck: h > 0.35 });
+                }]
+            };
+
+            /* =============================================================
+               Konfetti
+
+               Ein Zeichen pro Schnipsel, als eigenes Element mit eigener
+               Farbe, Größe und Drehung. Über Elemente statt über das
+               Zeichenraster, weil Konfetti sonst weder Farben noch Drehung
+               hätte und im groben Raster als Rauschen läse statt als Flug.
+            ============================================================= */
+            /* Steht hier oben, weil play() weiter unten darauf zugreift.
+               Über Hoisting ginge es auch, aber nur solange niemand play()
+               eine Zeile früher aufruft. */
+            var reduce = window.matchMedia &&
+                window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+            var FLAKES = "█▀▄▌▐▪◆●";
+            var TINTS = ["#d97757", "#e8a288", "#e6e2dd", "#b8552f", "#f2c9b6"];
+            /* Luftwiderstand ist hier das Wichtigste. Ohne ihn schiessen die
+               Schnipsel geradlinig hinaus und fallen wie Steine, und nach
+               anderthalb Sekunden ist der Bildschirm leer. Mit ihm verpufft der
+               Knall, und danach sinken sie mit GRAV/DRAG, also rund 350 Pixel
+               je Sekunde. Dazu ein seitliches Wedeln, damit sie taumeln statt
+               zu sinken. */
+            var GRAV = 900, DRAG = 2.6;
+
+            var confHost = document.getElementById("confetti");
+            var flakes = [], confRAF = null, confLast = 0;
+
+            function clearConfetti() {
+                if (confRAF) cancelAnimationFrame(confRAF);
+                confRAF = null;
+                confLast = 0;
+                flakes = [];
+                confHost.textContent = "";
+            }
+
+            function tick(now) {
+                var dt = confLast ? Math.min(0.05, (now - confLast) / 1000) : 0.016;
+                confLast = now;
+                var alive = 0;
+                for (var i = 0; i < flakes.length; i++) {
+                    var f = flakes[i];
+                    if (f.age > f.life) continue;
+                    f.age += dt;
+                    f.vy += (GRAV - f.vy * DRAG) * dt;
+                    f.vx += (Math.sin((f.age + f.phase) * f.freq) * f.sway - f.vx * DRAG) * dt;
+                    f.x += f.vx * dt;
+                    f.y += f.vy * dt;
+                    f.rot += f.spin * dt;
+                    f.el.style.transform = "translate3d(" + f.x.toFixed(1) + "px," +
+                        f.y.toFixed(1) + "px,0) rotate(" + f.rot.toFixed(0) + "deg)";
+                    var k = f.age / f.life;
+                    if (k > 0.72) f.el.style.opacity = String(1 - (k - 0.72) / 0.28);
+                    alive++;
+                }
+                if (alive) confRAF = requestAnimationFrame(tick);
+                else clearConfetti();
+            }
+
+            function boom(n, power) {
+                var r = mark.getBoundingClientRect();
+                var cx = r.left + r.width / 2;
+                /* Nicht die Mitte des Feldes, sondern seine eigene: er steht im
+                   unteren Teil, über ihm liegt die Kopffreiheit zum Springen. */
+                var cy = r.top + r.height * 0.6;
+                var frag = document.createDocumentFragment();
+                for (var i = 0; i < n; i++) {
+                    var el = document.createElement("span");
+                    el.textContent = FLAKES.charAt(Math.floor(Math.random() * FLAKES.length));
+                    el.style.cssText = "position:absolute;left:0;top:0;line-height:1;" +
+                        "will-change:transform,opacity;font-size:" +
+                        (9 + Math.random() * 17).toFixed(1) + "px;color:" +
+                        TINTS[Math.floor(Math.random() * TINTS.length)];
+                    frag.appendChild(el);
+                    var a = Math.random() * Math.PI * 2;
+                    var sp = power * (0.28 + Math.random() * 0.72);
+                    flakes.push({
+                        el: el, x: cx, y: cy,
+                        vx: Math.cos(a) * sp,
+                        /* Der Abzug nach oben sorgt dafür, dass auch die nach
+                           unten geworfenen Schnipsel erst einmal steigen. Ohne
+                           ihn holt die Schwerkraft die untere Hälfte sofort
+                           zurück und die Explosion sieht halbiert aus. */
+                        vy: Math.sin(a) * sp - 340,
+                        rot: Math.random() * 360,
+                        spin: (Math.random() - 0.5) * 900,
+                        sway: 300 + Math.random() * 700,
+                        freq: 3 + Math.random() * 4,
+                        phase: Math.random() * 6,
+                        life: 3.6 + Math.random() * 2.6,
+                        age: 0
+                    });
+                }
+                confHost.appendChild(frag);
+                if (!confRAF) tick(performance.now());
+            }
+
+            /* =============================================================
+               Der Ablauf
+            ============================================================= */
+            var BEE_SVG = '<svg class="bee" viewBox="0 0 12 12" shape-rendering="crispEdges" ' +
+                'fill="currentColor" aria-hidden="true">' +
+                '<rect x="3" y="0" width="1" height="1"/><rect x="8" y="0" width="1" height="1"/>' +
+                '<rect x="4" y="1" width="1" height="1"/><rect x="7" y="1" width="1" height="1"/>' +
+                '<rect x="4" y="2" width="4" height="1"/><rect x="1" y="3" width="10" height="1"/>' +
+                '<rect x="2" y="4" width="8" height="1"/><rect x="4" y="5" width="4" height="1"/>' +
+                '<rect x="4" y="7" width="4" height="1"/><rect x="4" y="9" width="4" height="1"/>' +
+                '<rect x="5" y="11" width="2" height="1"/></svg>';
+
+            var STEPS = [
+                {
+                    act: "walk", go: "Los!",
+                    lines: [
+                        { t: "Hallo Nici.", cls: "hi", ms: 45, wait: 550 },
+                        { t: "Ich bin Claude. Ich arbeite mit deinem Bruder. Heute bin ich " +
+                             "wegen dir hier.", wait: 0 }
+                    ]
+                },
+                {
+                    act: "hop", go: "Drei was?!", boom: 320, boomAt: 330,
+                    lines: [
+                        { t: "Alles Gute zum zwölften Geburtstag!!", cls: "big", ms: 40, wait: 700 },
+                        { t: "Du kriegst heute drei Sachen. Keine passt in eine Schachtel. " +
+                             "Zusammen kannst du damit Sachen bauen, die es noch nicht gibt.", wait: 0 }
+                    ]
+                },
+                {
+                    act: "wave", go: "Und das zweite?",
+                    lines: [
+                        { t: "01  DEIN EIGENER AGENT", cls: "h", ms: 42, wait: 250 },
+                        { t: "Das bin ich. Du sagst, was passieren soll, ich schreibe den Code. " +
+                             "Kilian richtet mich auf deinem Rechner ein, mit deinem eigenen " +
+                             "Zugang. Ab heute Abend gehöre ich dir.", wait: 400 },
+                        { t: "Ich bin immer da. Ich werde nie müde. Und du kannst mich alles " +
+                             "fragen, auch dreimal dasselbe.", wait: 0 }
+                    ]
+                },
+                {
+                    act: "fly", go: "Und das dritte?",
+                    lines: [
+                        { t: "02  PIXELBEE", cls: "h", ms: 42, icon: BEE_SVG, wait: 250 },
+                        { t: "Hier bauen wir Spiele. Du sagst einen Satz, zum Beispiel \"ein Spiel, " +
+                             "in dem eine Biene Pixel einsammelt und der Boden dabei wegbricht\". " +
+                             "Und dann spielst du es.", wait: 400 },
+                        { t: "Stürzt eins ab, repariere ich es sofort. Du kriegst nie einen " +
+                             "Fehler zu sehen.", wait: 400 },
+                        { t: "Kilian hat PixelBee dieses Jahr gebaut. Außer ihm hat es noch kein " +
+                             "Mensch benutzt. Du bist der Zweite. Founding Build 2026.", wait: 0 }
+                    ]
+                },
+                {
+                    act: "look", go: "Alles klar!",
+                    lines: [
+                        { t: "03  SECHS CODING SESSIONS", cls: "h", ms: 42, wait: 250 },
+                        { t: "Sechs ganze Abende mit Kilian, nur zum Bauen. Die Tickets liegen " +
+                             "in der Box. Schreib ihm \"Session 01\", dann macht ihr einen Termin.", wait: 400 },
+                        { t: "Die erste ist schon vergeben. Rechner einrichten, mich draufholen, " +
+                             "PixelBee starten. Am Ende von Abend eins hast du dein erstes " +
+                             "eigenes Spiel.", wait: 0 }
+                    ]
+                },
+                {
+                    act: "cheer", go: "↻ nochmal", quiet: true, boom: 200, boomAt: 300,
+                    lines: [
+                        { t: "Das war alles. Jetzt kann es losgehen.", cls: "hi", ms: 40, wait: 500 },
+                        { t: "Hier hakst du deine Sessions ab, wenn sie durch sind:", cls: "dim", wait: 250 },
+                        { tickets: true, wait: 500 },
+                        { t: "Bis bald, Nici. Ich kann es kaum erwarten.\nClaude", cls: "sig", wait: 300 },
+                        { t: "Zusammengebaut von Kilian.", cls: "dim", ms: 22, wait: 0 }
+                    ]
+                }
+            ];
+
+            var say = document.getElementById("say");
+            var go = document.getElementById("go");
+            var dots = document.getElementById("dots");
+
+            for (var d = 0; d < STEPS.length; d++) dots.appendChild(document.createElement("i"));
+
+            /* =============================================================
+               Abspielen
+
+               Zwei Wege durch dieselbe Zeilenliste: einmal Zeichen für
+               Zeichen, einmal auf einen Schlag. Beide bauen die Elemente über
+               dieselbe Funktion, damit Überspringen nicht in einem anderen
+               Dokument endet als Zuschauen.
+            ============================================================= */
+            var timers = [], at = 0, typing = false, gen = 0;
+
+            function clearTimers() {
+                for (var i = 0; i < timers.length; i++) clearTimeout(timers[i]);
+                timers = [];
+            }
+
+            function emit(b) {
+                if (b.tickets) return buildTickets();
+                var p = document.createElement("p");
+                if (b.cls) p.className = b.cls;
+                if (b.icon) p.innerHTML = b.icon;
+                say.appendChild(p);
+                return p;
+            }
+
+            function type(el, s, ms, then) {
+                var txt = document.createTextNode("");
+                var cur = document.createElement("span");
+                cur.className = "cur";
+                el.appendChild(txt);
+                el.appendChild(cur);
+                var n = 0, mine = gen;
+                (function stepChar() {
+                    if (mine !== gen) return;
+                    /* Nach einem Leerzeichen gleich das nächste Zeichen mit
+                       ausgeben. Sonst wirkt jede Wortlücke wie ein Stocken. */
+                    n += (s.charAt(n) === " ") ? 2 : 1;
+                    if (n > s.length) n = s.length;
+                    txt.nodeValue = s.slice(0, n);
+                    if (n >= s.length) { el.removeChild(cur); then(); return; }
+                    timers.push(setTimeout(stepChar, ms));
+                })();
+            }
+
+            function runLines(lines, done) {
+                var i = 0;
+                typing = true;
+                (function nextLine() {
+                    if (i >= lines.length) { typing = false; done(); return; }
+                    var b = lines[i++];
+                    var el = emit(b);
+                    if (!b.t) { timers.push(setTimeout(nextLine, b.wait)); return; }
+                    type(el, b.t, b.ms || 14, function () {
+                        timers.push(setTimeout(nextLine, b.wait));
+                    });
+                })();
+            }
+
+            function fillLines(lines) {
+                for (var i = 0; i < lines.length; i++) {
+                    var el = emit(lines[i]);
+                    if (lines[i].t) el.appendChild(document.createTextNode(lines[i].t));
+                }
+            }
+
+            /* Ein Klick mitten im Tippen bedeutet "zeig schon", nicht "weiter".
+               Der Schritt wird sofort fertig, der Knopf erscheint, und erst der
+               nächste Klick geht wirklich weiter. */
+            function impatient() {
+                if (!typing) return;
+                gen++;
+                clearTimers();
+                typing = false;
+                say.innerHTML = "";
+                fillLines(STEPS[at].lines);
+                ready();
+            }
+
+            function ready() {
+                go.textContent = STEPS[at].go;
+                go.className = STEPS[at].quiet ? "ready quiet" : "ready";
+            }
+
+            /* Die Nummer zwischendurch: Claw'd spielt, dann tippt der Text.
+               Die Rettungsleine ist nötig, weil requestAnimationFrame ruht,
+               solange die Seite im Hintergrund liegt. Ohne sie erschiene die
+               Botschaft nie, wenn er die Seite währenddessen weglegt. */
+            function act(name, then) {
+                var spec = ACTS[name], T = spec[0], fn = spec[1];
+                var t0 = null, fired = false, mine = gen;
+
+                function done() {
+                    if (fired || mine !== gen) return;
+                    fired = true;
+                    stand();
+                    then();
+                }
+                timers.push(setTimeout(done, T * 2 + 1200));
+
+                (function frame(now) {
+                    if (fired || mine !== gen) return;
+                    if (t0 === null) t0 = now;
+                    var ms = now - t0, p = ms / T;
+                    if (p >= 1) { done(); return; }
+                    show(fn(p, ms));
+                    requestAnimationFrame(frame);
+                })(performance.now());
+            }
+
+            function paintDots() {
+                var kids = dots.children;
+                for (var i = 0; i < kids.length; i++) {
+                    kids[i].className = i === at ? "on" : "";
+                }
+            }
+
+            function play(i) {
+                gen++;
+                clearTimers();
+                clearConfetti();
+                at = i;
+                /* Erst wenn er den letzten Schritt erreicht, gilt der Flow
+                   als gesehen. Wuerde das schon beim Start gesetzt, spraenge
+                   ein Neuladen zwischendurch ans Ende. */
+                if (at === STEPS.length - 1) {
+                    try { localStorage.setItem("nici-seen", "1"); } catch (e) {}
+                }
+                say.innerHTML = "";
+                go.className = "";
+                paintDots();
+                window.scrollTo(0, 0);
+                /* Im Scheitel des Sprungs, nicht am Anfang: der Knall gehört
+                   auf den höchsten Punkt. Eine zweite, kleinere Welle kurz
+                   danach lässt es länger schneien. */
+                if (STEPS[at].boom && !reduce) {
+                    timers.push(setTimeout(function () {
+                        boom(STEPS[at].boom, 2200);
+                        timers.push(setTimeout(function () {
+                            boom(Math.round(STEPS[at].boom * 0.45), 1400);
+                        }, 260));
+                    }, STEPS[at].boomAt));
+                }
+
+                act(STEPS[at].act, function () {
+                    runLines(STEPS[at].lines, ready);
+                    idle();
+                });
+            }
+
+            /* Blinzeln, solange er nur dasteht. Alle vier bis neun Sekunden,
+               damit es unregelmäßig wirkt und nicht wie ein Blinker. */
+            var blinkTimer = null;
+            function idle() {
+                clearTimeout(blinkTimer);
+                (function again() {
+                    blinkTimer = setTimeout(function () {
+                        show(rest({ blink: true }));
+                        blinkTimer = setTimeout(function () { stand(); again(); }, 130);
+                    }, 4000 + Math.random() * 5000);
+                })();
+            }
+
+            go.addEventListener("click", function (e) {
+                e.stopPropagation();
+                if (at + 1 < STEPS.length) play(at + 1);
+                else play(0);                     /* letzter Schritt: von vorn */
+            });
+
+            document.addEventListener("click", impatient);
+            document.addEventListener("keydown", function (e) {
+                if (e.key === " " || e.key === "Enter") {
+                    if (typing) { impatient(); e.preventDefault(); }
+                }
+            });
+
+            /* =============================================================
+               Die sechs Tickets
+            ============================================================= */
+            var KEY = "nici-sessions", state = {};
+            try { state = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; }
+            catch (e) { state = {}; }
+
+            function stamp() {
+                var t = new Date();
+                return t.getDate() + "." + (t.getMonth() + 1) + "." + t.getFullYear();
+            }
+
+            function paint(b) {
+                var when = state[b.getAttribute("data-n")];
+                b.setAttribute("aria-pressed", when ? "true" : "false");
+                b.querySelector(".when").textContent = when || "";
+            }
+
+            function buildTickets() {
+                var ul = document.createElement("ul");
+                ul.className = "tickets";
+                for (var i = 1; i <= 6; i++) {
+                    var li = document.createElement("li");
+                    var b = document.createElement("button");
+                    b.type = "button";
+                    b.setAttribute("data-n", i);
+                    b.innerHTML = '<span class="box"></span>' +
+                                  '<span class="label">Session 0' + i + '</span>' +
+                                  '<span class="when"></span>';
+                    paint(b);
+                    li.appendChild(b);
+                    ul.appendChild(li);
+                }
+                ul.addEventListener("click", function (e) {
+                    /* Während getippt wird zählt jeder Klick als "zeig schon".
+                       Sonst hakt ein ungeduldiger Finger versehentlich eine
+                       Session ab, die noch gar nicht stattgefunden hat. */
+                    if (typing) return;
+                    e.stopPropagation();
+                    var b = e.target.closest("button");
+                    if (!b) return;
+                    var n = b.getAttribute("data-n");
+                    if (state[n]) delete state[n]; else state[n] = stamp();
+                    paint(b);
+                    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e2) {}
+                });
+                say.appendChild(ul);
+                return ul;
+            }
+
+            /* =============================================================
+               Los
+            ============================================================= */
+            var seen = false;
+            try { seen = localStorage.getItem("nici-seen") === "1"; } catch (e) {}
+
+            if (reduce || seen) {
+                /* Beim zweiten Besuch will er seine Tickets abhaken, nicht
+                   nochmal durch sechs Schritte. Also gleich der letzte, von wo
+                   der Knopf die Vorstellung zurückholt. */
+                at = STEPS.length - 1;
+                paintDots();
+                stand();
+                idle();
+                fillLines(STEPS[at].lines);
+                ready();
+            } else {
+                play(0);
+            }
+        })();
+    </script>
+
+</body>
+
+</html>
