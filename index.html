@@ -85,13 +85,21 @@
         /* The name and the one section heading set exactly like the prose around
            them — same size, same cut, same weight. They stay headings so the
            document keeps its outline; only the browser's default display
-           treatment is undone, including the margin, which would otherwise
-           scale off its own font-size and break the paragraph rhythm. */
+           treatment is undone. */
         h1, h2 {
             color: inherit;
             font-size: inherit;
             font-weight: inherit;
-            margin-block: 1em;
+        }
+
+        /* The browser's own block spacing is 1em, and 1em here is a 20px gap on
+           top of a 31px line — every break costs the better part of two blank
+           lines, which at this measure reads as a hole rather than a paragraph.
+           0.6em still separates them clearly. The headings are in the list too,
+           because their margin would otherwise scale off their own font-size,
+           which no longer differs from the prose. */
+        p, ul, h1, h2 {
+            margin-block: 0.6em;
         }
     </style>
 </head>
@@ -127,7 +135,6 @@
     <p>&nbsp;</p>
 
     <p style="text-align: center;">
-        <a href="mailto:kilianweinzierl7@gmail.com">Email</a> ·
         <a href="https://github.com/kwzrl">GitHub</a> ·
         <a href="https://x.com/kwzrl">X</a>
     </p>
