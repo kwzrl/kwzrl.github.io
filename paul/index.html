@@ -36,8 +36,12 @@
      · kein Gerät, kein Verlauf, kein Bild. Was die Startseite
        zeigt, muss dieser Entwurf erzählen.
      · es gibt keinen Knopf und keine Schlusszeile mit Links. Die
-       Wege zu Paul stehen genau einmal, unter „Kontakt", und der
-       Text schickt einen am Ende dorthin zurück. Die Aufforderung
+       Wege zu Paul stehen genau einmal, unter „Kontakt" gleich
+       unter dem Namen, und der Text schickt einen am Ende dorthin
+       zurück. Sie sind nicht einmal anklickbar: die Nummer steht
+       da, wie bei Instinct die Mailadresse. Wer sie will, tippt
+       sie ab. Damit bleibt auf der ganzen Seite ein einziger Link,
+       der in der Fußnote auf das Gesetz. Die Aufforderung
        steht auch unter keiner eigenen Überschrift — „Über Paul"
        läuft in sie hinein, damit sie wie der letzte Satz einer
        Erklärung klingt und nicht wie ein Abschnitt, den man
@@ -141,8 +145,8 @@ p { margin:1em 0; }
 dt{ font-weight:700; }
 dd{ margin-bottom:.6em; }
 
-/* Die Zeile unter dem Namen — die einzige Stelle, an der dieser
-   Entwurf lauter ist als sein Vorbild. */
+/* Die Zeile, die „Über Paul" eröffnet — die einzige Stelle, an der
+   dieser Entwurf lauter ist als sein Vorbild. */
 .claim{ margin:.4em 0 1em; font-weight:700; }
 
 
@@ -206,21 +210,18 @@ body:has(#t-mitte:checked) dd{ margin-inline-start:0; }  /* sonst hängt die Ach
 
   <h1>Paul</h1>
 
-  <p class="claim">Wenn du nicht rangehen kannst, geht Paul ran.</p>
-
-  <p>Paul ist ein digitaler Mitarbeiter für Handwerks- und Servicebetriebe.
-     Er kümmert sich um Anrufe, Kundenanfragen, Termine und Rückrufe.</p>
-
   <h2>Kontakt</h2>
 
   <p>Regensburg, Deutschland<br>
-     WhatsApp: <a href="https://wa.me/4994120899240?text=Hallo%20Paul%2C%20ich%20hab%20einen%20Betrieb%20und%20will%20wissen%2C%20was%20du%20f%C3%BCr%20mich%20machen%20kannst." rel="noopener">Paul schreiben</a><br>
-     Telefon: <a href="tel:+4994120899240">+49 941 20 89 92 40</a><br>
-     E-Mail: <a href="mailto:hallo@callpaul.ai">hallo@callpaul.ai</a></p>
+     Telefon und WhatsApp: +49 941 20 89 92 40<br>
+     E-Mail: hallo@callpaul.ai</p>
 
   <h2>Über Paul</h2>
 
-  <p>Paul kümmert sich um die Kommunikation mit deinen Kunden. Er nimmt Anrufe
+  <p class="claim">Wenn du nicht rangehen kannst, geht Paul ran.</p>
+
+  <p>Paul ist ein digitaler Mitarbeiter für Handwerks- und Servicebetriebe.
+     Er kümmert sich um die Kommunikation mit deinen Kunden: nimmt Anrufe
      entgegen, beantwortet Fragen, erfasst neue Aufträge, vereinbart Termine
      und erinnert an Rückrufe.</p>
 
