@@ -1,0 +1,670 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex">
+    <title>lab — split index</title>
+
+    <link rel="icon" href="favicon.png">
+    <link rel="apple-touch-icon" href="favicon.png">
+
+    <style>
+        /* Source Serif 4, self-hosted from Adobe's OFL release; the licence
+           travels with it in fonts/OFL.txt. The variable build with the weight
+           pinned to 400 and only the optical size axis left in it — which is
+           the constraint this layout designs around: there is exactly one cut,
+           so nothing here can be told apart by weight. Colour and position
+           carry that work instead. */
+        @font-face {
+            font-family: "Source Serif 4";
+            src: url("fonts/SourceSerif4.woff2") format("woff2");
+            font-weight: 400;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        /* Warm neutrals rather than cold ones. Nothing here is #fff or #000:
+           the page is a paper white, the panel a shade of it deep enough to
+           read as a second surface but not as a block of grey, and the text
+           stops short of black. A serif sets badly on pure white — the stems
+           thin out — which is the whole argument for the two tones. */
+        :root {
+            --paper: #fbfbfa;
+            --panel: #eeedea;
+            --sunk: #e4e2dd;
+            --ink: #171716;
+            --muted: #8b8a84;
+            --hover: #3f3e3a;
+            --rule: #dedcd7;
+            --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+
+            /* The one measurement the index still keeps as a number: the air
+               between the number column and the label column. Both column
+               widths come from the content now. */
+            --spine-gap: 1.25rem;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            background: var(--paper);
+            color: var(--ink);
+            font-family: "Source Serif 4", Georgia, "Times New Roman", Times, serif;
+            font-size: 15px;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        main {
+            display: flex;
+            min-height: 100vh;
+            min-height: 100svh;
+        }
+
+        /* ---------- the panel ----------
+
+           Two halves of equal weight: this is not a sidebar the content has
+           been squeezed next to, it is the other half of the spread. Both are
+           flex: 1, so the seam sits dead centre of the viewport at every width
+           and never has to be told a number.
+
+           Everything inside hangs off one left edge — the picture, the name and
+           the numbers all start on the same vertical, which is what makes the
+           block read as a margin rather than as three centred things. */
+        .panel {
+            flex: 1;
+            display: grid;
+            place-content: center;
+            background: var(--panel);
+        }
+
+        /* Swapping in the real photograph is one tag: <img class="avatar"
+           src="..." alt="Kilian Weinzierl">. The rules that matter for an image
+           — the fixed square, the radius, object-fit — are already here, so the
+           div and the img land in exactly the same place. */
+        .avatar {
+            display: grid;
+            place-items: center;
+            width: 46px;
+            height: 46px;
+            margin-bottom: 0.8rem;
+            border: 1px solid var(--rule);
+            border-radius: 50%;
+            background: var(--sunk);
+            object-fit: cover;
+            color: var(--muted);
+            font-size: 0.8em;
+            letter-spacing: 0.04em;
+        }
+
+        .panel__name {
+            margin: 0 0 1.7rem;
+            font-size: inherit;
+            font-weight: inherit;
+        }
+
+        /* ---------- the index ----------
+
+           Two columns, the number set right and the label set left, and every
+           row sharing both — which is what gives the list a spine down the
+           middle instead of labels ragged on the left.
+
+           The columns are max-content on the nav and the rows opt into them
+           with subgrid, so both are exactly as wide as the widest thing in
+           them. That is the fix for what the fixed widths were doing: a label
+           column guessed at 6.5rem was nearly two centimetres wider than the
+           longest word in it, and since the highlight covers the whole row, all
+           of that slack showed up as an empty tail on the pill. Nothing is
+           guessed now, and a longer label later resizes the column rather than
+           breaking it.
+
+           The negative inline margin is exactly the inline padding, so the pill
+           bleeds 0.75rem past the text on both sides while the content box
+           lands back on the parent's tracks — the highlight gets its air
+           without the columns drifting off the spine. */
+        .index {
+            display: grid;
+            grid-template-columns: max-content max-content;
+            row-gap: 0.1rem;
+            counter-reset: item;
+        }
+
+        .index a {
+            display: grid;
+            grid-column: 1 / -1;
+            grid-template-columns: subgrid;
+            column-gap: var(--spine-gap);
+            counter-increment: item;
+            padding: 0.4rem 0.75rem;
+            margin-inline: -0.75rem;
+            border-radius: 6px;
+            color: var(--muted);
+            text-decoration: none;
+            /* The 200ms is the entire reason a layout like this feels
+               expensive. Every colour on this page that can change moves over
+               the same duration, so touching anything feels like one material. */
+            transition: color 0.2s, background-color 0.2s;
+        }
+
+        /* Firefox before 71 and Safari before 16 drop the subgrid rule and
+           would stack the two spans; the old fixed widths are fine as the
+           floor, since the only thing lost is the tight fit. */
+        @supports not (grid-template-columns: subgrid) {
+            .index { grid-template-columns: 1fr; }
+            .index a { display: flex; gap: var(--spine-gap); }
+            .index a::before { width: 1.6rem; }
+            .label { width: 5rem; }
+        }
+
+        /* Gated, because a touch screen reports a hover on tap and then holds it
+           until something else is tapped — an ungated rule leaves the last item
+           the reader touched looking half-selected next to the real one. */
+        @media (hover: hover) {
+            .index a:hover { color: var(--hover); }
+        }
+
+        /* No weight in play, so the current item is marked twice over:
+           full-strength ink, and a shade of the paper laid behind it — the same
+           colour the other half of the screen is, which reads as that half
+           reaching across rather than as a highlight sitting on top. */
+        .index a[aria-current="page"] {
+            color: var(--ink);
+            background: var(--paper);
+        }
+
+        /* The number is generated rather than typed, so adding, removing or
+           reordering a tab is one line of markup and never a renumbering pass
+           down the list — which is exactly the mistake a hand-written 01 to 05
+           invites. decimal-leading-zero is what produces the pair of digits;
+           past nine it simply stops padding, which is the right behaviour and
+           not a limit to design around at five items.
+
+           It is a pseudo-element on the link, which makes it the first grid
+           item of the subgrid and puts it in the number column without an
+           element in the document. Correct twice over: a decorative index
+           number is exactly what generated content is for, and a screen reader
+           now announces "About" rather than "01 About". */
+        .index a::before {
+            content: counter(item, decimal-leading-zero);
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .label { text-align: left; }
+
+        /* ---------- the reading half ----------
+
+           The pane, not the page, is what scrolls. The viewport is locked to
+           exactly one screen so the panel can never be scrolled off the side of
+           the text it belongs to; overflow that the column cannot hold stays
+           inside this box.
+
+           `safe` centring matters once the prose is taller than the pane: plain
+           centring pushes the first line out of the top where nothing can reach
+           it, and safe centring falls back to top alignment exactly then. */
+        .pane {
+            flex: 1;
+            overflow-y: auto;
+            display: grid;
+            align-content: safe center;
+            justify-items: center;
+            padding: 2.5rem;
+        }
+
+        /* em, not rem. The measure has to be a count of characters, and rem is
+           anchored to the root's 16px, which the body no longer uses — so a
+           column set in rem would have held its 480px while the type shrank
+           underneath it, and the line would simply have got longer. In em it is
+           28 times the size of the text set in it, and the line holds its
+           length whatever that size becomes. */
+        article {
+            width: 100%;
+            max-width: 28em;
+        }
+
+        /* Sections are swapped with the hidden attribute, which is display: none
+           — and coming back from display: none is one of the few things that
+           restarts a CSS animation on its own. So the fade needs no class to be
+           added and removed in step with the switch; it fires because the
+           element was not being laid out a moment ago and now is.
+
+           4px, not 20: the panel does not move, so the pane only has to
+           acknowledge that something changed. Anything further reads as a page
+           transition, and there is no page transition here. */
+        @keyframes appear {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: none; }
+        }
+
+        .section { animation: appear 0.2s ease; }
+
+        @media (prefers-reduced-motion: reduce) {
+            .section { animation: none; }
+            * { transition-duration: 0.01ms !important; }
+        }
+
+        p { margin-block: 0.75em; }
+
+        h2 {
+            margin-block: 0 0.9em;
+            font-size: inherit;
+            font-weight: inherit;
+            color: var(--muted);
+        }
+
+        /* Links keep an underline, but a faint one held off the baseline, and
+           it goes to full ink on hover. Dropping the underline entirely only
+           works on a page with one link; several invisible links in a column of
+           prose is a puzzle, not a design. */
+        article a {
+            color: inherit;
+            text-decoration: underline;
+            text-decoration-thickness: 1px;
+            text-decoration-color: var(--rule);
+            text-underline-offset: 0.18em;
+            transition: text-decoration-color 0.2s;
+        }
+
+        @media (hover: hover) {
+            article a:hover { text-decoration-color: currentColor; }
+        }
+
+        /* A proper noun set in a second face mid-sentence, no underline until
+           you reach for it, so the name carries its own wordmark inside the
+           prose. The sans comes down a notch to sit level with the serif's
+           x-height, and is tracked in slightly so the three letters read as one
+           mark. */
+        .wordmark {
+            font-family: var(--sans);
+            font-size: 0.9em;
+            letter-spacing: -0.01em;
+            text-decoration: none;
+        }
+
+        .wordmark:hover { text-decoration: underline; }
+
+        .connect {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.4em;
+            padding-top: 1.2em;
+            border-top: 1px solid var(--rule);
+        }
+
+        /* ---------- the contribution graph ----------
+
+           Lifted off the site unchanged in behaviour, only recoloured onto the
+           warm neutrals so it does not sit on this page as a foreign object.
+           Five steps from the panel tone down to near-ink, which is the same
+           range the rest of the page already works in. */
+        .github-activity { margin-block: 1.4em; }
+
+        .github-activity__graph {
+            overflow-x: auto;
+            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .github-activity__graph::-webkit-scrollbar { display: none; }
+
+        .github-grid {
+            display: grid;
+            grid-template-columns: repeat(53, minmax(0, 1fr));
+            grid-template-rows: repeat(7, auto);
+            grid-auto-flow: column;
+            gap: 2px;
+            width: 100%;
+            min-width: 528px;
+        }
+
+        .github-cell {
+            width: 100%;
+            height: auto;
+            aspect-ratio: 1;
+            border-radius: 1px;
+            background: var(--panel);
+        }
+
+        .github-cell--pad { visibility: hidden; }
+
+        .github-cell[data-level="1"] { background: #d3d1cb; }
+        .github-cell[data-level="2"] { background: #a3a19a; }
+        .github-cell[data-level="3"] { background: #6b6a64; }
+        .github-cell[data-level="4"] { background: #343330; }
+
+        .github-activity__summary {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding-top: 10px;
+            color: var(--muted);
+            font-size: 0.82em;
+            line-height: 1.25;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .github-activity__profile {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        @media (hover: hover) {
+            .github-activity__profile:hover { color: var(--ink); }
+        }
+
+        .github-activity[data-state="loading"] .github-grid { opacity: 0.5; }
+
+        /* The section keeps its prose when the request fails; only the graph
+           goes, so the reader is never left looking at a hole. */
+        .github-activity[data-state="unavailable"] { display: none; }
+
+        /* ---------- narrow ----------
+
+           Under 768px the spread cannot survive: two halves of a phone are two
+           columns of nothing. The panel goes, the height lock goes with it so
+           the page scrolls the ordinary way, and the index comes back as a row
+           pinned to the bottom edge — within reach of a thumb, which is the
+           one place a phone can put navigation that a top bar cannot beat. The
+           pane pays for it in bottom padding so the last line never ends up
+           underneath the bar. */
+        .bar { display: none; }
+
+        @media (min-width: 768px) {
+            html, body { height: 100%; overflow: hidden; }
+
+            /* On the wide layout the panel already names the section in ink, a
+               few centimetres to the left. Repeating it at the top of the prose
+               is the kind of redundancy that makes a layout look like it does
+               not trust itself — so the heading stays in the document for the
+               outline and screen readers, and comes off the screen. Below the
+               breakpoint the panel is gone and the heading is the only label
+               left, which is exactly when it becomes visible again. */
+            .section > h2 {
+                position: absolute;
+                width: 1px;
+                height: 1px;
+                margin: -1px;
+                padding: 0;
+                overflow: hidden;
+                clip-path: inset(50%);
+                white-space: nowrap;
+            }
+        }
+
+        @media (max-width: 767px) {
+            .panel { display: none; }
+
+            /* The pane stops being its own scroll container here — with the
+               height lock gone there is nothing left to trap, and letting the
+               page scroll normally is what keeps the phone's address bar
+               collapsing on the way down. */
+            .pane {
+                overflow-y: visible;
+                padding: 2rem 1.5rem 6rem;
+            }
+
+            .bar {
+                position: fixed;
+                inset: auto 0 0;
+                display: flex;
+                justify-content: center;
+                gap: 1.25rem;
+                align-items: center;
+                padding: 1rem 1.5rem;
+                padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+                background: var(--paper);
+                border-top: 1px solid var(--rule);
+                font-size: 13px;
+            }
+
+            .bar a {
+                color: var(--muted);
+                text-decoration: none;
+                white-space: nowrap;
+                transition: color 0.2s;
+            }
+
+            .bar a[aria-current="page"] { color: var(--ink); }
+        }
+    </style>
+</head>
+
+<body>
+
+    <main>
+
+        <header class="panel">
+            <div>
+                <div class="avatar" aria-hidden="true">KW</div>
+
+                <h1 class="panel__name">Kilian Weinzierl</h1>
+
+                <nav class="index" aria-label="Sections">
+                    <a href="#about" data-section="about"><span class="label">About</span></a>
+                    <a href="#proof" data-section="proof"><span class="label">Proof</span></a>
+                </nav>
+            </div>
+        </header>
+
+        <div class="pane">
+            <article>
+
+                <section class="section" id="about" aria-labelledby="about-title">
+                    <h2 id="about-title">About</h2>
+
+                    <p>Hi, I’m Kilian.</p>
+
+                    <p>I’m 21 and live in Regensburg, Germany. I like building things across design,
+                        engineering, film, and the internet.</p>
+
+                    <p>Right now, I’m building <a class="wordmark" href="https://avogram.com">Avo</a>.</p>
+
+                    <p>We believe filmmaking is about to become a medium for everyone. As machines
+                        take over more of production, far more people will be able to create entire
+                        films. Avo is built around one principle: automate the production, preserve
+                        the direction.</p>
+
+                    <p>Before this, I worked at BMW. I left in 2026 to focus full time on building my
+                        own things.</p>
+
+                    <p>Most of my time is spent designing, coding, writing, and exploring what new
+                        creative tools can make possible.</p>
+
+                    <p>I’m always happy to connect.</p>
+
+                    <p class="connect">
+                        <a href="https://github.com/kwzrl">GitHub</a>
+                        <a href="https://x.com/kwzrl">X</a>
+                    </p>
+                </section>
+
+                <section class="section" id="proof" aria-labelledby="proof-title">
+                    <h2 id="proof-title">Proof</h2>
+
+                    <div class="github-activity" id="github-activity" data-state="loading">
+                        <div class="github-activity__graph" id="github-graph" aria-hidden="true"></div>
+                        <div class="github-activity__summary" aria-live="polite">
+                            <a class="github-activity__profile" href="https://github.com/kwzrl" target="_blank" rel="noopener noreferrer" aria-label="Open kwzrl on GitHub in a new tab">
+                                kwzrl <span aria-hidden="true">↗</span>
+                            </a>
+                            <span><span id="github-total">—</span> contributions</span>
+                        </div>
+                    </div>
+
+                    <p>The last year of commits. Mostly Avo and the small things around it.</p>
+                </section>
+
+            </article>
+        </div>
+
+        <nav class="bar" aria-label="Sections">
+            <a href="#about" data-section="about">About</a>
+            <a href="#proof" data-section="proof">Proof</a>
+        </nav>
+
+    </main>
+
+    <script>
+        (() => {
+            /* ---------- the router ----------
+
+               Four sections that all sit in the document at once; the panel
+               only decides which one is laid out. Nothing is fetched, nothing
+               is re-parsed, and the panel itself is never re-rendered — which
+               is the entire argument for one file over four: the left half
+               holds perfectly still while the right half changes.
+
+               The links are real anchors to real fragments, so this works
+               before the script runs and keeps working if it never does: with
+               no JavaScript every section is simply visible and the anchors
+               jump between them. The script's first act is to hide the three
+               that are not current, which means the no-JS state is the markup's
+               natural one rather than something that has to be restored. */
+            const sections = [...document.querySelectorAll(".section")];
+            const links = [...document.querySelectorAll("[data-section]")];
+            const pane = document.querySelector(".pane");
+            const ids = sections.map((section) => section.id);
+
+            function show(id) {
+                if (!ids.includes(id)) id = ids[0];
+
+                sections.forEach((section) => {
+                    section.hidden = section.id !== id;
+                });
+
+                links.forEach((link) => {
+                    if (link.dataset.section === id) link.setAttribute("aria-current", "page");
+                    else link.removeAttribute("aria-current");
+                });
+
+                /* The pane is its own scroll container on the wide layout, so a
+                   section left halfway down would otherwise hand the next one
+                   its scroll position. */
+                pane.scrollTop = 0;
+
+                if (id === "proof") settleGraph();
+            }
+
+            function currentId() {
+                return decodeURIComponent(location.hash.slice(1));
+            }
+
+            /* ---------- the contribution graph ----------
+
+               Same source and same shape as the one on the site. One thing has
+               to be different: it can be drawn while its section is display:
+               none, where scrollWidth is 0 and the scroll-to-today at the end
+               of drawing quietly does nothing. So the scroll is also applied
+               every time the section is revealed, when the element finally has
+               a width to measure. */
+            const activity = document.getElementById("github-activity");
+            const graph = document.getElementById("github-graph");
+            const number = new Intl.NumberFormat("en-US");
+
+            function settleGraph() {
+                graph.scrollLeft = graph.scrollWidth;
+            }
+
+            function localISO(date) {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, "0");
+                const day = String(date.getDate()).padStart(2, "0");
+                return `${year}-${month}-${day}`;
+            }
+
+            function drawGraph(days) {
+                const grid = document.createElement("div");
+                grid.className = "github-grid";
+
+                const counts = days
+                    .map((day) => Number(day.count) || 0)
+                    .filter((count) => count > 0)
+                    .sort((a, b) => a - b);
+                const quantile = (position) =>
+                    counts[Math.floor((counts.length - 1) * position)] || 1;
+                const thresholds = [quantile(0.3), quantile(0.6), quantile(0.85)];
+                const levelFor = (count) => {
+                    if (!count) return 0;
+                    if (count <= thresholds[0]) return 1;
+                    if (count <= thresholds[1]) return 2;
+                    if (count <= thresholds[2]) return 3;
+                    return 4;
+                };
+
+                const firstDay = new Date(`${days[0].date}T00:00:00`).getDay();
+                for (let index = 0; index < firstDay; index += 1) {
+                    const pad = document.createElement("span");
+                    pad.className = "github-cell github-cell--pad";
+                    grid.appendChild(pad);
+                }
+
+                days.forEach((day) => {
+                    const cell = document.createElement("span");
+                    cell.className = "github-cell";
+                    cell.dataset.level = levelFor(Number(day.count) || 0);
+                    cell.title = `${day.count} contributions on ${day.date}`;
+                    grid.appendChild(cell);
+                });
+
+                graph.replaceChildren(grid);
+                settleGraph();
+            }
+
+            function drawLoadingGraph() {
+                const grid = document.createElement("div");
+                grid.className = "github-grid";
+                for (let index = 0; index < 371; index += 1) {
+                    const cell = document.createElement("span");
+                    cell.className = "github-cell";
+                    grid.appendChild(cell);
+                }
+                graph.replaceChildren(grid);
+                settleGraph();
+            }
+
+            async function loadGithubActivity() {
+                try {
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    const start = new Date(today);
+                    start.setDate(start.getDate() - 364);
+
+                    const years = [...new Set([start.getFullYear(), today.getFullYear()])];
+                    const responses = await Promise.all(years.map((year) =>
+                        fetch(`https://github-contributions-api.jogruber.de/v4/kwzrl?y=${year}`)
+                    ));
+                    if (responses.some((response) => !response.ok)) {
+                        throw new Error("GitHub contribution request failed");
+                    }
+                    const payloads = await Promise.all(responses.map((response) => response.json()));
+                    const days = payloads
+                        .flatMap((data) => data.contributions || [])
+                        .filter((day) => day.date >= localISO(start) && day.date <= localISO(today))
+                        .sort((a, b) => a.date.localeCompare(b.date));
+
+                    if (!days.length) throw new Error("No contribution data");
+
+                    const total = days.reduce((sum, day) => sum + (Number(day.count) || 0), 0);
+                    document.getElementById("github-total").textContent = number.format(total);
+                    drawGraph(days);
+                    activity.dataset.state = "ready";
+                } catch (error) {
+                    activity.dataset.state = "unavailable";
+                }
+            }
+
+            window.addEventListener("hashchange", () => show(currentId()));
+
+            drawLoadingGraph();
+            loadGithubActivity();
+            show(currentId());
+        })();
+    </script>
+
+</body>
+
+</html>
