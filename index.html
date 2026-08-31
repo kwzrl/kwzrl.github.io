@@ -48,7 +48,9 @@
         /* Everything else is the browser's own stylesheet: one column, black on
            white, default blue underlined links, default paragraph rhythm.
            Source Serif is a text face with a generous x-height and needs no
-           compensating, so 17px sets about seventy characters to this measure.
+           compensating, so 17px sets about seventy-two characters to this
+           measure — the line runs a little long by the book, which is the
+           trade for the paragraph sitting as a block rather than a column.
 
            The column is centred both ways. Horizontally that is the auto
            margin. Vertically it is body becoming a single-cell grid as tall as
@@ -70,7 +72,7 @@
            exactly on a wide screen while the same 20px keeps the text off the
            edge of a phone, with no breakpoint that has to know the number. */
         body {
-            max-width: 560px;
+            max-width: 630px;
             margin: 0 auto;
             padding: 24px 20px;
             min-height: calc(100vh - 48px);
@@ -79,7 +81,7 @@
             align-content: safe center;
             font-family: "Source Serif 4", Georgia, "Times New Roman", Times, serif;
             font-size: 17px;
-            line-height: 1.5;
+            line-height: 1.45;
         }
 
         /* The name and the one section heading set exactly like the prose around
@@ -101,6 +103,77 @@
         p, ul, h1, h2 {
             margin-block: 0.6em;
         }
+
+        .github-activity {
+            margin-block: 0.8em;
+        }
+
+        .github-activity__graph {
+            overflow-x: auto;
+            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .github-activity__graph::-webkit-scrollbar {
+            display: none;
+        }
+
+        .github-grid {
+            display: grid;
+            grid-template-columns: repeat(53, minmax(0, 1fr));
+            grid-template-rows: repeat(7, auto);
+            grid-auto-flow: column;
+            gap: 2px;
+            width: 100%;
+            min-width: 528px;
+        }
+
+        .github-cell {
+            width: 100%;
+            height: auto;
+            aspect-ratio: 1;
+            border-radius: 1px;
+            background: #f0f0ee;
+        }
+
+        .github-cell--pad {
+            visibility: hidden;
+        }
+
+        .github-cell[data-level="1"] { background: #c9c9c3; }
+        .github-cell[data-level="2"] { background: #999892; }
+        .github-cell[data-level="3"] { background: #66645f; }
+        .github-cell[data-level="4"] { background: #343330; }
+
+        .github-activity__summary {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding-top: 8px;
+            color: #555;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            font-size: 10px;
+            line-height: 1.2;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .github-activity__profile {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .github-activity__profile:hover {
+            color: #111;
+        }
+
+        .github-activity[data-state="loading"] .github-grid {
+            opacity: 0.5;
+        }
+
+        .github-activity[data-state="unavailable"] {
+            display: none;
+        }
     </style>
 </head>
 
@@ -120,24 +193,124 @@
     <p>Before this, I worked at BMW. I left in 2026 to focus full time on building my own
         things.</p>
 
-    <h2>Work I’m proud of</h2>
-
-    <ul>
-        <li><a href="https://avogram.com">Avogram.com</a></li>
-        <li>A 220,000-word book about filmmaking</li>
-        <li>Film as a Journey</li>
-        <li>Essays about film, creativity, and technology</li>
-    </ul>
-
     <p>Most of my time is spent designing, coding, writing, and exploring what new creative
         tools can make possible.</p>
 
-    <p>&nbsp;</p>
+    <section class="github-activity" id="github-activity" data-state="loading" aria-label="GitHub activity">
+        <div class="github-activity__graph" id="github-graph" aria-hidden="true"></div>
+        <div class="github-activity__summary" aria-live="polite">
+            <a class="github-activity__profile" href="https://github.com/kwzrl" target="_blank" rel="noopener noreferrer" aria-label="Open kwzrl on GitHub in a new tab">
+                kwzrl <span aria-hidden="true">↗</span>
+            </a>
+            <span><span id="github-total">—</span> contributions</span>
+        </div>
+    </section>
+
+    <p>I’m always happy to connect.</p>
 
     <p style="text-align: center;">
         <a href="https://github.com/kwzrl">GitHub</a> ·
         <a href="https://x.com/kwzrl">X</a>
     </p>
+
+    <script>
+        (() => {
+            const activity = document.getElementById("github-activity");
+            const graph = document.getElementById("github-graph");
+            const number = new Intl.NumberFormat("en-US");
+
+            function localISO(date) {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, "0");
+                const day = String(date.getDate()).padStart(2, "0");
+                return `${year}-${month}-${day}`;
+            }
+
+            function drawGraph(days) {
+                const grid = document.createElement("div");
+                grid.className = "github-grid";
+
+                const counts = days
+                    .map((day) => Number(day.count) || 0)
+                    .filter((count) => count > 0)
+                    .sort((a, b) => a - b);
+                const quantile = (position) =>
+                    counts[Math.floor((counts.length - 1) * position)] || 1;
+                const thresholds = [quantile(0.3), quantile(0.6), quantile(0.85)];
+                const levelFor = (count) => {
+                    if (!count) return 0;
+                    if (count <= thresholds[0]) return 1;
+                    if (count <= thresholds[1]) return 2;
+                    if (count <= thresholds[2]) return 3;
+                    return 4;
+                };
+
+                const firstDay = new Date(`${days[0].date}T00:00:00`).getDay();
+                for (let index = 0; index < firstDay; index += 1) {
+                    const pad = document.createElement("span");
+                    pad.className = "github-cell github-cell--pad";
+                    grid.appendChild(pad);
+                }
+
+                days.forEach((day) => {
+                    const cell = document.createElement("span");
+                    cell.className = "github-cell";
+                    cell.dataset.level = levelFor(Number(day.count) || 0);
+                    cell.title = `${day.count} contributions on ${day.date}`;
+                    grid.appendChild(cell);
+                });
+
+                graph.replaceChildren(grid);
+                graph.scrollLeft = graph.scrollWidth;
+            }
+
+            function drawLoadingGraph() {
+                const grid = document.createElement("div");
+                grid.className = "github-grid";
+                for (let index = 0; index < 371; index += 1) {
+                    const cell = document.createElement("span");
+                    cell.className = "github-cell";
+                    grid.appendChild(cell);
+                }
+                graph.appendChild(grid);
+                graph.scrollLeft = graph.scrollWidth;
+            }
+
+            async function loadGithubActivity() {
+                try {
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    const start = new Date(today);
+                    start.setDate(start.getDate() - 364);
+
+                    const years = [...new Set([start.getFullYear(), today.getFullYear()])];
+                    const responses = await Promise.all(years.map((year) =>
+                        fetch(`https://github-contributions-api.jogruber.de/v4/kwzrl?y=${year}`)
+                    ));
+                    if (responses.some((response) => !response.ok)) {
+                        throw new Error("GitHub contribution request failed");
+                    }
+                    const payloads = await Promise.all(responses.map((response) => response.json()));
+                    const days = payloads
+                        .flatMap((data) => data.contributions || [])
+                        .filter((day) => day.date >= localISO(start) && day.date <= localISO(today))
+                        .sort((a, b) => a.date.localeCompare(b.date));
+
+                    if (!days.length) throw new Error("No contribution data");
+
+                    const total = days.reduce((sum, day) => sum + (Number(day.count) || 0), 0);
+                    document.getElementById("github-total").textContent = number.format(total);
+                    drawGraph(days);
+                    activity.dataset.state = "ready";
+                } catch (error) {
+                    activity.dataset.state = "unavailable";
+                }
+            }
+
+            drawLoadingGraph();
+            loadGithubActivity();
+        })();
+    </script>
 
 </body>
 
