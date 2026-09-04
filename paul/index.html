@@ -1,0 +1,2665 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>[Konzept] Paul, Seitenleiste</title>
+<meta name="description" content="Paul ist der digitale Mitarbeiter deines Betriebs. Er nimmt Anrufe entgegen, erfasst Aufträge und vereinbart Termine. Du schreibst ihm über WhatsApp, was zu tun ist.">
+<meta name="robots" content="noindex">
+<link rel="preload" href="fonts/geist-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%23111'/><text y='.92em' x='50%25' text-anchor='middle' font-size='62' font-family='Helvetica,Arial,sans-serif' fill='%23FDFDFC'>P</text></svg>">
+
+<style>
+/* ==========================================================
+   KONZEPT · SEITENLEISTE
+
+   Drei Vorbilder, je eines für Bau, Schrift und Ablauf.
+
+   BAU: business.x.com/en/advertising. Links eine Leiste, die
+   stehen bleibt, während rechts die ganze Seite durchläuft. Kein
+   Seitenwechsel, kein Menü, das sich öffnet. Nachgemessen bei
+   1680px Fensterbreite: Leiste 144px vom Rand, Textspalte 160px,
+   Zeilenkasten 32px, sticky über die volle Höhe.
+
+   SCHRIFT: benji.org, 1 zu 1 nachgemessen und auf Geist gesetzt.
+   Die Zahlen stehen unten bei den Variablen. Der Kern in einem
+   Satz: ein Grad für alles, 14px, und die Hierarchie läuft über
+   zwei Gewichte und zwei Tonwerte. Fließtext steht dort auf
+   vollem Schwarz, nicht auf 62 Prozent. Das war der größte
+   Unterschied zur vorigen Fassung hier, und es liest sich auf
+   14px besser: ein grauer Fließtext braucht Größe, ein schwarzer
+   nicht. Grau ist nur, was Beiwerk ist.
+
+   ABLAUF: die Reiter aus index-kopie.html. Fünf Abschnitte des
+   Kundenwegs bleiben sichtbar, der offene zeigt seine Werkzeuge.
+   Vorher standen alle fünf untereinander, das waren 50 Werkzeuge
+   am Stück. Die Unterpunkte in der Leiste schalten jetzt Reiter
+   statt zu scrollen.
+
+   Was die Seite nicht hat:
+
+     · Keine senkrechten Linien. Bei X hängt die aufgeklappte
+       Gruppe an einer Haarlinie. Die Einrückung reicht.
+     · Keine Kleinschrift über den Überschriften. Eine Zeile in
+       Versalien und Monospace sagt nichts, was der Absatz nicht
+       selbst sagt.
+     · Keine zweite Größe. Auch nicht für den Preis, auch nicht
+       für die Prozentwerte.
+
+   Die Regler unten rechts stellen die drei Fragen, die man nicht
+   im Kopf beantwortet: ob die Leiste einen grauen Grund bekommt,
+   ob der Grund von benji bleibt oder das warme Papier des
+   Projekts zurückkommt, und wie weit die Leiste eingerückt steht.
+   ========================================================== */
+
+@font-face{
+  font-family:"Geist";
+  src:url("fonts/geist-latin-wght-normal.woff2") format("woff2");
+  font-weight:100 900; font-style:normal; font-display:swap;
+}
+@font-face{
+  font-family:"Geist Mono";
+  src:url("fonts/geist-mono-latin-wght-normal.woff2") format("woff2");
+  font-weight:100 900; font-display:swap;
+}
+
+:root{
+  /* ── Farben, nachgemessen bei benji.org ──
+     Grund #FDFDFC, Text #111, Gedämpftes auf 40 Prozent Schwarz,
+     Trennlinien #F2F2F2, Link-Unterstrich #D9D9D9, Akzent #FF00AA
+     (dort das Wort "New" neben dem neuesten Eintrag). */
+  --papier:  #FDFDFC;
+  --ink:     #111111;
+  --ton:     rgba(0,0,0,.4);
+  --linie:   #F2F2F2;
+  --unter:   #D9D9D9;
+  /* Den Akzent von benji, #FF00AA neben dem neuesten Eintrag, gibt
+     es hier nicht. Auf einer Seite für Handwerksbetriebe ist Pink
+     kein Hinweis, sondern ein Fremdkörper. Notiert, nicht benutzt. */
+
+  /* Abgeleitet, weil benji keine Flächen und keine Karten hat.
+     Die graue Fläche ist rgba(0,0,0,.028) auf dem Grund, die
+     Kante eine Stufe kräftiger als die Textlinie, damit eine
+     Karte auf der Fläche noch eine Kante hat. */
+  --grau:    #F4F4F3;
+  --karte:   #FFFFFF;
+  --kante:   #E6E6E4;
+  --ink-h:   #444444;
+  --go:      #3F6B4E;
+
+  /* ── Typografie, 1 zu 1 von benji.org ──
+     14px, Zeilenhöhe 20px, Laufweite -0.09008px (das sind
+     -0.006434em), Gewicht 460 im Fließtext und 500 für den Namen
+     und alles, was hervorsticht. Kein Fettdruck, keine zweite
+     Größe, kein drittes Gewicht.
+
+     Die krummen Zahlen sind kein Tippfehler: Geist ist wie Inter
+     ein Variable Font von 100 bis 900, dazwischen liegt jede Zahl.
+
+     Takt ist 16px. Bei benji trägt jeder Block padding-top:16px
+     und margin:0. Alle Abstände auf der Seite sind Vielfache
+     davon, es gibt keinen zweiten Rhythmus. */
+  --grad:   .875rem;      /* 14px */
+  --zeile:  1.42857;      /* 20px auf 14px */
+  --spur:   -.006434em;
+  --w-text: 460;
+  --w-kopf: 500;
+  --takt:   1rem;         /* 16px */
+  /* Die eine Ausnahme vom einen Grad, und sie steht deshalb hier
+     mit Namen statt irgendwo als Zahl in einer Regel. Sie gilt für
+     die drei Prozentwerte und für das Wort Paul daneben. Eine Zahl
+     auf 14px ist eine Angabe, und als Angabe hat sie in diesem
+     Abschnitt zu wenig zu sagen: er besteht aus nichts anderem. */
+  --zahl:   clamp(2rem, 4.2vw, 3.5rem);
+  --inhalt: 42.5rem;      /* 680px, gemeinsame Breite aller Abschnitte */
+  --spalte: var(--inhalt); /* auch innere Textspalten nutzen die vollen 680px */
+  /* Der einzige Grad unter dem einen Grad. Bei benji stehen die
+     Bildunterschriften auf 12px, sonst nichts. */
+  --klein:  .75rem;
+
+  /* ── Maße der Leiste ── */
+  --raster:  1440px;
+  --leiste:  13.5rem;
+  --luft:    1.5rem;
+  --einzug:  clamp(1.5rem, 4vw, 4.5rem);
+  --kopf:    3.75rem;     /* nur mobil, Höhe der oberen Zeile */
+
+  --sans: "Geist", "Helvetica Neue", Helvetica, system-ui, -apple-system, Arial, sans-serif;
+  --mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+*,*::before,*::after{ box-sizing:border-box; }
+
+html{
+  -webkit-text-size-adjust:100%;
+  scroll-behavior:smooth;
+  scroll-padding-top:2rem;
+  background:var(--papier);
+}
+@media (prefers-reduced-motion:reduce){ html{ scroll-behavior:auto; } }
+
+body{
+  margin:0;
+  background:var(--papier);
+  color:var(--ink);
+  font-family:var(--sans);
+  font-size:var(--grad);
+  font-weight:var(--w-text);
+  letter-spacing:var(--spur);
+  line-height:var(--zeile);
+  -webkit-font-smoothing:antialiased;   /* wie bei benji */
+  -moz-osx-font-smoothing:grayscale;
+  overflow-x:hidden;
+}
+
+a{ color:inherit; text-decoration:none; }
+p{ margin:0; }
+ul,ol{ margin:0; padding:0; list-style:none; }
+small{ font-size:1em; }
+button{ font:inherit; letter-spacing:inherit; }
+::selection{ background:var(--ink); color:var(--papier); }
+
+/* Die ganze Hierarchie steht in diesen zwei Zeilen. Keine Größe,
+   nur Gewicht, genau wie bei benji der Name über dem Datum. */
+h1,h2,h3{ margin:0; font-size:1em; font-weight:var(--w-kopf); color:var(--ink);
+  letter-spacing:var(--spur); line-height:var(--zeile); }
+strong{ font-weight:var(--w-kopf); color:var(--ink); }
+
+/* Der Unterstrich von benji: kein text-decoration, sondern eine
+   Haarlinie als Pseudoelement auf der Grundlinie. Sie sitzt tiefer
+   als eine Unterstreichung und schneidet keine Unterlängen. */
+.link{ position:relative; }
+.link::before{
+  content:""; position:absolute; left:0; bottom:0;
+  width:100%; height:1px; background:var(--unter);
+  transition:background .15s;
+}
+.link:hover::before{ background:var(--ink); }
+
+/* Korn liegt nur über dem warmen Papier. Über dem Grund von benji
+   hätte es nichts zu tun. */
+.grain{
+  position:fixed; inset:0; z-index:90; pointer-events:none;
+  opacity:0; mix-blend-mode:multiply;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='.05'/%3E%3C/svg%3E");
+}
+
+/* ── Raster ──
+   Außen mittig, innen zwei Spalten. Der Einzug links ist der
+   Unterschied zwischen Leiste am Rand und Leiste weiter drin. */
+.shell{
+  max-width:var(--raster);
+  margin-inline:auto;
+  padding-left:var(--einzug);
+  padding-right:clamp(1.25rem, 4vw, 3rem);
+  display:flex;
+  align-items:flex-start;
+}
+
+/* ── Leiste ──
+   Klebt oben und ist so hoch wie das Fenster. Kein Rahmen, keine
+   senkrechte Linie und kein mitlaufender Aktionsknopf. */
+.side{
+  position:sticky; top:0;
+  flex:0 0 var(--leiste);
+  width:var(--leiste);
+  height:100svh;
+  padding:calc(var(--takt) * 3) var(--luft) var(--takt) 0;
+  display:flex; flex-direction:column;
+  gap:var(--takt);
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  scrollbar-width:none;
+}
+.side::-webkit-scrollbar{ width:0; }
+
+/* Der Name steht allein und ruhig über der Navigation. */
+.side__oben{ display:block; color:var(--ton); transition:color .15s; }
+.side__oben:hover{ color:var(--ink-h); }
+
+/* Links, 1 zu 1 die Leiste von benji: im Ton, der aktuelle im Ton
+   des Namens, aber im selben Gewicht. Keine Gruppe, kein Pfeil,
+   keine Unterpunkte. Der große Abstand nach oben ist derselbe wie
+   dort zwischen "Index" und der Liste. */
+.nav{ display:flex; flex-direction:column; padding-top:5rem; }
+.nav a{ display:block; padding:.125rem 0; color:var(--ton); transition:color .15s; }
+.nav a:hover{ color:var(--ink-h); }
+.nav a.is-here{ color:var(--ink); }
+
+/* ── Knöpfe ── */
+.btn{
+  display:inline-flex; align-items:center; gap:.35rem;
+  padding:.45rem 1rem; border-radius:999px;
+  font-weight:var(--w-kopf); letter-spacing:var(--spur);
+  border:1px solid transparent; cursor:pointer;
+  transition:background .18s, color .18s, border-color .18s;
+}
+.btn--dark{ background:var(--ink); color:var(--papier); }
+.btn--dark:hover{ background:var(--ink-h); }
+.btn--line{ border-color:var(--kante); color:var(--ink); }
+.btn--line:hover{ border-color:var(--ink); }
+.btn .arr{ opacity:.55; }
+
+/* ── Text rechts ── */
+.main{ flex:1 1 auto; min-width:0; padding-left:clamp(1.5rem, 4vw, 3.5rem); padding-bottom:calc(var(--takt) * 6); }
+.sec{ padding:calc(var(--takt) * 4) 0; border-top:1px solid var(--linie); }
+.sec:first-child{ border-top:0; padding-top:calc(var(--takt) * 3); }
+.wrap,
+.wrap--breit{ width:100%; max-width:var(--inhalt); margin-inline:auto; }
+
+/* Die Leiste nimmt im Raster Platz ein, der Inhalt soll optisch aber
+   auf der Fensterachse stehen – wie die Artikelspalte bei benji. */
+@media (min-width:62.0625rem){
+  .wrap,
+  .wrap--breit{
+    position:relative;
+    left:calc(-6.75rem - clamp(.75rem, 2vw, 1.75rem));
+  }
+}
+
+/* Überschrift und Nachsatz: Zeile eins auf 500 und vollem Schwarz,
+   Zeile zwei auf 40 Prozent. Das ist bei benji die Figur aus Name
+   und "Updated Aug 22, 2026" darunter, hier für einen Abschnitt. */
+.kopf{ max-width:var(--spalte); }
+.kopf span{ display:block; color:var(--ton); font-weight:var(--w-text); }
+.lead{ padding-top:calc(var(--takt) * 2); max-width:var(--spalte); }
+
+/* Der Takt von benji: jeder Absatz trägt seinen Abstand als
+   padding-top, margin bleibt null. */
+.prose{ max-width:var(--spalte); }
+.prose p{ padding-top:var(--takt); }
+.prose h3{ padding-top:calc(var(--takt) * 2); }
+
+
+/* ══════════  Erster Bildschirm  ══════════
+   Wie benji.org es macht, nachgemessen auf seiner Honkish-Seite.
+   Dort steht dasselbe Problem: ein Artikel in einer Spalte, und
+   mittendrin muss ein Handy gezeigt werden.
+
+   Seine Lösung, und jetzt unsere:
+
+     · Der Kasten ist exakt so breit wie der Text, 550px. Nicht
+       breiter. Das Bild bricht nie aus der Spalte aus, und genau
+       daran hängt, dass die Seite ein Dokument bleibt.
+     · Keine Kante, sondern ein Schatten von 1px in der Farbe der
+       Trennlinien. Es gibt auf der ganzen Seite genau einen
+       Linienton, und der Kasten benutzt ihn auch.
+     · Grund #FCFCFC auf #FDFDFC. Ein Prozent Unterschied. Der
+       Kasten hebt sich fast nicht ab, nur so viel, dass man die
+       Kante als Absicht liest und nicht als Versehen.
+     · Radius 8px, Polsterung 40px.
+     · Bei benji schneidet der Kasten das Gerät an, weil sein Demo
+       oben spielt und unten nichts mehr kommt. Hier steht das
+       Gerät ganz drin. Das Gespräch läuft von selbst durch, und
+       ein abgeschnittener Verlauf, in dem gerade etwas passiert,
+       ist kein Ausschnitt, sondern ein Fehler.
+
+   Weggeworfen ist damit die Mittelachse von orchid.ai. Die
+   funktioniert auf einer Seite, die nur aus einem Bildschirm
+   besteht. Hier steht links eine Leiste und darunter ein Dokument,
+   und ein zentrierter Aushang mitten in einem Dokument ist eine
+   zweite Seite auf derselben Seite. */
+.hero__text{ max-width:var(--spalte); }
+.hero__text p{ padding-top:calc(var(--takt) * 1.5); }
+.hero__btns{ padding-top:calc(var(--takt) * 2); display:flex; gap:.5rem; flex-wrap:wrap; }
+
+.schau-figur{ margin:calc(var(--takt) * 2.5) 0 0; max-width:var(--spalte); }
+/* Das Gerät oben darf groß sein. Es misst sich an der Fensterhöhe
+   und steht damit fast bildschirmfüllend im Kasten. Die Breite des
+   Kastens bleibt das Lesemaß, das Gerät wächst nur nach oben. */
+.schau-figur .ip{ --h:clamp(30rem, 88vh, 56rem); }
+.schau{
+  width:100%;
+  background:#FCFCFC;
+  box-shadow:0 0 0 1px var(--linie);
+  border-radius:8px;
+  padding:2.5rem;
+  overflow:hidden;
+  display:grid; justify-items:center;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   DAS GERÄT · iPhone 16 Pro
+   Übernommen aus lab-whatsapp.html, wo Rahmen und App gegen einen
+   echten Screenshot gelegt und Farbe für Farbe nachgemessen
+   wurden. Hier steht das Ergebnis, nicht die Werkstatt.
+
+   Alle Maße hängen an --h. Die Schriftgröße wird daraus gerechnet,
+   damit 1em immer derselbe Bruchteil der Gerätehöhe ist (41em =
+   ganz). So bleiben Radien, Kanten und Tasten im Maßstab, egal wie
+   groß das Gerät steht. Gemessen am echten Gerät: 149,6 mal 71,5
+   mm, also 1 zu 2,092.
+
+   Das Gerät erbt nichts von der Seite. Weder den Grad noch die
+   Laufweite noch die Schrift. Es ist ein Bild, kein Textbereich.
+   ══════════════════════════════════════════════════════════════ */
+.ip{
+  --h:clamp(26rem, 34vw, 36rem);
+  --edge:.38em;
+  --radius:2.95em;
+
+  /* Die Farben von WhatsApp, hell. Nachgemessen, nicht geraten. */
+  --wa-tint:#25D366;
+  --wa-nav:#F7F7F7;
+  --wa-navline:rgba(0,0,0,.20);
+  --wa-paper:#EFE7DE;
+  --wa-doodle:#7A6A55;
+  --wa-doodle-a:.085;
+  --wa-in:#FFFFFF;
+  --wa-out:#D9FDD3;
+  --wa-text:#111B21;
+  --wa-meta:rgba(17,27,33,.45);
+  --wa-tick:#53BDEB;
+  --wa-pill:#FEF3C0;
+  --wa-pilltext:rgba(17,27,33,.62);
+  --wa-fieldbg:#FFFFFF;
+  --wa-fieldline:rgba(0,0,0,.14);
+  --wa-icon:#8E8E93;
+  --wa-status:#000000;
+  --wa-ava:#3F6B4E;
+  --wa-doc:rgba(0,0,0,.035);
+  --wa-docline:rgba(0,0,0,.13);
+  --doodle:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M30 46c-8-6-12-10-12-15a6 6 0 0 1 12-3 6 6 0 0 1 12 3c0 5-4 9-12 15z'/%3E%3Ccircle cx='110' cy='31' r='12'/%3E%3Cpath d='M104 35c3 4 9 4 12 0M106 27v.1M114 27v.1'/%3E%3Cpath d='M182 36h18v11a9 9 0 0 1-18 0zM200 39h4a4 4 0 0 1 0 8h-4M177 55h28'/%3E%3Cpath d='M260 21l4 8 9 1.2-6.5 6 1.6 8.8-8.1-4.6-8.1 4.6 1.6-8.8-6.5-6 9-1.2z'/%3E%3Cpath d='M36 114h28v18H36zM44.5 114l3-5h6l3 5'/%3E%3Ccircle cx='50' cy='123' r='5'/%3E%3Cpath d='M130 107a11 12 0 1 1-.1 0zM130 131l-3 5h6zM130 136c0 6-6 6-6 12'/%3E%3Cpath d='M204 137v-25l15-3v25'/%3E%3Ccircle cx='200' cy='138' r='4.5'/%3E%3Ccircle cx='215' cy='134' r='4.5'/%3E%3Cpath d='M262 128l27-11-10 25-5.5-9.5zM273.5 132.5l15.5-15.5'/%3E%3Cpath d='M28 211a8 8 0 0 1 8.5-8 12 12 0 0 1 22 2.5 7 7 0 0 1-1.5 13.5H36a8 8 0 0 1-8-8z'/%3E%3Cpath d='M108 195h24v22h-24zM120 195v22M112 201h4M136 195h24v22h-24zM148 195v22'/%3E%3Cpath d='M199 187l-9 15h7.5l-4.5 13 13-17h-7.5z'/%3E%3Ccircle cx='265' cy='205' r='6'/%3E%3Cpath d='M265 193v-5M265 222v-5M277 205h5M248 205h5M273.5 196.5l3.5-3.5M253 217l3.5-3.5M273.5 213.5l3.5 3.5M253 193l3.5 3.5'/%3E%3Cpath d='M46 268h28v16H46zM60 262a6 6 0 1 0-6 6h6zM60 262a6 6 0 1 1 6 6h-6zM60 268v16'/%3E%3Cpath d='M136 262h30v20h-18l-9 7v-7h-3z'/%3E%3Cpath d='M232 288c-8-6-12-10-12-15a6 6 0 0 1 12-3 6 6 0 0 1 12 3c0 5-4 9-12 15z'/%3E%3C/svg%3E");
+
+  --ip-metal:linear-gradient(147deg,
+    #cbcbcb 0%, #787878 8%, #ededed 19%, #949494 31%,
+    #6a6a6a 48%, #e6e6e6 64%, #8a8a8a 79%, #b1b1b1 90%, #d4d4d4 100%);
+  --ip-key:linear-gradient(180deg,#b6b6b6,#868686 40%,#cbcbcb);
+
+  position:relative;
+  height:var(--h);
+  font-size:calc(var(--h) / 41);
+  letter-spacing:normal;
+  text-align:left;
+  aspect-ratio:71.5 / 149.6;
+  flex:none;
+  display:flex;
+  padding:var(--edge);
+  border-radius:var(--radius);
+  background:var(--ip-metal);
+  box-shadow:
+    0 0 0 1px rgba(17,17,17,.2),
+    0 1px 0 rgba(255,255,255,.45) inset,
+    0 16px 30px -20px rgba(17,17,17,.38),
+    0 44px 70px -38px rgba(17,17,17,.5);
+}
+.ip__screen{
+  position:relative;
+  flex:1 1 auto; width:100%;
+  display:flex; flex-direction:column;
+  border:.075em solid #0a0a0a;      /* die schwarze Fuge unter dem Glas */
+  border-radius:calc(var(--radius) - var(--edge));
+  overflow:hidden;
+  background:var(--wa-paper);
+  background-clip:padding-box;
+  isolation:isolate;
+}
+/* Die Insel liegt über allem, auch über der Statuszeile. Im Gerät
+   ist sie ein Loch im Bild und keine Grafik darin. */
+.ip__island{
+  position:absolute; z-index:6; top:.52em; left:50%; translate:-50% 0;
+  width:6.05em; height:1.78em; border-radius:999px;
+  background:#0B0A07;
+}
+.ip__island::after{
+  content:""; position:absolute; top:50%; right:.42em; translate:0 -50%;
+  width:.6em; height:.6em; border-radius:50%;
+  background:radial-gradient(circle at 35% 30%, #3d4a63, #131722 68%);
+}
+.ip__key{
+  position:absolute; z-index:0;
+  width:.15em; border-radius:.1em;
+  background:var(--ip-key);
+  box-shadow:0 0 0 .5px rgba(17,17,17,.3);
+}
+.ip__key--l{ left:-.085em; top:17.5%; height:3.4%; }
+.ip__key--l::before,
+.ip__key--l::after{
+  content:""; position:absolute; left:0; width:100%;
+  border-radius:.1em; background:inherit;
+  box-shadow:0 0 0 .5px rgba(17,17,17,.3);
+}
+.ip__key--l::before{ top:190%; height:230%; }
+.ip__key--l::after { top:450%; height:230%; }
+.ip__key--r{ right:-.085em; top:25.5%; height:8%; }
+.ip__cam{
+  position:absolute; z-index:0; right:-.05em; top:39%;
+  width:.1em; height:4.4%; border-radius:.06em;
+  background:var(--ip-key);
+  box-shadow:0 0 0 .5px rgba(17,17,17,.35);
+}
+
+/* Die Marke unter dem Gerät. Ein Gespräch in einem echten
+   Handyrahmen wird für einen echten Verlauf gehalten. Diese Zeile
+   ist der Unterschied zwischen Beispiel und Behauptung, und sie
+   bleibt drin. Im Lab steht sie in Versalien und Monospace, hier
+   im Grad und im Ton der Seite. */
+
+/* ══════════════════════════════════════════════════════════════
+   WHATSAPP · iOS
+   Schrift ist bewusst NICHT Geist, sondern die Systemschrift. Auf
+   einem Mac ist das SF Pro, dieselbe Schrift, die im echten Gerät
+   steht. Geist im WhatsApp-Fenster ist der Fehler, den man nicht
+   benennen kann und trotzdem sieht.
+   ══════════════════════════════════════════════════════════════ */
+.wap{
+  position:relative; z-index:1;
+  flex:1 1 auto; min-height:0;
+  display:flex; flex-direction:column;
+  background:var(--wa-paper);
+  font-family:-apple-system, BlinkMacSystemFont, "SF Pro Text",
+              "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-weight:400;
+  color:var(--wa-text);
+  -webkit-font-smoothing:antialiased;
+}
+
+/* 9:41 ist kein Zufall. Apple zeigt seit dem ersten iPhone diese
+   Uhrzeit in jedem Produktbild. Wer eine andere nimmt, fällt in
+   der Reihe auf. iOS legt Statuszeile und Navigation auf eine
+   Fläche. Eine beige Statuszeile über weißer Navigation ist der
+   Fehler, den man auf jedem zweiten Mockup sieht. */
+.wap__status{
+  position:relative; z-index:5; flex:none;
+  display:flex; align-items:center; justify-content:space-between;
+  height:2.9em; padding:.62em 1.35em 0;
+  background:var(--wa-nav);
+  font-size:.83em; font-weight:600; letter-spacing:-.01em;
+  color:var(--wa-status);
+}
+.wap__status b{ font-weight:600; font-variant-numeric:tabular-nums; padding-left:.5em; }
+.wap__sig{ display:inline-flex; align-items:center; gap:.4em; padding-right:.3em; }
+.wap__sig svg{ display:block; height:.75em; width:auto; fill:currentColor; }
+
+/* iOS legt hinter die Navigationsleiste kein Weiß, sondern eine
+   Milchglasscheibe. Darunter läuft der Hintergrund weiter durch. */
+.wap__nav{
+  position:relative; z-index:4; flex:none;
+  display:flex; align-items:center; gap:.5em;
+  padding:.28em .8em .5em;
+  background:var(--wa-nav);
+  backdrop-filter:saturate(180%) blur(14px);
+  -webkit-backdrop-filter:saturate(180%) blur(14px);
+  box-shadow:0 .5px 0 var(--wa-navline);
+}
+.wap__back{ display:inline-flex; align-items:center; gap:.12em; color:var(--wa-tint); flex:none; }
+.wap__back svg{ display:block; height:1.15em; width:auto; }
+.wap__back span{ font-size:.86em; font-variant-numeric:tabular-nums; }
+.wap__ava{
+  flex:none; width:2.15em; height:2.15em; border-radius:50%;
+  display:grid; place-items:center;
+  background:var(--wa-ava); color:#fff;
+  font-size:.9em; font-weight:600;
+}
+.wap__who{ display:grid; line-height:1.2; margin-right:auto; min-width:0; padding-left:.1em; }
+.wap__who b{ font-size:.9em; font-weight:600; letter-spacing:-.015em; }
+.wap__who em{ font-style:normal; font-size:.72em; color:var(--wa-meta); }
+.wap__acts{ display:inline-flex; align-items:center; gap:1.05em; color:var(--wa-tint); flex:none; }
+.wap__acts svg{ display:block; height:1.18em; width:auto; }
+
+/* Das Kritzelmuster ist nachempfunden, nicht kopiert. WhatsApps
+   eigenes Bild ist geschütztes Material. Es liegt als Maske über
+   einer Farbfläche: die Maske gibt die Form, --wa-doodle die Farbe.
+
+   justify-content:flex-end klebt den Verlauf an die Unterkante.
+   So steht die letzte Nachricht immer im Bild, wie beim Öffnen
+   eines echten Chats, und der Anfang läuft oben raus. */
+.wap__body{
+  position:relative; flex:1 1 auto; min-height:0;
+  overflow:hidden;
+  display:flex; flex-direction:column; justify-content:flex-end; gap:.22em;
+  padding:.8em .6em 1em;
+  background:var(--wa-paper);
+}
+.wap__body::before{
+  content:""; position:absolute; inset:0; z-index:0; pointer-events:none;
+  background:var(--wa-doodle);
+  opacity:var(--wa-doodle-a);
+  mask-image:var(--doodle); -webkit-mask-image:var(--doodle);
+  /* 8em auf einen 300er Bogen: die Kritzel werden klein und das
+     Feld dicht. Groß und licht sah nach Tapete aus. */
+  mask-size:8em; -webkit-mask-size:8em;
+  mask-repeat:repeat; -webkit-mask-repeat:repeat;
+}
+.wap__body > *{ position:relative; z-index:1; }
+
+/* Der Verschlüsselungshinweis und der Datumsreiter sind dieselbe
+   Pille, im Original auch. */
+.wap__pill{
+  align-self:center; max-width:88%;
+  margin:.15em 0 .5em;
+  padding:.32em .7em; border-radius:.55em;
+  background:var(--wa-pill); color:var(--wa-pilltext);
+  font-size:.66em; line-height:1.35; text-align:center;
+}
+.wap__pill--day{ font-weight:600; padding-inline:.85em; }
+.wap__pill svg{ display:inline-block; height:.9em; width:auto; vertical-align:-.1em; margin-right:.2em; fill:currentColor; }
+
+/* Der Zeitstempel schwimmt rechts unten im Text, statt darunter zu
+   stehen. Genau so löst es die App auch: der letzte Satz fließt um
+   die Uhrzeit herum, wenn Platz ist, und rutscht darunter, wenn
+   nicht. */
+.wap__b{
+  position:relative;
+  max-width:78%;
+  padding:.36em .5em .32em .55em;
+  border-radius:.62em;
+  font-size:.845em; line-height:1.32; letter-spacing:-.004em;
+  box-shadow:0 .5px .6px rgba(11,20,26,.13);
+  /* NICHT anywhere: das setzt die Mindestbreite eines Flex-Kindes
+     auf einen Buchstaben, und die Blase fällt zu einer Spalte
+     zusammen. break-word bricht genauso, lässt die Mindestbreite
+     aber in Ruhe. */
+  overflow-wrap:break-word;
+}
+.wap__b--in { align-self:flex-start; background:var(--wa-in);  color:var(--wa-text); }
+.wap__b--out{ align-self:flex-end;   background:var(--wa-out); color:var(--wa-text); }
+/* Nur die erste Blase einer Folge trägt den Zipfel. */
+.wap__b--in.is-first { border-top-left-radius:.1em; }
+.wap__b--out.is-first{ border-top-right-radius:.1em; }
+.wap__b.is-first::before{ content:""; position:absolute; top:0; width:.5em; height:.62em; }
+.wap__b--in.is-first::before{ left:-.42em; background:var(--wa-in); clip-path:polygon(100% 0, 100% 100%, 0 0); }
+.wap__b--out.is-first::before{ right:-.42em; background:var(--wa-out); clip-path:polygon(0 0, 0 100%, 100% 0); }
+
+/* Die drei Punkte, während Paul schreibt. Sie sind der Grund, warum
+   ein laufendes Gespräch anders wirkt als ein Standbild: es gibt
+   einen Moment, in dem noch nichts dasteht und man trotzdem weiß,
+   dass gleich etwas kommt. */
+.wap__tippt{ display:inline-flex; align-items:center; gap:.22em; padding:.62em .72em; }
+.wap__tippt i{
+  width:.4em; height:.4em; border-radius:50%;
+  background:var(--wa-meta); opacity:.3;
+  animation:wap-punkt 1.25s infinite ease-in-out;
+}
+.wap__tippt i:nth-child(2){ animation-delay:.16s; }
+.wap__tippt i:nth-child(3){ animation-delay:.32s; }
+@keyframes wap-punkt{
+  0%,62%,100%{ opacity:.28; transform:translateY(0); }
+  31%{ opacity:.85; transform:translateY(-.16em); }
+}
+@media (prefers-reduced-motion:reduce){ .wap__tippt i{ animation:none; } }
+
+.wap__t{
+  float:right;
+  display:inline-flex; align-items:center; gap:.25em;
+  margin:.42em 0 -.1em .5em;
+  font-size:.72em; line-height:1;
+  color:var(--wa-meta);
+  font-variant-numeric:tabular-nums;
+}
+.wap__t svg{ display:block; height:.82em; width:auto; fill:var(--wa-tick); }
+
+/* Der Beleg in der Blase: der angelegte Termin. Ein "ist erledigt"
+   wäre eine Behauptung, der Beleg ist der Beweis. Nüchtern, damit
+   er nicht wie Werbung aussieht. */
+.wap__doc{
+  margin:.15em 0 .35em;
+  border:1px solid var(--wa-docline); border-radius:.45em;
+  background:var(--wa-doc);
+  overflow:hidden;
+}
+.wap__doc__h{ padding:.4em .55em .3em; border-bottom:1px solid var(--wa-docline); }
+.wap__doc__h em{
+  display:block; font-style:normal; font-size:.78em;
+  color:var(--wa-meta); margin-bottom:.1em;
+}
+.wap__doc__h b{ font-size:.94em; font-weight:600; letter-spacing:-.01em; }
+.wap__doc dl{ margin:0; padding:.35em .55em; display:grid; grid-template-columns:auto 1fr; gap:.18em .7em; }
+.wap__doc dt{ font-size:.8em; color:var(--wa-meta); }
+.wap__doc dd{ margin:0; font-size:.82em; }
+.wap__doc__n{ padding:.3em .55em .4em; border-top:1px solid var(--wa-docline); font-size:.76em; color:var(--wa-meta); }
+
+.wap__bar{
+  flex:none;
+  display:flex; align-items:flex-end; gap:.5em;
+  padding:.45em .6em .3em;
+  background:var(--wa-nav);
+  box-shadow:0 -.5px 0 var(--wa-navline);
+  color:var(--wa-icon);
+}
+.wap__plus{ flex:none; }
+.wap__plus svg, .wap__bar__i svg{ display:block; height:1.45em; width:auto; }
+.wap__field{
+  flex:1 1 auto; min-width:0;
+  display:flex; align-items:center; gap:.4em;
+  padding:.34em .6em; border-radius:999px;
+  background:var(--wa-fieldbg);
+  box-shadow:0 0 0 .5px var(--wa-fieldline) inset;
+  font-size:.85em; color:var(--wa-meta);
+}
+.wap__field span{ margin-right:auto; }
+.wap__field svg{ display:block; height:1.25em; width:auto; }
+.wap__bar__i{ flex:none; }
+.wap__home{ flex:none; height:1.35em; display:grid; place-items:center; background:var(--wa-nav); }
+.wap__home i{ display:block; width:8.6em; height:.3em; border-radius:999px; background:var(--wa-status); opacity:.85; }
+
+/* ══════════  Die Reiter  ══════════
+   Übernommen aus index-kopie.html, auf das Maß von benji gesetzt.
+   Fünf Spalten, jede mit Nummer und Namen, jede mit einer
+   Haarlinie darunter. Die schwarze Linie des offenen Reiters
+   fährt von links ein, statt zu springen. */
+.tabkopf{ display:flex; align-items:flex-start; justify-content:space-between; gap:2rem; }
+.pfeile{ display:flex; gap:.375rem; flex:0 0 auto; }
+.pfeile button{
+  width:2rem; height:2rem; padding:0;
+  display:grid; place-items:center;
+  border:1px solid var(--kante); border-radius:50%;
+  background:transparent; color:var(--ink); cursor:pointer;
+  transition:background .18s, color .18s, border-color .18s;
+}
+.pfeile button:hover{ background:var(--ink); color:var(--papier); border-color:var(--ink); }
+.pfeile svg{ width:13px; height:13px; display:block; }
+
+.tabs{
+  margin-top:calc(var(--takt) * 3);
+  display:grid; grid-template-columns:repeat(5, minmax(0,1fr));
+  gap:clamp(1rem, 2.5vw, 2rem);
+}
+.tabs button{
+  position:relative; min-width:0;
+  display:flex; flex-direction:column; align-items:flex-start; gap:.15rem;
+  padding:0 0 .75rem;
+  border:0; border-bottom:1px solid var(--linie);
+  background:transparent; color:var(--ton);
+  text-align:left; cursor:pointer;
+  transition:color .18s;
+}
+.tabs button::after{
+  content:""; position:absolute; left:0; right:100%; bottom:-1px;
+  height:1px; background:var(--ink); transition:right .28s ease;
+}
+.tabs button:hover{ color:var(--ink-h); }
+.tabs button.is-active{ color:var(--ink); }
+.tabs button.is-active::after{ right:0; }
+.tabs button > span{ color:var(--ton); font-variant-numeric:tabular-nums; }
+.tabs button > strong{
+  min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  color:inherit; font-weight:var(--w-kopf);
+}
+@media (prefers-reduced-motion:reduce){ .tabs button::after{ transition:none; } }
+
+.panels{ margin-top:0; }
+.panel{ display:none; }
+.panel.is-active{ display:block; animation:panel-ein .32s ease both; }
+@keyframes panel-ein{ from{ opacity:0; transform:translateY(6px); } to{ opacity:1; transform:none; } }
+@media (prefers-reduced-motion:reduce){ .panel.is-active{ animation:none; } }
+
+.panel__visual{
+  min-width:0; min-height:26rem; overflow:hidden;
+  display:grid; place-items:center;
+  padding:clamp(1.25rem, 4vw, 3rem);
+  background:var(--grau);
+}
+.panel__copy > p{ padding-top:var(--takt); }
+.panel__facts{ padding-top:var(--takt); display:flex; flex-direction:column; }
+.panel__facts li{ padding-left:.875rem; position:relative; color:var(--ton); }
+.panel__facts li::before{
+  content:""; position:absolute; left:0; top:.6em;
+  width:3px; height:3px; border-radius:999px; background:var(--ton);
+}
+
+/* Das Fenster im Grau. Kein Bildschirmfoto, sondern gebaut, damit
+   echter Text darin steht. */
+.fenster{
+  width:min(100%, 40rem); overflow:hidden;
+  border:1px solid var(--kante); border-radius:.625rem;
+  background:var(--karte);
+  box-shadow:0 1rem 3rem rgba(0,0,0,.05);
+}
+.fenster__bar{
+  height:2.5rem; padding:0 1rem;
+  display:flex; align-items:center; justify-content:space-between;
+  border-bottom:1px solid var(--linie); color:var(--ton);
+}
+.fenster__punkte,
+.fenster__punkte::before,
+.fenster__punkte::after{
+  display:block; width:.3rem; height:.3rem; border-radius:50%; background:var(--kante);
+}
+.fenster__punkte{ position:relative; margin-right:.9rem; }
+.fenster__punkte::before,
+.fenster__punkte::after{ content:""; position:absolute; top:0; }
+.fenster__punkte::before{ left:.45rem; }
+.fenster__punkte::after{ left:.9rem; }
+.fenster__body{ padding:clamp(1rem, 2.5vw, 1.5rem); }
+.fenster__label{ padding:calc(var(--takt) * 1.5) 0 var(--takt); color:var(--ton); }
+.fenster__status{ padding-top:var(--takt); display:flex; align-items:center; gap:.4rem; color:var(--ton); }
+.fenster__status > i{ width:.35rem; height:.35rem; flex:0 0 auto; border-radius:50%; background:var(--go); }
+
+.werkzeuge{ display:grid; grid-template-columns:minmax(0,1fr); border-top:1px solid var(--linie); }
+.werkzeuge li{
+  min-width:0; padding:.7rem 0;
+  display:flex; flex-direction:column; gap:.1rem;
+  border-bottom:1px solid var(--linie);
+}
+.werkzeuge small{ color:var(--ton); }
+
+/* ── Zahlen ──
+   Drei graue Karten die Lage, eine dunkle wir. Die Prozentwerte
+   stehen im Gewicht des Namens, nicht in dessen Größe. */
+.treppe{
+  margin-top:calc(var(--takt) * 2);
+  display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:var(--takt);
+  align-items:end;
+}
+/* Der Inhalt steht oben in der Karte, nicht unten. Bei X ist das der
+   Grund, warum die Treppe als Treppe lesbar bleibt: die Oberkanten
+   steigen, und daneben steht jeweils sofort, wofür die Stufe steht.
+   Unten angeschlagen schwimmen die Zahlen auf einer Linie und die
+   Höhen wirken wie Zufall.
+
+   Ecken scharf. Die Treppe ist ein Diagramm, keine Kachelreihe. Die
+   abgerundeten Kästen auf dieser Seite sind alle Behälter für etwas
+   anderes, die Stufen hier sind selbst die Aussage. */
+.karte{
+  min-width:0;
+  background:var(--grau);
+  padding:1.25rem .875rem;
+  display:flex; flex-direction:column; justify-content:flex-start;
+}
+.karte:nth-child(1){ min-height:13rem; }
+.karte:nth-child(2){ min-height:16rem; }
+.karte:nth-child(3){ min-height:19rem; }
+.karte:nth-child(4){ min-height:22rem; }
+/* Doppelte Klasse, weil :nth-child(4) sonst dieselbe Spezifität hat
+   und später steht. Im Lab war die dunkle Karte deshalb eine Fassung
+   lang heller Text auf hellem Grund. */
+.karte.karte--dunkel{ background:var(--ink); color:var(--papier); }
+/* Tabellenziffern, damit 62 und 85 gleich breit sitzen und die
+   Karten nicht unterschiedlich atmen. */
+.zahl{
+  display:block; font-size:var(--zahl); line-height:1;
+  letter-spacing:-.035em; font-weight:var(--w-text);
+  font-variant-numeric:tabular-nums;
+}
+.treppe .zahl{ font-size:clamp(2rem, 3vw, 2.5rem); }
+.karte p{ padding-top:var(--takt); color:var(--ton); line-height:1.5; }
+.karte--dunkel p{ color:rgba(253,253,252,.55); }
+.karte dl{ margin:0; padding-top:var(--takt); display:grid; gap:.5rem; font-size:var(--klein); }
+.karte dl > div{ display:flex; justify-content:space-between; gap:.5rem; }
+.karte dt{ color:rgba(253,253,252,.45); }
+.karte dd{ margin:0; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.quelle{ padding-top:calc(var(--takt) * 2); max-width:var(--spalte); color:var(--ton); }
+
+/* Zweispaltig, und die Treppe wird flach. Vier ansteigende Höhen in
+   zwei Spalten ergeben ein Zickzack und keine Treppe. Der Umbruch
+   liegt bei 78rem statt bei der Fensterbreite, weil die Leiste links
+   240px vom Platz nimmt. */
+@media (max-width:78rem){
+  .treppe{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .karte:nth-child(n){ min-height:13rem; }
+}
+@media (max-width:36rem){
+  .treppe{ grid-template-columns:1fr; }
+  .karte:nth-child(n){ min-height:0; }
+}
+
+/* ── Preis ──
+   Begriff und Erläuterung, wie das Verzeichnis bei benji: Titel
+   links, Angabe rechts, dazwischen eine Haarlinie. */
+.liste{ margin-top:calc(var(--takt) * 2); max-width:var(--spalte); }
+.liste > div{
+  display:flex; justify-content:space-between; gap:2rem;
+  padding:.75rem 0; border-bottom:1px solid var(--linie);
+}
+.liste > div:first-child{ border-top:1px solid var(--linie); }
+.liste dt{ font-weight:var(--w-kopf); }
+.liste dd{ margin:0; color:var(--ton); text-align:right; }
+
+
+
+
+
+/* ══════════  Angebot  ══════════
+   Der einzige Handel auf der Seite, und bis eben stand er als
+   grauer Kasten im Preisabschnitt, kleiner gesetzt als die
+   Werkzeuglisten daneben. Ein Satz, der einem Betrieb 997 Euro
+   schenkt, war damit das leiseste Element der Seite.
+
+   Jetzt ist es der größte dunkle Block, den es hier gibt, und er
+   steht direkt hinter dem Rechner. Das ist die Stelle, an der
+   jemand gerade mit seinen eigenen Zahlen ausgerechnet hat, was
+   Paul kostet. Genau dann trifft ein Nachlass, und keinen Absatz
+   früher.
+
+   Dunkel, weil es auf dieser Seite außer der Paul-Karte und der
+   Schicht-Kachel nichts Dunkles gibt. Wer scrollt, hält hier an,
+   ohne zu wissen warum. */
+.angebot{
+  margin-top:calc(var(--takt) * 2);
+  background:var(--ink); color:var(--papier);
+  padding:clamp(2rem, 5vw, 4rem);
+  display:grid; gap:calc(var(--takt) * 1.5);
+}
+.angebot__kopf{
+  margin:0; max-width:18ch;
+  font-size:var(--zahl); line-height:1.05;
+  letter-spacing:-.035em; font-weight:var(--w-text);
+  color:var(--papier);
+}
+.angebot__kopf span{ display:block; color:rgba(253,253,252,.45); }
+.angebot__satz{ max-width:var(--spalte); color:rgba(253,253,252,.62); }
+.angebot__btns{ display:flex; gap:.5rem; flex-wrap:wrap; }
+.angebot .btn--hell{ background:var(--papier); color:var(--ink); }
+.angebot .btn--hell:hover{ background:#fff; }
+.angebot .btn--rand{ border-color:rgba(253,253,252,.28); color:var(--papier); }
+.angebot .btn--rand:hover{ border-color:var(--papier); }
+.angebot__fein{ color:rgba(253,253,252,.42); font-size:var(--klein); max-width:var(--spalte); }
+
+/* ══════════  Paul in Aktion  ══════════
+   Ein Modul statt zwei: oben der Kundenweg als Reiter, links das
+   laufende Gespräch, rechts Nutzen und die Werkzeuge dahinter. */
+.aktion{
+  margin-top:calc(var(--takt) * 3);
+  display:grid;
+  grid-template-columns:minmax(16rem,.9fr) minmax(0,1.1fr);
+  gap:clamp(1.5rem,4vw,3rem);
+  align-items:start;
+}
+.aktion > *{ min-width:0; }
+.aktion__buehne{
+  position:sticky;
+  top:2rem;
+  padding:clamp(1rem,2.5vw,1.5rem);
+  display:grid;
+  justify-items:center;
+  border:1px solid var(--linie);
+  border-radius:.75rem;
+  background:var(--grau);
+}
+.aktion__buehne .ip--chat{
+  --h:auto;
+  width:100%;
+  height:22rem;
+  display:block;
+  padding:0;
+  border-radius:0;
+  aspect-ratio:auto;
+  background:transparent;
+  box-shadow:none;
+  font-size:1rem;
+}
+.ip--chat .wap{ height:100%; background:transparent; }
+.ip--chat .wap__body{
+  min-height:100%;
+  justify-content:center;
+  gap:.75rem;
+  padding:1rem 0;
+  overflow:hidden;
+  background:transparent;
+}
+.ip--chat .wap__body::before{ display:none; }
+.ip--chat .wap__b{
+  max-width:92%;
+  padding:.7rem .8rem .6rem;
+  border-radius:.75rem;
+  font-size:.9375rem;
+  line-height:1.4;
+  box-shadow:0 1px 2px rgba(11,20,26,.1);
+}
+.aktion__inhalt{ min-width:0; }
+
+/* ══════════  Beweis  ══════════
+   Vier Zahlen der Plattform, auf der Paul läuft. Sie stehen am Ende
+   des Ablaufs, weil sie zu den Werkzeugen darüber gehören und zu
+   nichts sonst.
+
+   Die Überschrift macht die ganze Arbeit. "Paul baut auf bewiesener
+   Software" sagt, dass die Software den Nachweis hat, nicht Paul.
+   Dieselbe Trennung wie bei den Bitkom-Werten weiter unten: neben
+   keiner fremden Zahl steht ein Satz über Paul, damit niemand
+   glaubt, hier sei Paul gemessen worden. 7 Millionen Telefonate
+   sind nicht Pauls Telefonate.
+
+   Gleiche Kästen wie das Gerät oben und der Rechner unten. Ein
+   Bauteil, drei Anwendungen. */
+.beweis-block{ padding-top:calc(var(--takt) * 4); }
+
+/* Dieselbe Treppe wie bei den Bitkom-Werten, nur mit einem Block
+   mehr. Die ersten beiden Spalten reichen über beide Zeilen, die
+   letzten beiden stehen in der oberen, und darunter liegt Schwarz
+   über zwei Spalten. So macht es X unter "Built for business
+   impact", und der Grund ist inhaltlich: die vier grauen Stufen
+   gehören zusammen, der schwarze Block sagt etwas anderes.
+
+   Alle Oberkanten steigen von links nach rechts, 10, 6, 3, 0. Die
+   Höhen sind daraus gerechnet und nicht geraten, sonst stimmt die
+   Treppe bei der ersten Textänderung nicht mehr. */
+.beweis{
+  margin-top:calc(var(--takt) * 2);
+  display:grid; gap:var(--takt);
+  grid-template-columns:repeat(4, minmax(0,1fr));
+  grid-template-rows:auto auto;
+  align-items:end;
+}
+.beweis > div{ min-width:0; background:var(--grau); padding:1.25rem .875rem; }
+.beweis > div:nth-child(1){ grid-column:1; grid-row:1 / span 2; min-height:17rem; }
+.beweis > div:nth-child(2){ grid-column:2; grid-row:1 / span 2; min-height:21rem; }
+.beweis > div:nth-child(3){ grid-column:3; grid-row:1; min-height:12rem; }
+.beweis > div:nth-child(4){ grid-column:4; grid-row:1; min-height:15rem; }
+.beweis .zahl{
+  font-size:clamp(1.5rem, 2vw, 1.875rem);
+  white-space:nowrap;
+}
+.beweis p{ padding-top:.5rem; color:var(--ton); line-height:1.5; }
+
+/* Der schwarze Block. Er steht nicht da, um die Zahlen zu
+   verstärken, sondern um sie einzuordnen: die Software hat den
+   Nachweis, Paul ist das, was wir darübergebaut haben. Ohne diesen
+   Satz liest jemand die 7 Millionen als Pauls Telefonate, und dann
+   ist die ganze Section eine Behauptung. */
+/* Der Selektor trägt das div mit, weil `.beweis > div` sonst
+   gewinnt: eine Klasse plus ein Element schlägt eine Klasse allein.
+   Beim ersten Versuch stand der Block deshalb grau da. Derselbe
+   Fehler wie bei der dunklen Karte in der Treppe, siehe den
+   Kommentar dort. */
+.beweis > div.beweis__layer{
+  grid-column:3 / span 2; grid-row:2; min-height:11rem;
+  display:flex; flex-direction:column; justify-content:flex-start;
+  background:var(--ink); color:var(--papier); padding:1.5rem;
+}
+.beweis > div.beweis__layer b{ font-weight:var(--w-kopf); }
+.beweis > div.beweis__layer p{ padding-top:.6rem; color:rgba(253,253,252,.55); max-width:34rem; }
+
+/* Zweispaltig fällt die Treppe flach, wie bei den Bitkom-Werten
+   auch. Vier ansteigende Höhen in zwei Spalten ergeben ein Zickzack.
+   Der schwarze Block läuft dann über die volle Breite. */
+@media (max-width:78rem){
+  .beweis{ grid-template-columns:repeat(2, minmax(0,1fr)); grid-template-rows:none; }
+  .beweis > div:nth-child(n){ grid-column:auto; grid-row:auto; min-height:11rem; }
+  .beweis > div.beweis__layer{ grid-column:1 / span 2; grid-row:auto; }
+}
+@media (max-width:36rem){
+  .beweis{ grid-template-columns:1fr; }
+  .beweis > div:nth-child(n){ min-height:0; }
+  .beweis > div.beweis__layer{ grid-column:1; }
+}
+
+/* ══════════  Werkzeuge  ══════════
+   Ein Satz in der Mitte, darunter ein grauer Kasten mit Logos, wie
+   auf einer Investorenseite. Die Logos sind farbig geliefert und
+   werden per CSS grau: grayscale, dann multiply, damit Weiß im Logo
+   zum Grau des Kastens wird und nichts als Rechteck stehen bleibt.
+   Eine Reihe hat sechs, damit 18 aufgehen. */
+.logowand{ text-align:center; }
+.logowand__satz{ max-width:var(--spalte); margin:0 auto; font-weight:var(--w-text); }
+.logowand__satz em{ font-style:italic; }
+.logowand__raster{
+  margin:calc(var(--takt) * 2) auto 0;   /* keine eigene Breite: der Kasten endet
+                                           an derselben Kante wie die Module */
+  background:var(--grau); border-radius:4px;
+  padding:clamp(1.75rem, 4vw, 3.5rem) clamp(1rem, 3vw, 2.5rem);
+  display:grid; grid-template-columns:repeat(6, minmax(0,1fr));
+  gap:clamp(1.75rem, 3.5vw, 3.25rem) 1rem; align-items:center; justify-items:center;
+}
+.logowand__raster img{
+  display:block; height:2.25rem; width:auto; max-width:100%; object-fit:contain;
+  filter:grayscale(1) contrast(.8) brightness(.85); mix-blend-mode:multiply; opacity:.65;
+}
+@media (max-width:62rem){ .logowand__raster{ grid-template-columns:repeat(4, minmax(0,1fr)); } }
+@media (max-width:36rem){ .logowand__raster{ grid-template-columns:repeat(3, minmax(0,1fr)); gap:1.75rem .75rem; } .logowand__raster img{ height:1.75rem; } }
+
+/* ══════════  Rechner  ══════════
+   Gebaut nach Hormozi, "$100M Offers", Value Creation, Schritt 1:
+   erst das Dream Outcome, dann alles andere. Der Rechner fragt
+   deshalb zuerst, was der Betrieb will, und erst danach, was heute
+   passiert. Vorher fragte er "Rechnet sich das?". Das ist unsere
+   Frage, nicht seine.
+
+   Das Dream Outcome gibt es in drei Fassungen, weil Betriebe drei
+   verschiedene Dinge meinen, wenn sie "besser laufen" sagen: mehr
+   Kunden, mehr Zeit, oder keine neue Stelle besetzen müssen. Jede
+   Fassung hat eigene Felder und eine eigene Rechnung. Ein Menü, das
+   nur die Überschrift tauscht, wäre Dekoration.
+
+   Bauart nach dem Vorbild eines Kontaktformulars: links eine graue
+   Karte mit der großen Zeile unten und dem Untertext, rechts Felder
+   mit Rand und Beschriftung darüber, ein Auswahlmenü, ein Knopf.
+   Bei uns trägt die Karte oben die Zahlen und unten das Ziel und
+   den Satz. Der Satz ist das Ergebnis.
+
+   Von uns kommt keine Quote und kein Prozentsatz. Im Netz kursieren
+   30 bis 62 Prozent verpasster Anrufe, und jeder dieser Werte
+   stammt aus dem Blog eines Anbieters derselben Produktkategorie
+   wie Paul, ohne Primärquelle. Ein Rechner, der so eine Zahl fest
+   verdrahtet, rechnet nicht, er behauptet.
+
+   Deshalb rechnet er auch nicht immer zugunsten von Paul. Steckt
+   das Ziel nicht in den Zahlen, sagt der Satz genau das. Ein
+   Rechner, der nie nein sagt, ist ein Knopf mit Zahlen drauf. */
+.rechner{
+  margin-top:calc(var(--takt) * 2);
+  display:grid; grid-template-columns:minmax(0,1fr);
+  gap:2rem; align-items:stretch;
+}
+
+/* Die Karte. Zahlen oben, Ziel und Satz unten. */
+.rechner__karte{
+  background:var(--grau); border-radius:6px;
+  padding:clamp(1.5rem, 2.5vw, 2.5rem);
+  display:flex; flex-direction:column; justify-content:space-between;
+  gap:calc(var(--takt) * 2); min-height:0;
+}
+.rechner__aus{ margin:0; }
+.rechner__aus > div{
+  display:flex; justify-content:space-between; gap:1.5rem;
+  padding:.55rem 0; border-bottom:1px solid var(--kante);
+}
+.rechner__aus dt{ color:var(--ton); }
+.rechner__aus dd{ margin:0; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.rechner__aus .ist-summe dt,
+.rechner__aus .ist-summe dd{ font-weight:var(--w-kopf); color:var(--ink); }
+.rechner__ziel{
+  font-size:clamp(1.6rem, 2.4vw, 2.25rem); line-height:1.08; letter-spacing:-.025em;
+  font-weight:var(--w-kopf); max-width:13em;
+}
+.rechner__satz{ padding-top:var(--takt); color:var(--ton); max-width:32rem; line-height:1.5; }
+.rechner__preis{ padding-top:calc(var(--takt) * .75); font-size:var(--klein); color:var(--ton); max-width:32rem; }
+.rechner__preis:empty{ display:none; }
+
+/* Das Formular. Beschriftung über dem Feld, Feld mit Rand, Einheit
+   rechts im Feld. Auswahlmenü und Zahlenfeld sehen gleich aus. */
+.rechner__form{
+  display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:1.5rem 1.25rem; align-content:start;
+}
+.rechner__form label{ display:block; }
+.rechner__form label[hidden]{ display:none; }
+.rechner__form label > span:first-child{ display:block; padding-bottom:.5rem; color:var(--ink); }
+.rechner__feld{
+  display:flex; align-items:center; gap:.5rem;
+  border:1px solid var(--kante); border-radius:10px; padding:0 1rem;
+  background:var(--papier); transition:border-color .15s;
+}
+.rechner__feld:focus-within{ border-color:var(--ink); }
+.rechner__feld input,
+.rechner__feld select{
+  flex:1 1 auto; min-width:0; width:100%;
+  font:inherit; letter-spacing:inherit; line-height:inherit;
+  color:var(--ink); background:transparent;
+  border:0; border-radius:0; margin:0; padding:.85rem 0; outline:0;
+  font-variant-numeric:tabular-nums;
+  -moz-appearance:textfield;
+}
+.rechner__feld input::-webkit-outer-spin-button,
+.rechner__feld input::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
+.rechner__feld select{
+  -webkit-appearance:none; appearance:none; cursor:pointer; padding-right:1.5rem;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5 6 8l3.5-3.5' fill='none' stroke='%23777' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat; background-position:right center; background-size:12px 12px;
+}
+.rechner__feld .einheit{ flex:none; color:var(--ton); white-space:nowrap; }
+
+/* Unten wie beim Vorbild: Kleingedrucktes links, Knopf rechts. */
+.rechner__fuss{
+  grid-column:1 / -1; display:flex; justify-content:space-between; align-items:flex-end;
+  gap:1.5rem; padding-top:.5rem;
+}
+.rechner__fein{ font-size:var(--klein); color:var(--ton); max-width:26rem; line-height:1.55; }
+.rechner__fuss .btn{ flex:none; }
+
+@media (max-width:62rem){
+  .rechner{ grid-template-columns:minmax(0,1fr); }
+  .rechner__karte{ min-height:0; gap:calc(var(--takt) * 2); }
+}
+@media (max-width:36rem){
+  .rechner__form{ grid-template-columns:minmax(0,1fr); }
+  .rechner__fuss{ flex-direction:column; align-items:flex-start; }
+}
+
+/* ── Fragen ── */
+/* Auf dem Lesemaß wie der Text darüber. 44rem war ein drittes Maß
+   zwischen Text und Modulen, und drei rechte Kanten sind eine zu viel. */
+.faq{ margin-top:calc(var(--takt) * 2); max-width:var(--spalte); }
+.faq details{ border-bottom:1px solid var(--linie); }
+.faq details:first-of-type{ border-top:1px solid var(--linie); }
+.faq summary{
+  list-style:none; cursor:pointer; padding:.75rem 2rem .75rem 0; position:relative;
+  font-weight:var(--w-kopf);
+}
+.faq summary::-webkit-details-marker{ display:none; }
+.faq summary::after{
+  content:""; position:absolute; right:.4rem; top:1.05rem;
+  width:7px; height:7px;
+  border-right:1.2px solid var(--ton); border-bottom:1.2px solid var(--ton);
+  transform:rotate(45deg); transition:transform .2s;
+}
+.faq details[open] summary::after{ transform:rotate(-135deg); }
+.faq p{ padding:0 2rem .875rem 0; max-width:var(--spalte); color:var(--ton); }
+
+/* ── Kontakt und Schluss ── */
+.kontakt{ margin-top:calc(var(--takt) * 2); display:grid; gap:var(--takt) 3rem;
+  grid-template-columns:repeat(auto-fit, minmax(14rem,1fr)); max-width:var(--spalte); }
+.kontakt dt{ font-weight:var(--w-kopf); }
+.kontakt dd{ margin:0; color:var(--ton); }
+.schluss{ margin-top:calc(var(--takt) * 3); padding-top:var(--takt);
+  border-top:1px solid var(--linie);
+  display:flex; flex-wrap:wrap; gap:0 1.5rem; color:var(--ton); }
+
+/* ── Mobil ──
+   Unter 62rem gibt es keine Spalte mehr. Die Leiste legt sich als
+   Zeile oben hin und rollt waagrecht. X schiebt hier ein Menü vor
+   die Seite. Eine Zeile, die mitzeigt, wo man ist, kann mehr und
+   kostet keinen Klick. */
+@media (max-width:62rem){
+  html{ scroll-padding-top:calc(var(--kopf) + 1rem); }
+  .shell{ display:block; padding-inline:clamp(1.25rem,5vw,2rem); }
+  .side{
+    position:sticky; top:0; z-index:60;
+    width:auto; height:auto; flex:none; display:block;
+    padding:.75rem 0 0; background:var(--papier);
+    margin-inline:calc(-1 * clamp(1.25rem,5vw,2rem));
+    padding-inline:clamp(1.25rem,5vw,2rem);
+    overflow:visible; border-bottom:1px solid var(--linie);
+  }
+  .side__oben{ display:none; }
+  .nav{
+    padding-top:0;
+    flex-direction:row; gap:1.25rem;
+    overflow-x:auto; scrollbar-width:none;
+    margin-inline:calc(-1 * clamp(1.25rem,5vw,2rem));
+    padding-inline:clamp(1.25rem,5vw,2rem);
+  }
+  .nav::-webkit-scrollbar{ height:0; }
+  .nav a{ white-space:nowrap; padding:.25rem 0 .5rem; }
+  .main{ padding-left:0; }
+  .schau-figur .ip{ --h:min(32rem, calc((100vw - 9.5rem) * 2.09)); }
+  .aktion{ grid-template-columns:minmax(0,1fr); }
+  .aktion__buehne{ position:static; }
+  .aktion__buehne .ip--chat{ height:18rem; }
+  .tabs{ display:flex; overflow-x:auto; scrollbar-width:none; gap:1.25rem; }
+  .tabs::-webkit-scrollbar{ height:0; }
+  .tabs button{ flex:0 0 auto; }
+}
+
+/* ── Regler ──
+   Reines CSS über :has(), kein Skript, im Druck weg. Sie bleiben
+   in Monospace und auf 11px, weil sie nicht zur Seite gehören. */
+.lab{
+  position:fixed; right:.75rem; bottom:.75rem; z-index:95;
+  font-family:var(--mono); font-size:11px; line-height:1.7;
+  letter-spacing:0; font-weight:400;
+  background:#fff; color:#555;
+  border:1px solid var(--kante); border-radius:6px;
+  box-shadow:0 1px 3px rgba(0,0,0,.06);
+  max-width:min(15rem, calc(100vw - 1.5rem));
+}
+.lab > summary{ list-style:none; cursor:pointer; padding:.3rem .6rem; color:#999; }
+.lab > summary::-webkit-details-marker{ display:none; }
+.lab[open] > summary{ border-bottom:1px solid var(--linie); color:#555; }
+.lab__body{ padding:.5rem .6rem .6rem; }
+.lab fieldset{ border:0; margin:0 0 .5rem; padding:0; }
+.lab fieldset:last-of-type{ margin-bottom:0; }
+.lab legend{ padding:0 0 .1rem; color:#aaa; }
+.lab label{ display:inline-block; margin-right:.5rem; cursor:pointer; white-space:nowrap; }
+.lab input{ margin:0 .15rem 0 0; vertical-align:-1px; }
+.lab p{ margin:.5rem 0 0; color:#aaa; }
+
+body:has(#sb-grau:checked) .side{
+  background:var(--grau);
+  padding-left:var(--luft);
+  margin-left:calc(-1 * var(--luft));
+  box-shadow:-100vw 0 0 var(--grau);
+}
+/* Das warme Papier des Projekts als Gegenprobe zum Grund von benji.
+   Mit ihm kommt das Korn zurück, ohne ihn hat es nichts zu tun. */
+body:has(#g-warm:checked){
+  --papier:#FCFBF7; --ink:#17150F; --ton:rgba(23,21,15,.45);
+  --linie:rgba(23,21,15,.08); --unter:rgba(23,21,15,.2);
+  --grau:#F1EFE8; --karte:#FFFEFB; --kante:rgba(23,21,15,.12); --ink-h:#4A463C;
+}
+body:has(#g-warm:checked) .grain{ opacity:.4; }
+body:has(#e-eng:checked){  --einzug:1.5rem; }
+body:has(#e-weit:checked){ --einzug:clamp(1.5rem, 7vw, 7.25rem); }
+
+@media print{ .lab,.grain{ display:none; } }
+</style>
+</head>
+
+<body>
+
+<div class="grain" aria-hidden="true"></div>
+
+<div class="shell">
+
+  <!-- ══════════  Leiste  ══════════ -->
+  <nav class="side" aria-label="Abschnitte dieser Seite">
+
+    <div>
+      <a class="side__oben" href="#start">paul</a>
+
+      <ul class="nav" id="nav">
+        <li><a href="#start" data-jump>Übersicht</a></li>
+        <li><a href="#paul" data-jump>Über Paul</a></li>
+        <li><a href="#aktion" data-jump>In Aktion</a></li>
+        <li><a href="#werkzeuge" data-jump>Werkzeuge</a></li>
+        <li><a href="#zahlen" data-jump>Zahlen</a></li>
+        <li><a href="#preis" data-jump>Preis</a></li>
+        <li><a href="#rechner" data-jump>Rechner</a></li>
+        <li><a href="#angebot" data-jump>Angebot</a></li>
+        <li><a href="#daten" data-jump>Daten und KI</a></li>
+        <li><a href="#fragen" data-jump>Fragen</a></li>
+        <li><a href="#kontakt" data-jump>Kontakt</a></li>
+      </ul>
+    </div>
+
+  </nav>
+
+  <!-- ══════════  Text  ══════════ -->
+  <main class="main">
+
+    <section class="sec" id="start">
+      <div class="wrap">
+
+        <div class="hero__text">
+            <h1 class="kopf">Schreib Paul, was zu tun ist.<span>Paul macht's.</span></h1>
+            <p>Paul ist ein digitaler Mitarbeiter für Handwerks- und Servicebetriebe.
+               Du schreibst ihm wie einem Kollegen. Er kümmert sich um Termine,
+               Anfragen, Angebote und Rückrufe. Keine neue App.</p>
+            <div class="hero__btns">
+              <a class="btn btn--dark" href="https://wa.me/4994120899240" rel="noopener">Mit Paul schreiben <span class="arr">&#8599;</span></a>
+              <a class="btn btn--line" href="tel:+4994120899240">Paul anrufen</a>
+            </div>
+          </div>
+
+          <!-- Das Gerät. Kein Bild, sondern gebaut, damit im Bildschirm
+               echter Text steht und die Seite keine Datei nachladen muss.
+               Der Verlauf ist mit Absicht der, in dem Paul zurückfragt.
+               Ein Assistent, der sofort liefert, wirkt wie ein Formular.
+               Einer, der nachfragt, wirkt wie jemand, der zuhört. -->
+          <figure class="schau-figur">
+            <div class="schau">
+              <div class="ip">
+              <i class="ip__key ip__key--l" aria-hidden="true"></i>
+              <i class="ip__key ip__key--r" aria-hidden="true"></i>
+              <i class="ip__cam" aria-hidden="true"></i>
+              <i class="ip__island" aria-hidden="true"></i>
+
+              <div class="ip__screen">
+                <div class="wap">
+
+                  <div class="wap__status" aria-hidden="true">
+                    <b>9:41</b>
+                    <span class="wap__sig">
+                      <svg viewBox="0 0 18 12"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>
+                      <svg viewBox="0 0 16 12"><path d="M8 11.2 5.9 8.9a3 3 0 0 1 4.2 0zM3.6 6.6 2 4.9a8.8 8.8 0 0 1 12 0l-1.6 1.7a6.5 6.5 0 0 0-8.8 0z"/></svg>
+                      <svg viewBox="0 0 27 12"><rect x=".5" y=".5" width="22" height="11" rx="3.2" fill="none" stroke="currentColor" stroke-opacity=".38"/><rect x="2" y="2" width="17" height="8" rx="2"/><path d="M24.5 4v4a2.4 2.4 0 0 0 0-4z" fill-opacity=".45"/></svg>
+                    </span>
+                  </div>
+
+                  <div class="wap__nav">
+                    <span class="wap__back" aria-hidden="true">
+                      <svg viewBox="0 0 10 18" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 1.5 1.5 9l7 7.5"/></svg>
+                      <span>3</span>
+                    </span>
+                    <span class="wap__ava" aria-hidden="true">P</span>
+                    <span class="wap__who">
+                      <b>Paul</b>
+                      <em>online</em>
+                    </span>
+                    <span class="wap__acts" aria-hidden="true">
+                      <svg viewBox="0 0 23 15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><rect x=".75" y=".75" width="14.5" height="13.5" rx="3.6"/><path d="M15.6 5.4 21.4 2.1a.6.6 0 0 1 .85.55v9.7a.6.6 0 0 1-.85.55L15.6 9.6z"/></svg>
+                      <svg viewBox="0 0 19 19" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M5.2 1.9 7 5.1a1.4 1.4 0 0 1-.3 1.7L5.4 8.1a11 11 0 0 0 5 5l1.4-1.4a1.4 1.4 0 0 1 1.7-.3l3.2 1.8a1.4 1.4 0 0 1 .5 1.9l-1 1.6a2.2 2.2 0 0 1-2.4 1C8.4 16.6 2.4 10.6 1.2 4.2a2.2 2.2 0 0 1 1-2.4l1.6-1a1.4 1.4 0 0 1 1.4.1z"/></svg>
+                    </span>
+                  </div>
+
+                  <div class="wap__body">
+                    <div class="wap__pill">
+                      <svg viewBox="0 0 10 14" aria-hidden="true"><path d="M5 0a3.2 3.2 0 0 0-3.2 3.2V5H1a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1H8.2V3.2A3.2 3.2 0 0 0 5 0zm0 1.6a1.6 1.6 0 0 1 1.6 1.6V5H3.4V3.2A1.6 1.6 0 0 1 5 1.6z"/></svg>
+                      Nachrichten und Anrufe sind Ende-zu-Ende-verschlüsselt. Niemand außerhalb dieses Chats kann sie lesen oder anhören.
+                    </div>
+
+                    <div class="wap__pill wap__pill--day">Heute</div>
+
+                    <div class="wap__b wap__b--out is-first">
+                      Paul, trag Herrn Kern für Donnerstag ein.
+                      <span class="wap__t">08:12
+                        <svg viewBox="0 0 18 12" aria-hidden="true"><path d="M6.3 11.4.4 5.6l1.5-1.5 4.4 4.3L15.1.7l1.5 1.5z"/><path d="M11.2 11.4 9.7 9.9l6.3-6.2 1.5 1.5z"/></svg>
+                      </span>
+                    </div>
+                    <div class="wap__b wap__b--in is-first">
+                      Welchen Kern meinst du, Michael Kern in der Ostengasse oder die Kern GmbH in Burgweinting?
+                      <span class="wap__t">08:12</span>
+                    </div>
+                    <div class="wap__b wap__b--out is-first">
+                      Die GmbH. 10 Uhr, Angebot für die neue Anlage.
+                      <span class="wap__t">08:13
+                        <svg viewBox="0 0 18 12" aria-hidden="true"><path d="M6.3 11.4.4 5.6l1.5-1.5 4.4 4.3L15.1.7l1.5 1.5z"/><path d="M11.2 11.4 9.7 9.9l6.3-6.2 1.5 1.5z"/></svg>
+                      </span>
+                    </div>
+                    <div class="wap__b wap__b--in is-first">
+                      <div class="wap__doc">
+                        <div class="wap__doc__h">
+                          <em>Termin angelegt</em>
+                          <b>Angebotstermin, Kern GmbH</b>
+                        </div>
+                        <dl>
+                          <dt>Wann</dt><dd>Do, 21. Aug, 10:00</dd>
+                          <dt>Wo</dt><dd>Obertraublinger Str. 4</dd>
+                          <dt>Wer</dt><dd>Herr Kern, Geschäftsführer</dd>
+                        </dl>
+                        <div class="wap__doc__n">Im Kalender, Bestätigung ist raus</div>
+                      </div>
+                      Steht drin. Ich schicke ihm die Bestätigung.
+                      <span class="wap__t">08:13</span>
+                    </div>
+                  </div>
+
+                  <div class="wap__bar" aria-hidden="true">
+                    <span class="wap__plus">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10.2"/><path d="M12 7.2v9.6M7.2 12h9.6"/></svg>
+                    </span>
+                    <span class="wap__field">
+                      <span>Nachricht</span>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2.8" y="2.8" width="18.4" height="18.4" rx="5"/><path d="M8 15.5s1.6 2 4 2 4-2 4-2"/><circle cx="8.8" cy="9.6" r="1.1" fill="currentColor" stroke="none"/><circle cx="15.2" cy="9.6" r="1.1" fill="currentColor" stroke="none"/></svg>
+                    </span>
+                    <span class="wap__bar__i">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 8.4A2.4 2.4 0 0 1 5.4 6h2.1l1.5-2.2h6l1.5 2.2h2.1A2.4 2.4 0 0 1 21 8.4v9.2A2.4 2.4 0 0 1 18.6 20H5.4A2.4 2.4 0 0 1 3 17.6z"/><circle cx="12" cy="12.6" r="3.9"/></svg>
+                    </span>
+                    <span class="wap__bar__i">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="8.6" y="2.4" width="6.8" height="12" rx="3.4"/><path d="M5 11.6a7 7 0 0 0 14 0M12 18.6V21.6"/></svg>
+                    </span>
+                  </div>
+
+                  <div class="wap__home" aria-hidden="true"><i></i></div>
+
+                </div>
+              </div>
+            </div>
+
+            </div>
+          </figure>
+
+      </div>
+    </section>
+
+    <section class="sec" id="paul">
+      <div class="wrap">
+        <h2 class="kopf">Über Paul.<span>Die Arbeit, die abends liegen bleibt.</span></h2>
+
+        <div class="prose">
+          <p>Paul ist ein digitaler Mitarbeiter für Handwerks- und Servicebetriebe. Er
+             nimmt Anrufe entgegen, beantwortet Fragen, erfasst Aufträge, vereinbart
+             Termine und erinnert an Rückrufe. Das ist die Arbeit, die abends liegen
+             bleibt, weil tagsüber niemand Zeit dafür hat.</p>
+
+          <h3>Wie du ihm sagst, was zu tun ist</h3>
+          <p>Du sagst ihm in einem Satz, was zu tun ist. So, wie du es einem Kollegen
+             sagen würdest. Er kennt eure Kunden. Er weiß, welche Anlage wo steht und
+             was ihr beim letzten Mal berechnet habt. Ist etwas unklar, fragt er nach.
+             <strong>Er rät nicht.</strong></p>
+          <p>Er meldet sich auch von selbst. Kommt eine Anfrage über euer Formular
+             herein, liegt sie bei dir im Chat. Dazu schreibt er, was er über den
+             Kunden schon weiß und was er als Nächstes vorschlägt.</p>
+
+          <h3>Was er vorbereitet und was du freigibst</h3>
+          <p>Angebote, Bestätigungen und Nachrichten bereitet er vor und legt sie dir
+             hin. <strong>Raus geht nichts, was du nicht gesehen hast.</strong> Preise
+             sagt er nicht zu. Aufträge nimmt er nicht verbindlich an. Das bleibt
+             deine Entscheidung.</p>
+          <p>Er hält nach, was sonst untergeht. Den Rückruf von gestern. Das Angebot,
+             auf das seit einer Woche niemand geantwortet hat. Die Wartung, die letztes
+             Jahr um diese Zeit fällig war.</p>
+
+          <h3>Was du dafür brauchst</h3>
+          <p>Du brauchst keine neue Software. Deine Kunden rufen an wie bisher. Du
+             schreibst Paul über WhatsApp. Er arbeitet mit Telefon und Computer wie ein
+             Kollege und sagt dir hinterher, was er getan hat.</p>
+          <p>Dein Team kann ihm auch schreiben. In einer Gruppe oder jeder für sich.
+             Wer was bei ihm auslösen darf, legst du fest.</p>
+
+          <h3>Wer dahintersteht</h3>
+          <p>Hinter Paul steht ein kleines Team in Regensburg. Wir richten ihn mit euch
+             zusammen ein. Eure Abläufe, eure Preise, eure Regeln. Das ist im Preis
+             drin. Ihr bekommt keinen Zugang zu einer Software und dann viel Glück.</p>
+          <p>Läuft etwas anders als gedacht, ändern wir es. Ein Betrieb weiß nach zwei
+             Wochen besser, was Paul tun soll, als nach dem ersten Gespräch. Wenn etwas
+             nicht stimmt, schreibst du derselben Nummer. Es sitzt niemand dazwischen.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="sec" id="aktion">
+      <div class="wrap wrap--breit">
+
+        <div class="tabkopf">
+          <h2 class="kopf">Paul in Aktion.<span>Vom ersten Kontakt bis zum nächsten Auftrag.</span></h2>
+          <div class="pfeile" aria-label="Beispiel wechseln">
+            <button type="button" data-zurueck aria-label="Vorheriges Beispiel">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"
+                   stroke-linecap="round" stroke-linejoin="round"><path d="M13 8H3M7 4 3 8l4 4"/></svg>
+            </button>
+            <button type="button" data-vor aria-label="Nächstes Beispiel">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"
+                   stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <p class="lead">Wähle einen Bereich. Links läuft ein typisches Gespräch, rechts
+           steht, was Paul dabei übernimmt und welche Werkzeuge er dafür nutzt.</p>
+
+        <div class="tabs" role="tablist" aria-label="Paul entlang des Kundenwegs">
+          <button class="is-active" type="button" role="tab" id="tab-0"
+                  aria-selected="true" aria-controls="panel-0" tabindex="0" data-tabknopf>
+            <span>01</span><strong>Anfragen</strong>
+          </button>
+          <button type="button" role="tab" id="tab-1"
+                  aria-selected="false" aria-controls="panel-1" tabindex="-1" data-tabknopf>
+            <span>02</span><strong>Dranbleiben</strong>
+          </button>
+          <button type="button" role="tab" id="tab-2"
+                  aria-selected="false" aria-controls="panel-2" tabindex="-1" data-tabknopf>
+            <span>03</span><strong>Abschließen</strong>
+          </button>
+          <button type="button" role="tab" id="tab-3"
+                  aria-selected="false" aria-controls="panel-3" tabindex="-1" data-tabknopf>
+            <span>04</span><strong>Empfehlungen</strong>
+          </button>
+          <button type="button" role="tab" id="tab-4"
+                  aria-selected="false" aria-controls="panel-4" tabindex="-1" data-tabknopf>
+            <span>05</span><strong>Zurückholen</strong>
+          </button>
+        </div>
+
+        <div class="aktion">
+          <div class="aktion__buehne" aria-label="Live-Beispiel mit Paul">
+            <div class="ip ip--chat">
+              <div class="wap">
+                <div class="wap__body" aria-label="Animiertes Beispielgespräch"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="aktion__inhalt">
+            <div class="panels">
+              <article class="panel is-active" id="panel-0" role="tabpanel" aria-labelledby="tab-0" tabindex="0">
+                <div class="panel__copy">
+                  <h3>Anfragen gehen nicht verloren.</h3>
+                  <p>Paul nimmt Anfragen auf und hält fest, woher sie kamen. Zwischen Website, Telefon und Nachrichten bleibt nichts liegen.</p>
+                  <p class="fenster__label">Was Paul dafür mitbringt</p>
+                  <ul class="werkzeuge">
+                    <li><strong>CRM und Kontaktverwaltung</strong><small>Kontakte, Anfragen und nächste Schritte an einem Ort.</small></li>
+                    <li><strong>Telefon-KI</strong><small>Nimmt Anfragen auf und führt Gespräche nach euren Regeln.</small></li>
+                    <li><strong>Formulare, Umfragen, Quizze</strong><small>Sammelt, was ihr von Interessenten wissen müsst.</small></li>
+                    <li><strong>Websites und Landingpages</strong><small>Bringen Besucher zur Anfrage.</small></li>
+                    <li><strong>Webinare</strong><small>Organisiert Anmeldung, Erinnerung und Nachfassen.</small></li>
+                    <li><strong>Chat-Widget und Gesprächs-KI</strong><small>Beantwortet Fragen direkt auf der Website.</small></li>
+                    <li><strong>Anruf-Tracking</strong><small>Zeigt, welche Kampagne einen Anruf gebracht hat.</small></li>
+                    <li><strong>SMS und Direktnachrichten</strong><small>Bündelt neue Nachrichten aus allen Kanälen.</small></li>
+                  </ul>
+                  <p class="fenster__status"><i aria-hidden="true"></i> Aus einem Anruf wird eine Anfrage</p>
+                </div>
+              </article>
+
+              <article class="panel" id="panel-1" role="tabpanel" aria-labelledby="tab-1" tabindex="0" hidden>
+                <div class="panel__copy">
+                  <h3>Im Gespräch bleiben, bis es passt.</h3>
+                  <p>Paul hält Kontakt, ohne dass jemand bei euch jede Nachricht im Kopf behalten muss. Gespräche, Termine und Folgeschritte hängen zusammen.</p>
+                  <p class="fenster__label">Was Paul dafür mitbringt</p>
+                  <ul class="werkzeuge">
+                    <li><strong>Gesprächs-KI</strong><small>Antwortet nach euren Vorgaben.</small></li>
+                    <li><strong>Ein Posteingang für alles</strong><small>SMS, Messenger, Instagram, WhatsApp und Live-Chat gebündelt.</small></li>
+                    <li><strong>Verkaufspipelines</strong><small>Zeigen, wer gerade wartet und was als Nächstes ansteht.</small></li>
+                    <li><strong>Abläufe und Automatisierung</strong><small>Stoßen den nächsten Schritt an.</small></li>
+                    <li><strong>Kalender</strong><small>Findet freie Zeiten und nimmt Buchungen an.</small></li>
+                    <li><strong>Textbausteine</strong><small>Halten häufige Antworten einheitlich.</small></li>
+                    <li><strong>Terminerinnerungen</strong><small>Erinnern Kunden an ihren Termin.</small></li>
+                    <li><strong>Automatische Anrufverbindung</strong><small>Verbindet Anrufer mit dem richtigen Kollegen.</small></li>
+                  </ul>
+                  <p class="fenster__status"><i aria-hidden="true"></i> Antwort auf dem Weg, über den sie kam</p>
+                </div>
+              </article>
+
+              <article class="panel" id="panel-2" role="tabpanel" aria-labelledby="tab-2" tabindex="0" hidden>
+                <div class="panel__copy">
+                  <h3>Vom Gespräch zum bezahlten Auftrag.</h3>
+                  <p>Angebot, Buchung und Zahlung bleiben in einem Ablauf. Dafür wechselt niemand das Programm.</p>
+                  <p class="fenster__label">Was Paul dafür mitbringt</p>
+                  <ul class="werkzeuge">
+                    <li><strong>Anfragen bewerten</strong><small>Sortiert Kontakte nach Abschlusschance.</small></li>
+                    <li><strong>Kostenvoranschläge und Angebote</strong><small>Setzt Leistungen und Preise in ein Angebot.</small></li>
+                    <li><strong>Rechnungen</strong><small>Erstellt und verschickt Rechnungen.</small></li>
+                    <li><strong>Zahlungsanbindungen</strong><small>Verbindet die üblichen Zahlungswege.</small></li>
+                    <li><strong>Kostenpflichtige Termine</strong><small>Nimmt die Zahlung schon bei der Buchung entgegen.</small></li>
+                    <li><strong>Bestellformulare</strong><small>Bieten Zusatzleistungen beim Bestellen an.</small></li>
+                    <li><strong>Bezahlen per Nachricht</strong><small>Schickt einen Zahlungslink per SMS oder Chat.</small></li>
+                    <li><strong>Kontaktlos bezahlen</strong><small>Nimmt Zahlungen vor Ort mit dem Handy an.</small></li>
+                  </ul>
+                  <p class="fenster__status"><i aria-hidden="true"></i> Vom Angebot bis zur Zahlung in einem Ablauf</p>
+                </div>
+              </article>
+
+              <article class="panel" id="panel-3" role="tabpanel" aria-labelledby="tab-3" tabindex="0" hidden>
+                <div class="panel__copy">
+                  <h3>Zufriedene Kunden empfehlen weiter.</h3>
+                  <p>Paul fragt nach getaner Arbeit nach einer Bewertung und hält die Rückmeldungen zusammen.</p>
+                  <p class="fenster__label">Was Paul dafür mitbringt</p>
+                  <ul class="werkzeuge">
+                    <li><strong>Bewertungen verwalten</strong><small>Bündelt Rückmeldungen an einem Ort.</small></li>
+                    <li><strong>Automatische Bewertungsanfragen</strong><small>Fragt nach dem Auftrag nach einer Bewertung.</small></li>
+                    <li><strong>Empfehlungspartner</strong><small>Ordnet Empfehlungen dem richtigen Partner zu.</small></li>
+                    <li><strong>Bewertungen auf der Website</strong><small>Zeigt Kundenstimmen auf eurer Seite.</small></li>
+                    <li><strong>Video-Bewertungen</strong><small>Nehmen Kundenstimmen als Video auf.</small></li>
+                    <li><strong>KI-Antworten auf Bewertungen</strong><small>Bereitet eine Antwort vor, du gibst sie frei.</small></li>
+                    <li><strong>Bewertungen weiterverbreiten</strong><small>Stellt gute Rückmeldungen auf Social Media.</small></li>
+                    <li><strong>Treueprogramme</strong><small>Geben Stammkunden einen Grund wiederzukommen.</small></li>
+                  </ul>
+                  <p class="fenster__status"><i aria-hidden="true"></i> Gute Arbeit wird weiterempfohlen</p>
+                </div>
+              </article>
+
+              <article class="panel" id="panel-4" role="tabpanel" aria-labelledby="tab-4" tabindex="0" hidden>
+                <div class="panel__copy">
+                  <h3>Frühere Kunden wieder ansprechen.</h3>
+                  <p>Paul meldet sich bei früheren Kunden, wenn es einen passenden Anlass gibt.</p>
+                  <p class="fenster__label">Was Paul dafür mitbringt</p>
+                  <ul class="werkzeuge">
+                    <li><strong>Kampagnen über alle Kanäle</strong><small>E-Mail, SMS, WhatsApp und Messenger aus einem Ablauf.</small></li>
+                    <li><strong>Listen und Gruppen</strong><small>Sprechen nur die Kontakte an, für die ein Angebot passt.</small></li>
+                    <li><strong>Geburtstagsgrüße</strong><small>Melden sich am richtigen Tag.</small></li>
+                    <li><strong>Saisonkampagnen</strong><small>Planen wiederkehrende Themen vor der Saison.</small></li>
+                    <li><strong>Vorlagen für alte Kontakte</strong><small>Bringen frühere Kunden zurück ins Gespräch.</small></li>
+                    <li><strong>Newsletter</strong><small>Verschickt Neuigkeiten nach Plan.</small></li>
+                    <li><strong>Text-KI</strong><small>Bereitet Texte für Kampagnen und Newsletter vor.</small></li>
+                    <li><strong>Treueprogramme</strong><small>Geben früheren Kunden einen Grund wiederzukommen.</small></li>
+                  </ul>
+                  <p class="fenster__status"><i aria-hidden="true"></i> Frühere Kunden melden sich zurück</p>
+                </div>
+              </article>
+            </div>
+          </div>
+        </div>
+
+        <!-- ┌──────────────────────────────────────────────────────┐
+             │  QUELLENZEILE FEHLT. VOR VERÖFFENTLICHUNG PRÜFEN.    │
+             │                                                      │
+             │  Die vier Zahlen sind übernommen, aber unbelegt. Auf │
+             │  einer Seite, die drei Prozentwerte mit Institut,    │
+             │  Jahr und Stichprobe ausweist, ist eine Zahl ohne    │
+             │  Herkunft die schwächste Stelle. Wer sie prüfen      │
+             │  will, kann es nicht.                                │
+             │                                                      │
+             │  Dazu kommt die Regel aus dem README: der Apparat    │
+             │  unter Paul wird öffentlich nicht benannt. Damit     │
+             │  bleiben zwei Wege, und beide sind eine Entscheidung: │
+             │                                                      │
+             │    · Stand und Datum ergänzen, ohne Namen, und damit │
+             │      leben, dass die Quelle unbenannt bleibt         │
+             │    · Oder die Section weglassen                      │
+             │                                                      │
+             │  So wie es jetzt dasteht, ist es das Erste.          │
+             └──────────────────────────────────────────────────────┘ -->
+        <div class="beweis-block">
+          <h3 class="kopf">Paul baut auf bewiesener Software.<span>Die Werkzeuge darüber sind kein Prototyp.</span></h3>
+
+          <div class="beweis">
+            <div>
+              <span class="zahl">7 Mio.+</span>
+              <p>Telefonate, die eine KI auf dieser Plattform geführt hat.</p>
+            </div>
+            <div>
+              <span class="zahl">7,3 Mrd.</span>
+              <p>Anfragen, die darüber erfasst wurden.</p>
+            </div>
+            <div>
+              <span class="zahl">179 Mio.</span>
+              <p>Termine, die darüber gebucht wurden.</p>
+            </div>
+            <div>
+              <span class="zahl">5,2 Mrd.+</span>
+              <p>US-Dollar Umsatz, der 2025 darüber zustande kam.</p>
+            </div>
+
+            <div class="beweis__layer">
+              <b>Paul ist die Schicht darüber.</b>
+              <p>Diese Software kann alles, was in den Reitern oben steht. Sie kann nur
+                 eines nicht: sich selbst bedienen. Jemand muss Felder ausfüllen, Regeln
+                 anlegen und daran denken. Paul ist die Schicht, die wir darübergebaut
+                 haben. Du schreibst ihm einen Satz, er bedient den Apparat, und du
+                 siehst den Apparat nie.</p>
+            </div>
+          </div>
+
+          <p class="quelle">Zahlen der Plattform, auf der Paul läuft. Sie beschreiben
+             die Software unter Paul, nicht Paul.</p>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Drei Werte aus der Studie, ein Kasten über Paul. Neben keiner
+         Studienzahl steht ein Satz über Paul, damit niemand den
+         Eindruck bekommt, Bitkom hätte Paul gemessen. -->
+    <!-- ══════════  Werkzeuge  ══════════
+         Das Vorbild ist die Investorenzeile einer Firmenseite: ein Satz,
+         ein grauer Kasten, Logos in Grau. Die Logos sind die aus dem
+         Band "Integrates With Your Favorite Tools" von gohighlevel.com,
+         weil Paul auf HighLevel läuft. Sie liegen lokal unter
+         /images/werkzeuge, die Seite lädt nichts von fremden Servern. -->
+    <section class="sec" id="werkzeuge">
+      <div class="wrap wrap--breit logowand">
+        <h2 class="logowand__satz">Paul arbeitet mit den Werkzeugen, die ihr schon habt, <em>zum Beispiel:</em></h2>
+        <div class="logowand__raster">
+          <img src="images/werkzeuge/whatsapp.png" alt="WhatsApp" loading="lazy" decoding="async">
+          <img src="images/werkzeuge/google.png" alt="Google" loading="lazy" decoding="async">
+          <img src="images/werkzeuge/google-business-profile.png" alt="Google Business Profile" loading="lazy" decoding="async">
+          <img src="images/werkzeuge/instagram.png" alt="Instagram" loading="lazy" decoding="async">
+          <img src="images/werkzeuge/facebook.png" alt="Facebook" loading="lazy" decoding="async">
+          <img src="images/werkzeuge/linkedin.png" alt="LinkedIn" loading="lazy" decoding="async">
+          <img src="images/werkzeuge/tiktok.png" alt="TikTok" loading="lazy" decoding="async">
+          <img src="images/werkzeuge/slack.png" alt="Slack" loading="lazy" decoding="async">
+          <img src="images/werkzeuge/zapier.png" alt="Zapier" loading="lazy" decoding="async">
+          <img src="images/werkzeuge/stripe.png" alt="Stripe" loading="lazy" decoding="async">
+          <img src="images/werkzeuge/shopify.png" alt="Shopify" loading="lazy" decoding="async">
+          <img src="images/werkzeuge/woocommerce.png" alt="WooCommerce" loading="lazy" decoding="async">
+          <img src="images/werkzeuge/quickbooks.png" alt="QuickBooks" loading="lazy" decoding="async">
+          <img src="images/werkzeuge/xero.png" alt="Xero" loading="lazy" decoding="async">
+          <img src="images/werkzeuge/wave.png" alt="Wave" loading="lazy" decoding="async">
+          <img src="images/werkzeuge/shippo.png" alt="Shippo" loading="lazy" decoding="async">
+          <img src="images/werkzeuge/printful.png" alt="Printful" loading="lazy" decoding="async">
+          <img src="images/werkzeuge/clio.png" alt="Clio" loading="lazy" decoding="async">
+        </div>
+      </div>
+    </section>
+
+    <section class="sec" id="zahlen">
+      <div class="wrap wrap--breit">
+        <h2 class="kopf">Was Betriebe berichten.<span>Und was Paul daran ändert.</span></h2>
+
+        <div class="treppe">
+          <div class="karte">
+            <span class="zahl">62&nbsp;%</span>
+            <p>der Handwerksbetriebe nutzen WhatsApp oder Telegram für ihre Kommunikation.</p>
+          </div>
+          <div class="karte">
+            <span class="zahl">75&nbsp;%</span>
+            <p>nennen den Fachkräftemangel als zentrales Problem ihres Betriebs.</p>
+          </div>
+          <div class="karte">
+            <span class="zahl">85&nbsp;%</span>
+            <p>sagen, ihre Kundinnen und Kunden erwarten ständige Erreichbarkeit.</p>
+          </div>
+          <div class="karte karte--dunkel">
+            <span class="zahl">Paul</span>
+            <p>arbeitet in WhatsApp, kostet keine Stelle und ist immer da.</p>
+            <dl>
+              <div><dt>im Monat</dt><dd>997 &euro;</dd></div>
+              <div><dt>erreichbar</dt><dd>365 Tage</dd></div>
+              <div><dt>Einrichtung</dt><dd>0 &euro;</dd></div>
+              <div><dt>Laufzeit</dt><dd>monatlich</dd></div>
+            </dl>
+          </div>
+        </div>
+
+        <p class="quelle">Quelle der drei Prozentwerte: Bitkom Research und ZDH, "Die
+           Digitalisierung des Handwerks", 2025. Telefonische, repräsentativ
+           gewichtete Befragung von 504 Handwerksunternehmen in Deutschland.</p>
+      </div>
+    </section>
+
+    <section class="sec" id="preis">
+      <div class="wrap">
+        <h2 class="kopf">Was es kostet.<span>Feste Kosten statt einer zusätzlichen Stelle.</span></h2>
+
+        <dl class="liste">
+          <div><dt>997 &euro; im Monat</dt><dd>alles enthalten, was oben steht</dd></div>
+          <div><dt>Laufzeit</dt><dd>monatlich kündbar, keine Mindestlaufzeit</dd></div>
+          <div><dt>Einrichtung</dt><dd>0 &euro;, wir machen sie mit euch</dd></div>
+          <div><dt>Erreichbar</dt><dd>365 Tage im Jahr</dd></div>
+          <div><dt>Pro Anruf</dt><dd>kein Aufpreis, keine Staffel</dd></div>
+        </dl>
+
+        <div class="prose" style="padding-top:1rem">
+          <p>Dafür braucht Paul keinen Urlaub. Er wird nicht krank und kennt keinen
+             Feierabend. Kein Krankenstand im Winter, keine Vertretung im August, keine
+             Einarbeitung von vorn, wenn jemand geht. Er ist an 365 Tagen im Jahr da,
+             wenn deine Kunden anrufen.</p>
+          <p>Bei betrieblicher Nutzung kannst du die Kosten für Paul in der Regel als
+             Betriebsausgabe geltend machen. Absetzbar heißt nicht zurückbezahlt, die
+             Ausgabe mindert den steuerpflichtigen Gewinn. Was in eurem Fall gilt, sagt
+             euch euer Steuerberater.</p>
+        </div>
+
+      </div>
+    </section>
+
+
+    <!-- Der Rechner, gebaut nach Hormozi ($100M Offers), Value Creation,
+         Schritt 1: das Dream Outcome. Erst wählt der Betrieb, was er
+         will, und sagt, wie viel. Dann, was heute passiert. Die Karte
+         links zeigt die Zahlen, das Ziel und den Satz dazu. Der Preis
+         kommt zuletzt und klein. Er ist nicht das Ziel.
+
+         Die Felder tragen data-fuer mit dem Namen der Fassung, zu der
+         sie gehören. Das Skript blendet die anderen aus. Ohne Skript
+         stehen alle Felder da und die Karte zeigt die Fassung "Mehr
+         Kunden" mit den Vorgabewerten. -->
+    <section class="sec" id="rechner">
+      <div class="wrap wrap--breit">
+        <h2 class="kopf">Rechner.<span>Erst dein Ziel, dann deine Zahlen. Von uns kommt keine Quote und kein Prozentsatz, nur das Rechnen.</span></h2>
+
+        <div class="rechner">
+          <div class="rechner__karte">
+            <dl class="rechner__aus" id="r-aus">
+              <div><dt>Verpasste Anrufe im Monat</dt><dd>22</dd></div>
+              <div><dt>Aufträge, die darin stecken</dt><dd>7</dd></div>
+              <div><dt>Dein Ziel</dt><dd>5</dd></div>
+              <div class="ist-summe"><dt>Umsatz, der daran hängt, im Monat</dt><dd>5.600 &euro;</dd></div>
+              <div><dt>Im Jahr</dt><dd>67.200 &euro;</dd></div>
+            </dl>
+            <div>
+              <h3 class="rechner__ziel" id="r-titel">Mehr Kunden, ohne jemanden zu suchen.</h3>
+              <p class="rechner__satz" id="r-satz">Dein Ziel liegt in den Anrufen, die heute an die Mailbox gehen. Nach deinen Zahlen stecken darin 7 Aufträge im Monat, du willst 5. Paul muss dafür nicht jeden retten.</p>
+              <p class="rechner__preis" id="r-preis">Paul kostet 997 &euro; im Monat. Bezahlt ist er ab dem 2. Auftrag, den er rettet.</p>
+            </div>
+          </div>
+
+          <div class="rechner__form">
+            <label>
+              <span>Was du willst</span>
+              <span class="rechner__feld">
+                <select id="r-wunsch">
+                  <option value="kunden">Mehr Kunden</option>
+                  <option value="zeit">Mehr Zeit</option>
+                  <option value="stelle">Keine neue Stelle</option>
+                </select>
+              </span>
+            </label>
+
+            <!-- Mehr Kunden -->
+            <label data-fuer="kunden">
+              <span>Aufträge mehr im Monat</span>
+              <span class="rechner__feld"><input type="number" id="r-k-ziel" value="5" min="0" max="500" step="1" inputmode="numeric"><span class="einheit">im Monat</span></span>
+            </label>
+            <label data-fuer="kunden">
+              <span>Verpasste Anrufe</span>
+              <span class="rechner__feld"><input type="number" id="r-k-anrufe" value="5" min="0" max="500" step="1" inputmode="numeric"><span class="einheit">pro Woche</span></span>
+            </label>
+            <label data-fuer="kunden">
+              <span>Von zehn Anrufern werden Kunde</span>
+              <span class="rechner__feld"><input type="number" id="r-k-quote" value="3" min="0" max="10" step="1" inputmode="numeric"><span class="einheit">von 10</span></span>
+            </label>
+            <label data-fuer="kunden">
+              <span>Durchschnittlicher Auftragswert</span>
+              <span class="rechner__feld"><input type="number" id="r-k-wert" value="800" min="0" max="1000000" step="50" inputmode="numeric"><span class="einheit">&euro;</span></span>
+            </label>
+
+            <!-- Mehr Zeit -->
+            <label data-fuer="zeit" hidden>
+              <span>Stunden, die du zurückwillst</span>
+              <span class="rechner__feld"><input type="number" id="r-z-ziel" value="5" min="0" max="168" step="1" inputmode="numeric"><span class="einheit">pro Woche</span></span>
+            </label>
+            <label data-fuer="zeit" hidden>
+              <span>Stunden am Telefon und im Büro</span>
+              <span class="rechner__feld"><input type="number" id="r-z-stunden" value="10" min="0" max="168" step="1" inputmode="numeric"><span class="einheit">pro Woche</span></span>
+            </label>
+            <label data-fuer="zeit" hidden>
+              <span>Dein Stundensatz beim Kunden</span>
+              <span class="rechner__feld"><input type="number" id="r-z-satz" value="70" min="0" max="100000" step="5" inputmode="numeric"><span class="einheit">&euro;</span></span>
+            </label>
+
+            <!-- Keine neue Stelle -->
+            <label data-fuer="stelle" hidden>
+              <span>Stunden, die die Stelle hätte</span>
+              <span class="rechner__feld"><input type="number" id="r-s-stunden" value="20" min="0" max="168" step="1" inputmode="numeric"><span class="einheit">pro Woche</span></span>
+            </label>
+            <label data-fuer="stelle" hidden>
+              <span>Stundenlohn mit Nebenkosten</span>
+              <span class="rechner__feld"><input type="number" id="r-s-lohn" value="25" min="0" max="10000" step="1" inputmode="numeric"><span class="einheit">&euro;</span></span>
+            </label>
+            <label data-fuer="stelle" hidden>
+              <span>Davon Telefon und Büro</span>
+              <span class="rechner__feld"><input type="number" id="r-s-anteil" value="7" min="0" max="10" step="1" inputmode="numeric"><span class="einheit">von 10</span></span>
+            </label>
+
+            <div class="rechner__fuss">
+              <p class="rechner__fein" id="r-fein">Das ist Umsatz, nicht Gewinn. Wer es genau wissen will,
+                 setzt statt des Auftragswerts den Rohertrag ein. Und Paul rettet nicht jeden
+                 Anruf. Was er rettet, steht hinterher in eurem Chat und lässt sich zählen.</p>
+              <a class="btn btn--dark" href="https://wa.me/4994120899240" rel="noopener">Mit Paul schreiben <span class="arr">&#8599;</span></a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ┌──────────────────────────────────────────────────────────┐
+         │  UNVOLLSTÄNDIG. VOR VERÖFFENTLICHUNG PRÜFEN.             │
+         │                                                          │
+         │  Hier fehlen drei Angaben, die niemand aus dem Kopf      │
+         │  schreiben darf, weil sie rechtlich bindend sind:        │
+         │                                                          │
+         │    · Wo die Daten liegen (Rechenzentrum, Land)           │
+         │    · Ob es einen AVV nach Art. 28 DSGVO gibt und wie     │
+         │      man ihn bekommt                                     │
+         │    · Welche Unterauftragsverarbeiter beteiligt sind und  │
+         │      ob Inhalte zum Training verwendet werden            │
+         │                                                          │
+         │  Was unten steht, sind Produkteigenschaften und zwei     │
+         │  nachprüfbare Aussagen über diese Seite. Das ist kein    │
+         │  Ersatz für die drei Punkte oben.                        │
+         └──────────────────────────────────────────────────────────┘ -->
+
+    <!-- Steht hinter dem Rechner, nicht davor. Wer eben ausgerechnet
+         hat, was Paul kostet, liest einen Nachlass anders als jemand,
+         der die Zahl noch nicht kennt. -->
+    <section class="sec" id="angebot">
+      <div class="wrap wrap--breit">
+        <div class="angebot">
+          <h2 class="angebot__kopf">Wir zahlen Pauls erstes Gehalt.<span>997 &euro; für den ersten Monat, von uns.</span></h2>
+
+          <p class="angebot__satz">Stell Paul für zwei Monate ein und bezahle nur einen.
+             Der erste Monat geht auf uns, die Einrichtung sowieso. Was danach
+             passiert, entscheidest du jeden Monat neu.</p>
+
+          <div class="angebot__btns">
+            <a class="btn btn--hell" href="https://wa.me/4994120899240" rel="noopener">Paul einstellen <span class="arr">&#8599;</span></a>
+            <a class="btn btn--rand" href="tel:+4994120899240">Erst anrufen</a>
+          </div>
+
+          <p class="angebot__fein">Für Betriebe, die Paul noch nicht hatten. Monatlich
+             kündbar, auch danach.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="sec" id="daten">
+      <div class="wrap">
+        <h2 class="kopf">Daten und KI.<span>Was Paul darf, was du freigibst, und was hier nicht passiert.</span></h2>
+
+        <div class="prose">
+          <p>Eine KI im Betrieb wirft zwei Fragen auf, und sie werden oft vermischt.
+             Die eine ist rechtlich: wo liegen die Daten, wer darf sie sehen. Die
+             andere ist praktisch: was macht das Ding, wenn niemand hinschaut.
+             Hier steht die zweite. Die erste steht in der Datenschutzerklärung.</p>
+
+          <h3>Er sagt, was er ist</h3>
+          <p>Paul stellt sich am Anfang jedes Gesprächs als digitaler Assistent deines
+             Betriebs vor. <strong>Er gibt sich nie als Mensch aus.</strong> Wer mit ihm
+             spricht, weiß, womit er spricht. Das ist keine Vorsicht vor dem Gesetz,
+             sondern die Bedingung dafür, dass ein Kunde ihm beim zweiten Mal wieder
+             glaubt.</p>
+
+          <h3>Du gibst frei, nicht er</h3>
+          <p>Angebote, Bestätigungen und Nachrichten bereitet er vor und legt sie dir
+             hin. <strong>Raus geht nichts, was du nicht gesehen hast.</strong> Preise
+             sagt er nicht zu. Aufträge nimmt er nicht verbindlich an. Wer in deinem
+             Team was bei ihm auslösen darf, legst du fest.</p>
+
+          <h3>Er erfindet nichts</h3>
+          <p>Weiß er etwas nicht, rät er nicht. Er fragt nach, nimmt es auf oder gibt
+             die Entscheidung an dich weiter. Genau daran unterscheidet sich ein
+             Assistent von einem Textgenerator, und es ist der einzige Unterschied,
+             der im Alltag zählt.</p>
+
+          <h3>Alles steht in deinem Chat</h3>
+          <p>Jeder Schritt ist da nachlesbar, wo du sowieso hinschaust. Es gibt kein
+             Protokoll in einem System, in das du dich erst einloggen musst, um zu
+             sehen, was in deinem Namen passiert ist.</p>
+
+          <h3>Und diese Seite hier</h3>
+          <p>Die Schrift liegt auf unserem Server, nicht bei Google. Eine Einbindung
+             über Google Fonts überträgt bei jedem Aufruf die IP des Besuchers an einen
+             fremden Server, und genau das hat das Landgericht München 2022 kassiert.
+             Diese Seite lädt nichts von fremden Servern und misst nichts. Kein
+             Zählpixel, kein Skript von außen, kein Einwilligungsbanner, weil es nichts
+             gibt, worin man einwilligen müsste.</p>
+
+          <p>Was rechtlich gilt, steht in der
+             <a class="link" href="datenschutz.html">Datenschutzerklärung</a>.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- name="faq" macht daraus ein echtes Akkordeon: der Browser
+         schließt die offene Frage, sobald eine andere aufgeht. Die
+         erste steht offen, damit sichtbar ist, dass hier etwas
+         aufgeht. Sieben zugeklappte Zeilen sehen aus wie eine
+         Navigation, und eine gibt es links schon. -->
+    <section class="sec" id="fragen">
+      <div class="wrap">
+        <h2 class="kopf">Fragen.<span>Alles, was du vorher wissen willst.</span></h2>
+
+        <div class="faq">
+          <details name="faq" open>
+            <summary>Ist das einfach ChatGPT?</summary>
+            <p>Dieselbe Art von KI, nur eingearbeitet. ChatGPT kennt deinen Betrieb
+               nicht. Du müsstest ihm für jede Aufgabe die Kundenakte, eure Preise
+               und den alten Auftrag hinschreiben. Paul hat sie und trägt das
+               Ergebnis dort ein, wo es hingehört.</p>
+          </details>
+          <details name="faq">
+            <summary>Merken meine Kunden, dass Paul eine KI ist?</summary>
+            <p>Paul sagt am Anfang selbst, dass er der digitale Assistent deines
+               Betriebs ist. Er gibt sich nie als Mensch aus. Er soll weiterhelfen,
+               nicht einen Menschen spielen.</p>
+          </details>
+          <details name="faq">
+            <summary>Was, wenn er etwas falsch macht?</summary>
+            <p>Deshalb bereitet er im Normalfall nur vor und du gibst frei. Alles,
+               was rausgeht, hast du gesehen. Jeder Schritt steht in deinem Chat.
+               Du kannst ihn nachlesen und korrigieren.</p>
+          </details>
+          <details name="faq">
+            <summary>Was, wenn er etwas nicht weiß?</summary>
+            <p>Dann erfindet er nichts. Er fragt nach, nimmt es auf oder gibt die
+               Entscheidung an dich weiter.</p>
+          </details>
+          <details name="faq">
+            <summary>Brauche ich neue Software?</summary>
+            <p>Nein, und das ist der Punkt. Paul lebt in dem Chat, den du sowieso den
+               ganzen Tag offen hast. Wenn dein Betrieb schon Kalender oder Kundendaten
+               digital führt, hängen wir Paul dort an.</p>
+          </details>
+          <details name="faq">
+            <summary>Kann mein Team ihm auch schreiben?</summary>
+            <p>Ja. Paul kann in einer Gruppe mitlesen oder mit einzelnen Kollegen
+               direkt schreiben. Was wer bei ihm auslösen darf, legst du fest.</p>
+          </details>
+          <details name="faq">
+            <summary>Kann ich jederzeit kündigen?</summary>
+            <p>Ja. Monatlich kündbar, keine Mindestlaufzeit.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- Die Nummer steht wie eine Adresse auf Papier, nicht anklickbar.
+         Dieselbe Haltung wie auf der Startseite. -->
+    <section class="sec" id="kontakt">
+      <div class="wrap">
+        <h2 class="kopf">Ruf Paul an und spiel einen Kunden.<span>Kein Termin. Kein Verkäufer.</span></h2>
+        <p class="lead">Oder schreib ihm, was für einen Betrieb du hast und wobei
+           du Hilfe brauchst. Du sprichst direkt mit Paul.</p>
+
+        <dl class="kontakt">
+          <div><dt>Telefon und WhatsApp</dt><dd>+49 941 20 89 92 40</dd></div>
+          <div><dt>E-Mail</dt><dd>hallo@callpaul.ai</dd></div>
+          <div><dt>Sitz</dt><dd>Regensburg, Deutschland</dd></div>
+        </dl>
+
+        <div class="schluss">
+          <span>&copy; 2026 Call Paul</span>
+          <a class="link" href="impressum.html">Impressum</a>
+          <a class="link" href="datenschutz.html">Datenschutz</a>
+          <span>Paul kümmert sich drum.</span>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<details class="lab">
+  <summary>Lab</summary>
+  <div class="lab__body">
+    <fieldset>
+      <legend>Leiste</legend>
+      <label><input type="radio" name="sb" id="sb-kein" checked>ohne Grund</label>
+      <label><input type="radio" name="sb" id="sb-grau">grau</label>
+    </fieldset>
+    <fieldset>
+      <legend>Grund</legend>
+      <label><input type="radio" name="g" id="g-benji" checked>benji</label>
+      <label><input type="radio" name="g" id="g-warm">warm</label>
+    </fieldset>
+    <fieldset>
+      <legend>Einzug</legend>
+      <label><input type="radio" name="e" id="e-eng">eng</label>
+      <label><input type="radio" name="e" id="e-mittel" checked>mittel</label>
+      <label><input type="radio" name="e" id="e-weit">weit</label>
+    </fieldset>
+    <p>Regler. Ändern nur die Ansicht.</p>
+  </div>
+</details>
+
+<script>
+/* ══════════════════════════════════════════════════════════
+   Zwei Aufgaben.
+
+   1) Mitzeigen, wo man ist. Der Browser kann das nicht. :target
+      hängt am Klick, nicht am Scrollen, und fällt beim ersten
+      freien Scrollen zurück. Also eine Lesekante bei 30 Prozent
+      der Fensterhöhe. Aktiv ist der letzte Abschnitt, der über
+      ihr begonnen hat. Nicht die Mitte. Bei langen Abschnitten
+      hängt die Marke dann hinterher. Dieselbe Rechnung wie in der
+      Ein-Spalten-Fassung.
+
+   2) Die Reiter im Ablauf. Sie hängen nur noch an den Knöpfen im
+      Abschnitt und an den zwei Pfeilen. Die Leiste hat keine
+      Unterpunkte mehr.
+   ══════════════════════════════════════════════════════════ */
+(function () {
+  'use strict';
+
+  var sanft = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ── 1 · Abschnitte ── */
+  var links = Array.prototype.slice.call(document.querySelectorAll('[data-jump]'));
+  var stops = links.map(function (a) {
+    return { a: a, el: document.getElementById(a.getAttribute('href').slice(1)) };
+  }).filter(function (s) { return s.el; });
+
+  var hier = null;
+
+  function setz(a) {
+    if (a === hier) return;
+    hier = a;
+    stops.forEach(function (s) {
+      var an = s.a === a;
+      s.a.classList.toggle('is-here', an);
+      s.a.parentElement.classList.toggle('is-here', an);
+      if (an) { s.a.setAttribute('aria-current', 'true'); }
+      else    { s.a.removeAttribute('aria-current'); }
+    });
+  }
+
+  var wartet = false;
+  function messen() {
+    wartet = false;
+    var kante = window.scrollY + window.innerHeight * 0.3;
+    var treffer = stops[0];
+    for (var i = 0; i < stops.length; i++) {
+      if (stops[i].el.getBoundingClientRect().top + window.scrollY <= kante) treffer = stops[i];
+    }
+    /* Ganz unten gewinnt der letzte Abschnitt, auch wenn seine Kante
+       nie erreicht wird. Sonst bleibt "Kontakt" grau, während man
+       ihn liest. */
+    if (window.innerHeight + window.scrollY >= document.body.scrollHeight - 4) {
+      treffer = stops[stops.length - 1];
+    }
+    if (treffer) setz(treffer.a);
+  }
+  function anstoss() {
+    if (wartet) return;
+    wartet = true;
+    requestAnimationFrame(messen);
+  }
+
+  addEventListener('scroll', anstoss, { passive: true });
+  addEventListener('resize', anstoss);
+
+  /* ── 2 · Reiter ── */
+  var knoepfe = Array.prototype.slice.call(document.querySelectorAll('[data-tabknopf]'));
+
+  if (knoepfe.length) {
+    var felder = knoepfe.map(function (k) {
+      return document.getElementById(k.getAttribute('aria-controls'));
+    });
+    var offen = 0;
+
+    function zeige(index, fokus) {
+      index = (index + knoepfe.length) % knoepfe.length;
+      knoepfe.forEach(function (k, i) {
+        var an = i === index;
+        k.classList.toggle('is-active', an);
+        k.setAttribute('aria-selected', String(an));
+        k.tabIndex = an ? 0 : -1;
+        if (felder[i]) {
+          felder[i].hidden = !an;
+          felder[i].classList.toggle('is-active', an);
+        }
+      });
+      offen = index;
+      if (fokus) knoepfe[index].focus({ preventScroll: true });
+      if (matchMedia('(max-width: 62rem)').matches) {
+        knoepfe[index].scrollIntoView({
+          behavior: sanft ? 'smooth' : 'auto', block: 'nearest', inline: 'center'
+        });
+      }
+    }
+
+    knoepfe.forEach(function (k, i) {
+      k.addEventListener('click', function () { zeige(i, false); });
+      k.addEventListener('keydown', function (e) {
+        var ziel = null;
+        if (e.key === 'ArrowRight') ziel = i + 1;
+        if (e.key === 'ArrowLeft')  ziel = i - 1;
+        if (e.key === 'Home')       ziel = 0;
+        if (e.key === 'End')        ziel = knoepfe.length - 1;
+        if (ziel == null) return;
+        e.preventDefault();
+        zeige(ziel, true);
+      });
+    });
+
+    var zur = document.querySelector('[data-zurueck]');
+    var vor = document.querySelector('[data-vor]');
+    if (zur) zur.addEventListener('click', function () { zeige(offen - 1, false); });
+    if (vor) vor.addEventListener('click', function () { zeige(offen + 1, false); });
+
+    zeige(0, false);
+  }
+
+  messen();
+})();
+/* ══════════════════════════════════════════════════════════
+   Die Gespräche laufen mit.
+
+   Der Unterschied zwischen einem Standbild und einer Aufnahme sind
+   nicht die Blasen, sondern die Pausen dazwischen. Es gibt einen
+   Moment, in dem noch nichts dasteht und man trotzdem weiß, dass
+   gleich etwas kommt. Genau der fehlt einem Screenshot.
+
+   Eine Maschine, zwei Geräte. Oben im Kopf läuft immer dasselbe
+   Gespräch, unter "Paul in Aktion" das, was links ausgewählt ist.
+   Die Verläufe stehen als Daten hier und nicht im Markup: vier
+   Gespräche doppelt zu pflegen geht genau einmal gut.
+
+   Wer Bewegung abbestellt hat, bekommt denselben Verlauf ohne
+   Pausen und ohne Wiederholung. Nicht ein leeres Fenster, und auch
+   keine springenden Punkte.
+   ══════════════════════════════════════════════════════════ */
+(function () {
+  'use strict';
+
+  var sanft = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var einTick = document.querySelector('.wap__t svg');
+  var TICK    = einTick ? einTick.outerHTML : '';
+
+  /* Die Belegkarte. Sie steht im Markup nur einmal, als Vorlage für
+     den Kopf. Hier wird sie gebaut, weil jedes Beispiel eine andere
+     braucht. Alle Inhalte stehen in dieser Datei, nichts kommt von
+     außen, deshalb ist innerHTML hier die einfache und nicht die
+     unvorsichtige Lösung. */
+  function beleg(d) {
+    var h = '<div class="wap__doc"><div class="wap__doc__h">'
+          + '<em>' + d.label + '</em><b>' + d.titel + '</b></div>';
+    if (d.zeilen) {
+      h += '<dl>' + d.zeilen.map(function (z) {
+        return '<dt>' + z[0] + '</dt><dd>' + z[1] + '</dd>';
+      }).join('') + '</dl>';
+    }
+    if (d.notiz) h += '<div class="wap__doc__n">' + d.notiz + '</div>';
+    return h + '</div>';
+  }
+
+  /* Ein Gerät, ein Zustand. gen ist der Generationszähler: jeder
+     neue Anlauf erhöht ihn, und jeder Schritt einer alten Generation
+     steigt danach still aus. Ohne das laufen beim Umschalten zwei
+     Gespräche gleichzeitig in dasselbe Fenster. */
+  function geraet(wurzel) {
+    var body = wurzel.querySelector('.wap__body');
+    if (!body) return null;
+    var status = wurzel.querySelector('.wap__who em');
+
+    var gen = 0, uhren = [];
+    var minute = 0, schritte = 0;
+
+    function warte(ms) { return new Promise(function (r) { uhren.push(setTimeout(r, ms)); }); }
+    function halt() { gen++; uhren.forEach(clearTimeout); uhren = []; }
+    function leeren() {
+      [].slice.call(body.querySelectorAll('.wap__b')).forEach(function (n) { n.remove(); });
+    }
+    function sagt(t) { if (status) status.textContent = t; }
+
+    /* Die Uhr läuft nicht mit der echten Zeit. Ein Beispiel, das um
+       14:07 anfängt, weil der Besucher zufällig um 14:07 da ist,
+       behauptet, das Gespräch passiere gerade. Jeder Verlauf hat
+       seine eigene Anfangszeit, und alle liegen vor 9:41, weil in
+       der Statuszeile 9:41 steht. Jede zweite Nachricht rückt eine
+       Minute weiter. */
+    function zeit() {
+      var h = Math.floor(minute / 60), m = minute % 60;
+      var t = (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m;
+      if (++schritte % 2 === 0) minute++;
+      return t;
+    }
+
+    function blase(seite, text, d) {
+      var el = document.createElement('div');
+      el.className = 'wap__b wap__b--' + seite + ' is-first';
+      if (d) el.innerHTML = beleg(d);
+      el.appendChild(document.createTextNode(text));
+      var t = document.createElement('span');
+      t.className = 'wap__t';
+      t.innerHTML = zeit() + (seite === 'out' ? ' ' + TICK : '');
+      el.appendChild(t);
+      body.appendChild(el);
+    }
+
+    function punkte() {
+      var el = document.createElement('div');
+      el.className = 'wap__b wap__b--in is-first wap__tippt';
+      el.innerHTML = '<i></i><i></i><i></i>';
+      body.appendChild(el);
+      return el;
+    }
+
+    function spiel(verlauf) {
+      var mein = ++gen;
+      uhren.forEach(clearTimeout); uhren = [];
+      leeren();
+      minute = verlauf.start; schritte = 0;
+      sagt('online');
+
+      if (!sanft) {
+        verlauf.forEach(function (s) {
+          if (s.du) blase('out', s.du);
+          else blase('in', s.paul, s.beleg);
+        });
+        return;
+      }
+
+      var i = 0;
+      function weiter() {
+        if (mein !== gen) return;
+        if (i >= verlauf.length) {
+          return warte(5000).then(function () { if (mein === gen) spiel(verlauf); });
+        }
+        var s = verlauf[i++];
+
+        /* Eigene Nachrichten tippen sich nicht selbst. Sie stehen
+           da, sobald man sie abgeschickt hat. Nur die Pause davor
+           bleibt. */
+        if (s.du) {
+          return warte(i === 1 ? 250 : 850).then(function () {
+            if (mein !== gen) return;
+            blase('out', s.du);
+            return warte(320).then(weiter);
+          });
+        }
+
+        sagt('schreibt ...');
+        var p = punkte();
+        return warte(Math.min(1900, 550 + s.paul.length * 13)).then(function () {
+          p.remove();
+          if (mein !== gen) return;
+          sagt('online');
+          blase('in', s.paul, s.beleg);
+          return warte(320).then(weiter);
+        });
+      }
+      warte(900).then(weiter);
+    }
+
+    return { spiel: spiel, halt: halt, wurzel: wurzel };
+  }
+
+  /* Läuft nur, solange das Gerät zu sehen ist. Eine Animation, die
+     im Hintergrund weiterdreht, kostet Rechenzeit und hat kein
+     Publikum. */
+  function beobachte(g, hol) {
+    var kasten = g.wurzel.closest('.schau, .aktion__buehne') || g.wurzel;
+    if (!('IntersectionObserver' in window)) { g.spiel(hol()); return; }
+    new IntersectionObserver(function (e) {
+      e.forEach(function (x) { if (x.isIntersecting) g.spiel(hol()); else g.halt(); });
+    }, { threshold: 0.2 }).observe(kasten);
+  }
+
+  function u(h, m) { return h * 60 + m; }
+
+  /* ── Kopf ── */
+  var KERN = [
+    { du:   'Paul, trag Herrn Kern für Donnerstag ein.' },
+    { paul: 'Welchen Kern meinst du, Michael Kern in der Ostengasse oder die Kern GmbH in Burgweinting?' },
+    { du:   'Die GmbH. 10 Uhr, Angebot für die neue Anlage.' },
+    { paul: 'Steht drin. Ich schicke ihm die Bestätigung.', beleg: {
+        label: 'Termin angelegt', titel: 'Angebotstermin, Kern GmbH',
+        zeilen: [['Wann', 'Do, 21. Aug, 10:00'], ['Wo', 'Obertraublinger Str. 4'],
+                 ['Wer', 'Herr Kern, Geschäftsführer']],
+        notiz: 'Im Kalender, Bestätigung ist raus' } }
+  ];
+  KERN.start = u(8, 12);
+
+  /* ── Paul in Aktion ── */
+  var B0 = [
+    { du:   'Paul, Frau Bauer will nächste Woche einen Termin für die Wartung.' },
+    { paul: 'Mach ich. Bei ihr steht die Vaillant im Keller, letztes Jahr waren wir im September dran. Dienstag 9:00 oder Donnerstag 14:00, beides ist frei.' },
+    { du:   'Dienstag.' },
+    { paul: 'Eingetragen und Bestätigung ist raus.', beleg: {
+        label: 'Termin angelegt', titel: 'Heizungswartung bei Frau Bauer',
+        zeilen: [['Wann', 'Di, 19. Aug, 9:00 bis 10:30'], ['Wo', 'Ostengasse 12, Regensburg'],
+                 ['Anlage', 'Vaillant ecoTEC, Bj. 2019']],
+        notiz: 'Im Kalender, Kunde benachrichtigt' } }
+  ];
+  B0.start = u(8, 12);
+
+  var B1 = [
+    { paul: 'Neue Anfrage über euer Formular, gerade reingekommen.' },
+    { paul: 'Kein Bestandskunde. Das klingt nicht nach nächster Woche. Soll ich ihm schreiben, dass heute noch jemand von euch kommt?', beleg: {
+        label: 'Neue Anfrage, Website', titel: 'Wasserschaden im Keller',
+        zeilen: [['Name', 'Michael Kern'], ['Wo', 'Ostengasse 12, Regensburg'],
+                 ['Seit', 'heute früh'], ['Erreichbar', 'Handy hinterlegt']] } },
+    { du:   'Ja, schreib ihm. Tobias ist ab 15 Uhr frei.' },
+    { paul: 'Ist raus. Ich sag dir Bescheid, wenn er antwortet.' }
+  ];
+  B1.start = u(8, 31);
+
+  var B2 = [
+    { du:   'Mach Frau Bauer ein Angebot für die Wartung, so wie letztes Jahr.' },
+    { paul: 'Hab die Posten von 2025 genommen und auf eure aktuelle Preisliste gehoben. Anfahrt ist wie immer pauschal drin.' },
+    { paul: 'Geht erst raus, wenn du freigibst.', beleg: {
+        label: 'Angebot, Entwurf', titel: 'A-2026-0184, Heizungswartung',
+        zeilen: [['Kunde', 'Bauer, Ostengasse 12'], ['Leistung', 'Wartung inkl. Abgasmessung'],
+                 ['Summe', '340,00 € zzgl. MwSt.']] } },
+    { du:   'Freigeben.' },
+    { paul: 'Ist raus. Ich sag dir Bescheid, wenn sie nicht reagiert.' }
+  ];
+  B2.start = u(9, 4);
+
+  var B3 = [
+    { paul: 'Der Auftrag bei Frau Bauer ist abgeschlossen. Soll ich sie morgen um eine Bewertung bitten?' },
+    { du:   'Ja. Schick ihr den direkten Link.' },
+    { paul: 'Mach ich. Wenn sie antwortet, lege ich die Rückmeldung hier ab.', beleg: {
+        label: 'Bewertung vorbereitet', titel: 'Heizungswartung bei Frau Bauer',
+        zeilen: [['Versand', 'morgen, 10:00'], ['Kanal', 'SMS mit Bewertungslink']],
+        notiz: 'Freigegeben und eingeplant' } }
+  ];
+  B3.start = u(9, 16);
+
+  var B4 = [
+    { paul: 'Bei 24 Kunden war die Wartung letztes Jahr im Oktober. Soll ich sie jetzt anschreiben?' },
+    { du:   'Ja. Erst die Stammkunden, bei denen wir die Anlage kennen.' },
+    { paul: 'Sind 18 Kontakte. Ich nehme eure Wartungsvorlage und melde Antworten hier.', beleg: {
+        label: 'Kampagne vorbereitet', titel: 'Wartungen im Oktober',
+        zeilen: [['Kontakte', '18 Stammkunden'], ['Start', 'Montag, 9:00']],
+        notiz: 'Wartet auf den geplanten Versand' } }
+  ];
+  B4.start = u(8, 44);
+
+  var BEISPIELE = [B1, B0, B2, B3, B4];
+
+  /* ── Verdrahten ── */
+  var geraete = [].slice.call(document.querySelectorAll('.ip'));
+
+  var kopf = geraete[0] && geraet(geraete[0]);
+  if (kopf) beobachte(kopf, function () { return KERN; });
+
+  var buehne = document.querySelector('.aktion__buehne .ip');
+  if (buehne) {
+    var g = geraet(buehne);
+    var knoepfe = [].slice.call(document.querySelectorAll('[data-tabknopf]'));
+    var texte   = knoepfe.map(function (k) { return document.getElementById(k.getAttribute('aria-controls')); });
+    var offen   = 0;
+
+    function zeige(index, fokus) {
+      index = (index + knoepfe.length) % knoepfe.length;
+      knoepfe.forEach(function (k, i) {
+        var an = i === index;
+        k.classList.toggle('is-active', an);
+        k.setAttribute('aria-selected', String(an));
+        k.tabIndex = an ? 0 : -1;
+        if (texte[i]) {
+          texte[i].hidden = !an;
+          texte[i].classList.toggle('is-active', an);
+        }
+      });
+      offen = index;
+      if (fokus) knoepfe[index].focus({ preventScroll: true });
+      g.spiel(BEISPIELE[index]);
+    }
+
+    knoepfe.forEach(function (k, i) {
+      k.addEventListener('click', function () { zeige(i, false); });
+      k.addEventListener('keydown', function (e) {
+        var ziel = null;
+        if (e.key === 'ArrowDown' || e.key === 'ArrowRight') ziel = i + 1;
+        if (e.key === 'ArrowUp'   || e.key === 'ArrowLeft')  ziel = i - 1;
+        if (e.key === 'Home') ziel = 0;
+        if (e.key === 'End')  ziel = knoepfe.length - 1;
+        if (ziel == null) return;
+        e.preventDefault();
+        zeige(ziel, true);
+      });
+    });
+
+    var zur = document.querySelector('[data-zurueck]');
+    var vor = document.querySelector('[data-vor]');
+    if (zur) zur.addEventListener('click', function () { zeige(offen - 1, false); });
+    if (vor) vor.addEventListener('click', function () { zeige(offen + 1, false); });
+
+    beobachte(g, function () { return BEISPIELE[offen]; });
+  }
+})();
+
+/* ══════════════════════════════════════════════════════════
+   Der Rechner.
+
+   Drei Fassungen, eine pro Dream Outcome: mehr Kunden, mehr Zeit,
+   keine neue Stelle. Jede hat eigene Felder, eigene Zeilen und
+   einen eigenen Satz. Der Satz ist das eigentliche Ergebnis: eine
+   Zahl kann man anzweifeln, einen Satz muss man nachrechnen.
+
+   Gerundet wird vor dem Weiterrechnen, nicht erst beim Anzeigen.
+   Sonst stehen 4 Anrufe, 0 Aufträge und 130 Euro untereinander,
+   und wer nachmultipliziert, kommt auf null. Eine Tabelle, die sich
+   selbst widerspricht, ist schlimmer als gar keine.
+
+   4,33 Wochen im Monat, nicht 4. Zwölf Monate zu vier Wochen sind
+   48, und das Jahr hat 52. Wer mit 4 rechnet, verliert einen Monat.
+   ══════════════════════════════════════════════════════════ */
+(function () {
+  'use strict';
+
+  var wunsch  = document.getElementById('r-wunsch');
+  var aus     = document.getElementById('r-aus');
+  var titel   = document.getElementById('r-titel');
+  var satzEl  = document.getElementById('r-satz');
+  var preisEl = document.getElementById('r-preis');
+  var feinEl  = document.getElementById('r-fein');
+  if (!wunsch || !aus || !titel || !satzEl || !preisEl || !feinEl) return;
+
+  var PREIS  = 997;
+  var WOCHEN = 4.33;
+  var felder = Array.prototype.slice.call(document.querySelectorAll('.rechner__form label[data-fuer]'));
+
+  function zahl(id, min, max) {
+    var f = document.getElementById(id);
+    var v = parseFloat(String(f ? f.value : '').replace(',', '.'));
+    if (!isFinite(v)) return 0;
+    return Math.min(max, Math.max(min, v));
+  }
+  function de(n)  { return Math.round(n).toLocaleString('de-DE'); }
+  function eur(n) { return de(n) + ' €'; }
+
+  function zeilen(liste) {
+    aus.innerHTML = '';
+    liste.forEach(function (z) {
+      var div = document.createElement('div');
+      if (z[2]) div.className = z[2];
+      var dt = document.createElement('dt'); dt.textContent = z[0];
+      var dd = document.createElement('dd'); dd.textContent = z[1];
+      div.appendChild(dt); div.appendChild(dd);
+      aus.appendChild(div);
+    });
+  }
+
+  var wege = {
+
+    /* Mehr Kunden. Das Ziel sind Aufträge, die Rechnung sind die
+       Anrufe, die heute an die Mailbox gehen. */
+    kunden: {
+      titel: 'Mehr Kunden, ohne jemanden zu suchen.',
+      fein: 'Das ist Umsatz, nicht Gewinn. Wer es genau wissen will, setzt statt des '
+          + 'Auftragswerts den Rohertrag ein. Und Paul rettet nicht jeden Anruf. Was er '
+          + 'rettet, steht hinterher in eurem Chat und lässt sich zählen.',
+      rechne: function () {
+        var z = Math.round(zahl('r-k-ziel', 0, 500));
+        var a = zahl('r-k-anrufe', 0, 500);
+        var q = zahl('r-k-quote', 0, 10);
+        var w = zahl('r-k-wert', 0, 1000000);
+
+        var imMonat   = Math.round(a * WOCHEN);
+        var auftraege = Math.round(imMonat * q / 10);
+        var umsatz    = auftraege * w;
+
+        zeilen([
+          ['Verpasste Anrufe im Monat', de(imMonat)],
+          ['Aufträge, die darin stecken', de(auftraege)],
+          ['Dein Ziel', de(z)],
+          ['Umsatz, der daran hängt, im Monat', eur(umsatz), 'ist-summe'],
+          ['Im Jahr', eur(umsatz * 12)]
+        ]);
+
+        var satz, preis = '';
+        if (z <= 0) {
+          satz = 'Sag erst, wie viele Aufträge mehr du im Monat willst. Dann rechnet er.';
+        } else if (a <= 0 || q <= 0 || w <= 0) {
+          satz = 'Trag ein, was heute passiert. Dann rechnet er.';
+        } else if (auftraege > z) {
+          satz = 'Dein Ziel liegt in den Anrufen, die heute an die Mailbox gehen. '
+               + 'Nach deinen Zahlen stecken darin ' + de(auftraege) + ' Aufträge im Monat, '
+               + 'du willst ' + de(z) + '. Paul muss dafür nicht jeden retten.';
+        } else if (auftraege === z) {
+          satz = 'Dein Ziel liegt genau in den Anrufen, die heute an die Mailbox gehen: '
+               + de(auftraege) + ' Aufträge im Monat. Das ist knapp. Dafür müsste Paul '
+               + 'jeden davon retten.';
+        } else if (auftraege > 0) {
+          satz = 'Aus verpassten Anrufen allein wird dein Ziel nicht. Darin stecken '
+               + de(auftraege) + ' Aufträge im Monat, du willst ' + de(z) + '. '
+               + 'Der Rest liegt in Angeboten, denen niemand nachgeht, und Wartungen, '
+               + 'an die keiner erinnert. Das steht hier nicht als Zahl.';
+        } else {
+          satz = 'Bei diesen Zahlen geht dir über verpasste Anrufe kein Auftrag verloren. '
+               + 'Dein Ziel liegt woanders, und dafür rechnet diese Seite nicht.';
+        }
+        if (auftraege > 0 && w > 0) {
+          if (umsatz >= PREIS) {
+            var noetig = Math.ceil(PREIS / w);
+            preis = 'Paul kostet ' + eur(PREIS) + ' im Monat. Bezahlt ist er ab dem '
+                  + (noetig === 1 ? 'ersten' : noetig + '.') + ' Auftrag, den er rettet.';
+          } else {
+            preis = 'Paul kostet ' + eur(PREIS) + ' im Monat. Über verpasste Anrufe allein '
+                  + 'holt er das bei diesen Zahlen nicht herein.';
+          }
+        }
+        return [satz, preis];
+      }
+    },
+
+    /* Mehr Zeit. Das Ziel sind Stunden, die Rechnung sind die
+       Stunden, die heute im Telefon und im Büro stecken. Was sie
+       wert sind, sagt der Stundensatz beim Kunden. */
+    zeit: {
+      titel: 'Mehr Zeit, ohne dass etwas liegen bleibt.',
+      fein: 'Paul nimmt dir Telefon, Termine, Angebote und Rückrufe ab. Was er übernimmt, '
+          + 'legst du fest. Ob du die Stunden beim Kunden verbringst oder zu Hause, ist '
+          + 'deine Sache.',
+      rechne: function () {
+        var z = zahl('r-z-ziel', 0, 168);
+        var h = zahl('r-z-stunden', 0, 168);
+        var p = zahl('r-z-satz', 0, 100000);
+
+        var hMonat  = Math.round(h * WOCHEN);
+        var zMonat  = Math.round(z * WOCHEN);
+        var zurueck = Math.min(zMonat, hMonat);
+        var wert    = zurueck * p;
+
+        zeilen([
+          ['Telefon und Büro im Monat', de(hMonat) + ' Std.'],
+          ['Davon willst du zurück', de(zMonat) + ' Std.'],
+          ['Beim Kunden wären die Stunden wert, im Monat', eur(wert), 'ist-summe'],
+          ['Im Jahr', eur(wert * 12)]
+        ]);
+
+        var satz, preis = '';
+        if (z <= 0) {
+          satz = 'Sag erst, wie viele Stunden die Woche du zurückwillst. Dann rechnet er.';
+        } else if (h <= 0 || p <= 0) {
+          satz = 'Trag ein, was heute passiert. Dann rechnet er.';
+        } else if (hMonat > zMonat) {
+          satz = 'Die Zeit liegt im Telefon und im Büro. Nach deinen Zahlen gehen dafür '
+               + de(hMonat) + ' Stunden im Monat drauf, du willst ' + de(zMonat)
+               + ' zurück. Paul muss dafür nicht alles übernehmen.';
+        } else if (hMonat === zMonat) {
+          satz = 'Das ist knapp. Du willst genau die ' + de(hMonat) + ' Stunden zurück, die '
+               + 'im Monat für Telefon und Büro draufgehen. Dafür müsste Paul alles davon '
+               + 'übernehmen.';
+        } else {
+          satz = 'Mehr Zeit, als im Telefon und im Büro steckt, holt Paul nicht zurück. '
+               + 'Da gehen ' + de(hMonat) + ' Stunden im Monat drauf, du willst ' + de(zMonat)
+               + '. Der Rest liegt woanders, und dafür rechnet diese Seite nicht.';
+        }
+        if (zurueck > 0 && p > 0) {
+          if (wert >= PREIS) {
+            preis = 'Paul kostet ' + eur(PREIS) + ' im Monat. Das sind '
+                  + de(Math.ceil(PREIS / p)) + ' Stunden von dir beim Kunden.';
+          } else {
+            preis = 'Paul kostet ' + eur(PREIS) + ' im Monat. Die Stunden, die du zurückwillst, '
+                  + 'bringen beim Kunden weniger. Dann zählt, was dir der Feierabend wert '
+                  + 'ist, und das steht hier nicht als Zahl.';
+          }
+        }
+        return [satz, preis];
+      }
+    },
+
+    /* Keine neue Stelle. Die Rechnung ist, was die Stelle kosten
+       würde, und welcher Teil davon Telefon und Büro ist. Nur den
+       Teil macht Paul. Der Rest bleibt, und das steht auch da. */
+    stelle: {
+      titel: 'Keine neue Stelle, trotzdem geht jemand ran.',
+      fein: 'Paul ersetzt niemanden auf der Baustelle oder im Lager. Er macht Telefon und '
+          + 'Büro. Die Nebenkosten der Stelle rechnest du selbst ein, weil sie in jedem '
+          + 'Betrieb anders sind.',
+      rechne: function () {
+        var h = zahl('r-s-stunden', 0, 168);
+        var l = zahl('r-s-lohn', 0, 10000);
+        var t = zahl('r-s-anteil', 0, 10);
+
+        var hMonat   = Math.round(h * WOCHEN);
+        var bueroStd = Math.round(hMonat * t / 10);
+        var kosten   = hMonat * l;
+        var buero    = bueroStd * l;
+        var rest     = kosten - buero;
+        var diff     = buero - PREIS;
+
+        zeilen([
+          ['Die Stelle kostet im Monat', eur(kosten)],
+          ['Davon Telefon und Büro', eur(buero)],
+          ['Paul kostet im Monat', eur(PREIS)],
+          [diff >= 0 ? 'Das spart Paul im Monat' : 'So viel mehr kostet Paul im Monat',
+           eur(Math.abs(diff)), 'ist-summe'],
+          ['Im Jahr', eur(Math.abs(diff) * 12)]
+        ]);
+
+        var satz;
+        if (h <= 0 || l <= 0) {
+          satz = 'Trag ein, was die Stelle hätte. Dann rechnet er.';
+        } else if (t <= 0) {
+          satz = 'Wenn nichts davon Telefon und Büro ist, kann Paul nichts davon übernehmen. '
+               + 'Dafür rechnet diese Seite nicht.';
+        } else if (buero > PREIS) {
+          satz = 'Telefon und Büro dieser Stelle kosten dich ' + eur(buero) + ' im Monat. '
+               + 'Das macht Paul für ' + eur(PREIS) + '. ';
+          satz += rest > 0
+            ? 'Die anderen ' + eur(rest) + ' bleiben: Was auf der Baustelle und im Lager '
+              + 'anfällt, macht er nicht.'
+            : 'Und er wird nicht krank, kündigt nicht und ist an 365 Tagen da.';
+        } else {
+          satz = 'Bei diesen Zahlen ist die Stelle für Telefon und Büro nicht teurer als '
+               + 'Paul. Dann zählt, dass Paul nicht krank wird, nicht kündigt und an 365 '
+               + 'Tagen da ist, und das steht hier nicht als Zahl.';
+        }
+        return [satz, ''];
+      }
+    }
+  };
+
+  function rechne() {
+    var name = wege[wunsch.value] ? wunsch.value : 'kunden';
+    var weg  = wege[name];
+    felder.forEach(function (l) {
+      l.hidden = l.getAttribute('data-fuer').split(' ').indexOf(name) < 0;
+    });
+    titel.textContent = weg.titel;
+    feinEl.textContent = weg.fein;
+    var r = weg.rechne();
+    satzEl.textContent  = r[0];
+    preisEl.textContent = r[1];
+  }
+
+  wunsch.addEventListener('change', rechne);
+  Array.prototype.forEach.call(document.querySelectorAll('.rechner__form input'), function (f) {
+    f.addEventListener('input', rechne);
+    f.addEventListener('change', rechne);
+  });
+  rechne();
+})();
+</script>
+
+</body>
+</html>
