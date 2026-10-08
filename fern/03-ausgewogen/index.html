@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="robots" content="noindex,nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>fern. Video Journalism, Redefined</title>
+<meta name="description" content="Video Journalism, Redefined. YouTube outlet reaching over 5 million subscribers.">
+<meta name="theme-color" content="#0b0c0c">
+<link rel="icon" type="image/svg+xml" href="../assets/logos/favicon.svg">
+<link rel="apple-touch-icon" href="../assets/logos/webclip.svg">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="fern.">
+<meta property="og:title" content="fern. Video Journalism, Redefined">
+<meta property="og:description" content="YouTube outlet reaching over 5 million subscribers.">
+<meta property="og:image" content="https://kwzrl.com/fern/assets/img/6939783a1655468f29e637ed_opengraph.webp">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="fern. Video Journalism, Redefined">
+<meta name="twitter:description" content="YouTube outlet reaching over 5 million subscribers.">
+<meta name="twitter:image" content="https://kwzrl.com/fern/assets/img/6939783a1655468f29e637ed_opengraph.webp">
+<link rel="preload" href="../assets/fonts/6936bc85f1e6f94ab29973f7_InterTight-Medium.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" as="image" href="hero-still-d.webp" media="(min-aspect-ratio: 7/5)" fetchpriority="high">
+<link rel="preload" as="image" href="hero-still-t.webp" media="(min-aspect-ratio: 9/10) and (max-aspect-ratio: 7/5)" fetchpriority="high">
+<link rel="preload" as="image" href="hero-still-m.webp" media="(max-aspect-ratio: 9/10)" fetchpriority="high">
+<link rel="modulepreload" href="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.module.min.js" crossorigin>
+<link rel="modulepreload" href="https://unpkg.com/three@0.160.0/examples/jsm/environments/RoomEnvironment.js" crossorigin>
+<link rel="modulepreload" href="https://unpkg.com/three@0.160.0/examples/jsm/geometries/RoundedBoxGeometry.js" crossorigin>
+<link rel="modulepreload" href="https://unpkg.com/three@0.160.0/examples/jsm/loaders/SVGLoader.js" crossorigin>
+<link rel="stylesheet" href="style.css">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.module.min.js",
+  "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<a class="skip" href="#about">Skip to content</a>
+
+<!-- 3D studio, fixed behind the hero -->
+<div class="stage" id="stage" aria-hidden="true">
+  <div class="stage-still"></div>
+  <canvas id="scene"></canvas>
+  <div class="stage-shade" id="stageShade"></div>
+</div>
+
+<video id="reel" class="reel-source" muted loop playsinline preload="none" poster="../assets/video/posters/hero-reel.jpg" crossorigin="anonymous" aria-hidden="true" tabindex="-1">
+  <source src="../assets/video/hero-reel.webm" type="video/webm">
+  <source src="../assets/video/hero-reel.mp4" type="video/mp4">
+</video>
+
+<!-- top right: command palette trigger -->
+<button class="cmdk-trigger" id="cmdkOpen" type="button" aria-label="Search (Command K)" aria-haspopup="dialog" aria-controls="cmdk">
+  <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.6"/><path d="m10.4 10.4 3.2 3.2"/></svg>
+  <span class="kbd">⌘K</span>
+</button>
+
+<!-- floating pill navigation -->
+<nav class="pill" id="pill" aria-label="Main">
+  <span class="pill-ind" id="pillInd"></span>
+  <a href="#home" class="is-active" data-nav="home" aria-current="location">home,</a>
+  <a href="#about" data-nav="about">about,</a>
+  <a href="#sponsors" data-nav="sponsors">sponsors,</a>
+  <a href="#jobs" data-nav="jobs">jobs,</a>
+  <a href="#contact" data-nav="contact">contact.</a>
+  <span class="pill-sep" aria-hidden="true"></span>
+  <a href="#home" class="pill-avatar" data-top aria-label="fern., back to top"><span id="avatarLogo"></span></a>
+</nav>
+
+<main>
+  <section class="hero" id="home">
+    <div class="hud">
+      <div class="hud-a">
+        <div class="hud-left">
+          <span class="rec"><i></i>REC</span>
+          <span class="tc" id="timecode">00:00:00:00</span>
+        </div>
+        <p class="hud-caption">YouTube outlet reaching over 5 million subscribers.</p>
+      </div>
+      <div class="hud-b">
+        <div class="hud-ctl">
+          <button type="button" class="chip-btn" id="lampBtn" aria-pressed="true"><i class="lamp-dot"></i><span>Lamp on</span></button>
+          <button type="button" class="chip-btn" id="playBtn" aria-pressed="false"><i class="play-ico"></i><span>Pause</span></button>
+        </div>
+        <p class="hud-scroll">Scroll to view more <span class="arrow">↓</span></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="intro" id="about">
+    <div class="col">
+      <h1 class="name">
+        <span class="name-line">This Is Fern.</span>
+        <span class="badge">Video Journalism, Redefined</span>
+      </h1>
+
+      <div class="story" id="story">
+        <p>We believe video <span class="x x-video" data-x aria-hidden="true"><canvas id="reelChip" width="160" height="90"></canvas></span> is the future of journalism: a way to reach audiences beyond traditional media and deliver in-depth reporting in an increasingly brutal war for <span class="x-rec" data-word>attention.<i class="dot"></i></span></p>
+
+        <p>We <span class="x-circle" data-word>investigate,<svg viewBox="0 0 200 60" preserveAspectRatio="none" aria-hidden="true"><path d="M14 34C10 14 70 4 120 6s76 12 70 28c-6 18-74 22-120 20S6 46 22 22"/></svg></span> <span class="x-bounce" data-word data-letters>animate</span> and tell stories that matter. Select projects are produced in partnership with established outlets, <span class="x x-logos" data-x aria-hidden="true"><img width="185" height="25" src="../assets/logos/6995b6b7220fd08050da1b8e_nyt.svg" alt="" loading="lazy" decoding="async"><img width="560" height="160" src="../assets/logos/6995b6b7866fc8a3445d9206_bbc.svg" alt="" loading="lazy" decoding="async"><img width="463" height="72" src="../assets/logos/6995b6b753b5b6c6d7319fa1_wp.svg" alt="" loading="lazy" decoding="async"></span> bringing their reporting to life.</p>
+
+        <p>Born in <span class="x-clip" data-word><b class="clip-label">V1</b>2023.<i class="h l"></i><i class="h r"></i></span> Our work began with animation, using it to visualize complex information and tell important stories that are otherwise hard to convey. Since then, we have expanded that approach to include investigative on-the-ground <span class="x x-photo" data-x aria-hidden="true" data-tap><img src="../assets/img-sized/6977644d59608dba153ebf66_bts_1-800.webp" srcset="../assets/img-sized/6977644d59608dba153ebf66_bts_1-800.webp 800w, ../assets/img-sized/6977644d59608dba153ebf66_bts_1-1600.webp 1600w" sizes="60px" width="800" height="450" loading="lazy" decoding="async" alt=""></span> reporting and in-person interviews.</p>
+
+        <p id="about-team">The channel was originally founded by the team behind <a class="u" href="https://simpli.de/" target="_blank" rel="noopener">Simplicissimus</a> and <a class="u" href="https://www.youtube.com/@hoog-youtube" target="_blank" rel="noopener">Hoog</a>. Hoog has since stepped away to focus on other projects, aside from occasional voice-over work. While we maintain an office in Amsterdam, our team is spread across Europe. Today, around 100 people <span class="x x-team" data-x aria-hidden="true"><img src="../assets/img-sized/69c40faf9ee0ff08de1e307f_fern-team-member-2-800.webp" srcset="../assets/img-sized/69c40faf9ee0ff08de1e307f_fern-team-member-2-800.webp 800w, ../assets/img-sized/69c40faf9ee0ff08de1e307f_fern-team-member-2-1600.webp 1600w" sizes="48px" width="800" height="800" loading="lazy" decoding="async" alt=""><img src="../assets/img-sized/69c40f661f39e0bc3dbdedfd_fern-team-member-4-800.webp" srcset="../assets/img-sized/69c40f661f39e0bc3dbdedfd_fern-team-member-4-800.webp 800w, ../assets/img-sized/69c40f661f39e0bc3dbdedfd_fern-team-member-4-1600.webp 1600w" sizes="48px" width="800" height="800" loading="lazy" decoding="async" alt=""><img src="../assets/img-sized/69c41091990db1c059b2e9a1_fern-team-member-7-800.webp" srcset="../assets/img-sized/69c41091990db1c059b2e9a1_fern-team-member-7-800.webp 800w, ../assets/img-sized/69c41091990db1c059b2e9a1_fern-team-member-7-1600.webp 1600w" sizes="48px" width="800" height="800" loading="lazy" decoding="async" alt=""><img src="../assets/img-sized/69c410a19a0825f4e4d34fd5_fern-team-member-8-800.webp" srcset="../assets/img-sized/69c410a19a0825f4e4d34fd5_fern-team-member-8-800.webp 800w, ../assets/img-sized/69c410a19a0825f4e4d34fd5_fern-team-member-8-1600.webp 1600w" sizes="48px" width="800" height="800" loading="lazy" decoding="async" alt=""></span> work across our channels and podcast, which for now is available only in German. We’ve partnered with <a class="u" href="https://electrify.video" target="_blank" rel="noopener">Electrify</a> since January 2025.</p>
+
+        <p>fern is a play on the German words “Fernweh” (a longing for distant places, or homesickness for a place you’ve never been) and “fernsehen” (to watch television). It’s also a plant in English, hence the <span class="x-green" data-word>green.<svg class="sprig" viewBox="0 0 40 40" aria-hidden="true"><path d="M8 36C14 26 20 16 32 6"/><path d="M12 30l-6-2M15 25l-7-4M18 20l-6-6M22 16l-3-7M26 12l-1-6M14 28l4 5M17 23l6 3M21 18l6 1M25 13l5-1"/></svg></span></p>
+      </div>
+
+      <dl class="stats">
+        <div><dt>fern.</dt><dd>5 mil subscribers</dd></div>
+        <div><dt>Our German outlets</dt><dd><span>210k</span><span>190k</span><span>2.3 Mil</span></dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="partners">
+    <div class="col">
+      <p class="eyebrow">We worked with</p>
+      <h2 class="h2">Great Reporting, On Youtube</h2>
+      <p class="lede">In recent years, we’ve been fortunate to work with several acclaimed outlets and journalists. Our videos amplify their stories, highlight their reporting, and deliver them to new audiences.</p>
+    </div>
+    <div class="logo-row">
+      <img width="185" height="25" src="../assets/logos/6995b6b7220fd08050da1b8e_nyt.svg" alt="The New York Times" loading="lazy" decoding="async">
+      <img width="463" height="72" src="../assets/logos/6995b6b753b5b6c6d7319fa1_wp.svg" alt="The Washington Post" loading="lazy" decoding="async">
+      <img width="560" height="160" src="../assets/logos/6995b6b7866fc8a3445d9206_bbc.svg" alt="BBC" loading="lazy" decoding="async">
+      <img width="1024" height="276" src="../assets/logos/6995b6b756344bc741748c17_occrp.svg" alt="OCCRP" loading="lazy" decoding="async">
+      <img width="812" height="279" src="../assets/logos/6995b6b76b85d83ace20f213_veritasium.svg" alt="Veritasium" loading="lazy" decoding="async">
+      <img width="850" height="142" src="../assets/logos/6995b6b712ed6eae703aa529_dossier.svg" alt="Dossier" loading="lazy" decoding="async">
+      <img width="736" height="126" src="../assets/logos/6995b6b7b71f35ee36120df8_the-examination.svg" alt="The Examination" loading="lazy" decoding="async">
+    </div>
+  </section>
+
+  <section class="sponsors" id="sponsors" aria-labelledby="sponsors-h">
+    <div class="wrap">
+      <p class="eyebrow">About us and our partners</p>
+      <h2 class="h2 big" id="sponsors-h">Your ad never looked this good.</h2>
+      <div class="sponsors-grid">
+        <figure class="reel-card">
+          <video class="lazy-video" muted loop playsinline preload="none" width="1280" height="720" poster="../assets/video/posters/Sponsors-Hero-approved-SHORTENED.jpg" aria-hidden="true">
+            <source src="../assets/video/Sponsors-Hero-approved-SHORTENED.webm" type="video/webm">
+            <source src="../assets/video/Sponsors-Hero-approved-SHORTENED.mp4" type="video/mp4">
+          </video>
+        </figure>
+        <div class="sponsors-copy">
+          <p>Every sponsor segment is custom-made, animated, and designed to be part of the episode itself by being directly written into the narrative. This makes our partnerships truly native.</p>
+          <p>Cinematic visuals, deep research and fact based storytelling by a team of journalists and creatives is what makes fern a trusted voice and a safe, high-quality environment for brand partners.</p>
+          <p>We partner with brands that value high production quality, thoughtful storytelling and an intelligent, curious audience.</p>
+        </div>
+      </div>
+      <div class="sponsors-foot">
+        <div class="sponsor-logos">
+          <img width="210" height="60" src="../assets/logos/692040fd3333b0458f203750_Shopify-1.webp.svg" alt="Shopify" loading="lazy" decoding="async">
+          <img width="210" height="50" src="../assets/logos/692040fd3b307f9f409aa884_emma-scaled.webp.svg" alt="emma" loading="lazy" decoding="async">
+          <img width="210" height="50" src="../assets/logos/692045ae69741dade2c89014_revolut.webp.svg" alt="Revolut" loading="lazy" decoding="async">
+        </div>
+        <div class="collab">
+          <p>Do you want to collaborate?</p>
+          <a class="btn" href="mailto:fern@1up.management">Get in touch with Anna... <span aria-hidden="true">→</span></a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="jobs" id="jobs" aria-labelledby="jobs-h">
+    <div class="wrap">
+      <p class="eyebrow">Jobs</p>
+      <h2 class="h2 big" id="jobs-h">Working For Fern</h2>
+      <p class="lede">We are always looking for talent. Check out our current open roles and come join the team.</p>
+      <div class="roles" role="table" aria-label="Open Roles">
+        <div class="roles-head" role="row"><span role="columnheader">Open Roles</span><span role="columnheader">Position</span><span role="columnheader">Location</span><span role="columnheader">Category</span></div>
+        <p class="roles-empty" role="row"><span role="cell">There are currently no jobs available.</span></p>
+      </div>
+      <a class="btn" href="#contact">Join Us <span aria-hidden="true">→</span></a>
+    </div>
+  </section>
+
+  <section class="contact" id="contact" aria-labelledby="contact-h">
+    <div class="wrap contact-grid">
+      <div>
+        <p class="eyebrow">Contact</p>
+        <h2 class="h2 big" id="contact-h">Get in touch.</h2>
+        <p class="lede">Business enquires? Send us an email</p>
+        <div class="mail-row">
+          <a class="mail-big" href="mailto:fern@1up.management">fern@1up.management</a>
+          <button type="button" class="chip-btn" id="copyMail"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="2"/><path d="M11 5V3.5A1.5 1.5 0 0 0 9.5 2h-6A1.5 1.5 0 0 0 2 3.5v6A1.5 1.5 0 0 0 3.5 11H5"/></svg><span>Copy</span></button>
+        </div>
+        <p class="eyebrow socials-h">Socials</p>
+        <div class="socials">
+          <a href="https://www.instagram.com/fern.tv/" target="_blank" rel="noopener"><img src="../assets/logos/691f57968a10dc80f2974521_inst-1.svg" width="20" height="20" alt="" loading="lazy">Instagram</a>
+          <a href="https://www.youtube.com/@fern-tv" target="_blank" rel="noopener"><img src="../assets/logos/691f57963da8c21851a1879f_youtube-1.svg" width="20" height="20" alt="" loading="lazy">Youtube</a>
+        </div>
+      </div>
+      <div class="faq" id="faq">
+        <p class="eyebrow">FAQ</p>
+        <h3 class="h3">If you’re curious</h3>
+        <details>
+          <summary>Why are you called fern?</summary>
+          <div class="ans"><p>fern is a play on the German words “Fernweh” (a longing for distant places, or homesickness for a place you’ve never been) and “fernsehen” (to watch television). It’s also a plant in English, hence the green.</p></div>
+        </details>
+        <details>
+          <summary>Who founded fern?</summary>
+          <div class="ans"><p>fern is the brainchild of German YouTubers David and Jonas (Simplicissimus, 2 Bored Guys), and Dutch YouTuber Hoog. He has since stepped back to focus on his main channel, but remains the voice behind some videos.</p></div>
+        </details>
+        <details>
+          <summary>Why did you partner with Electrify?</summary>
+          <div class="ans"><p>In 2025, we took an investment from <a class="u2" href="https://electrify.video" target="_blank" rel="noopener">Electrify</a> to stabilize the company and reduce the day-to-day operational load on the founders. That allowed us to grow the team and focus on making better videos than ever. Electrify isn’t involved in the creative process, and we remain editorially independent.</p></div>
+        </details>
+        <details>
+          <summary>How do you handle generative AI?</summary>
+          <div class="ans"><p>We work with a team of dedicated 2D and 3D animators, and tend to use AI only in the background for non-creative tasks like upscaling, image extension, or file organization. Beyond legal and ethical questions, we believe people value work that other humans have put real care and intention into. We use generative AI only very selectively.</p></div>
+        </details>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="foot-top">
+    <div class="foot-brand">
+      <strong>fern.</strong>
+      <span>Video Journalism, Redefined</span>
+      <a class="mail" href="mailto:fern@1up.management">fern@1up.management</a>
+    </div>
+    <nav class="foot-cols" aria-label="Footer">
+      <div><p class="eyebrow">About</p><a href="#about">about</a><a href="#about-team">team</a></div>
+      <div><p class="eyebrow">Watch</p><a href="https://www.youtube.com/@fern-tv" target="_blank" rel="noopener">youtube</a></div>
+      <div><p class="eyebrow">Join Us</p><a href="#jobs">jobs</a></div>
+      <div><p class="eyebrow">Questions</p><a href="#contact">contact</a><a href="#faq">faq</a></div>
+    </nav>
+  </div>
+  <div class="foot-mark">
+    <a class="wordmark" id="wordmark" href="#home" data-top aria-label="fern., back to top"></a>
+    <span class="foot-copy">@2025</span>
+  </div>
+</footer>
+
+
+<!-- command palette -->
+<div class="cmdk" id="cmdk" role="dialog" aria-modal="true" aria-label="Search" hidden>
+  <div class="cmdk-backdrop" data-close></div>
+  <div class="cmdk-panel">
+    <label class="cmdk-search">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.6"/><path d="m10.4 10.4 3.2 3.2"/></svg>
+      <input id="cmdkInput" type="text" placeholder="Search fern." autocomplete="off" spellcheck="false">
+      <span class="kbd">ESC</span>
+    </label>
+    <div class="cmdk-list" id="cmdkList" data-lenis-prevent></div>
+    <div class="cmdk-foot">
+      <span><span class="kbd">↑↓</span> navigate</span>
+      <span><span class="kbd">↵</span> select</span>
+      <span class="cmdk-hint">Try “faq” or “youtube”</span>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie_light.min.js"></script>
+<script defer src="https://unpkg.com/lenis@1.1.13/dist/lenis.min.js"></script>
+<script defer src="main.js"></script>
+<script type="module" src="scene.js"></script>
+<div aria-hidden="true" style="position:fixed;left:12px;bottom:12px;z-index:2147483647;pointer-events:none;font:11px/1 ui-monospace,Menlo,monospace;letter-spacing:.02em;color:#fafafa;background:rgba(0,0,0,.62);padding:6px 9px;border-radius:999px;backdrop-filter:blur(6px)">concept by kwzrl for fern.</div></body>
+</html>
