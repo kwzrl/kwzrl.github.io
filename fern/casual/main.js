@@ -272,7 +272,7 @@
       s.style.left = `${Math.round(Math.max(8, Math.min(vw - w - 8, xPx)) - lx)}px`;
     });
   }
-  const saved = store.get('fern-locker-stickers') || {};
+  const saved = store.get('fern-casual-stickers') || {};
   stickers.forEach(s => {
     const p = saved[s.dataset.id];
     if (p) { s.style.setProperty('--dx', `${p[0]}px`); s.style.setProperty('--dy', `${p[1]}px`); }
@@ -293,13 +293,13 @@
       if (e.pointerId !== id) return;
       id = null; s.classList.remove('is-drag');
       saved[s.dataset.id] = [parseFloat(s.style.getPropertyValue('--dx')) || 0, parseFloat(s.style.getPropertyValue('--dy')) || 0];
-      store.set('fern-locker-stickers', saved);
+      store.set('fern-casual-stickers', saved);
     };
     s.addEventListener('pointerup', end); s.addEventListener('pointercancel', end);
   });
   $('#resetStickers').addEventListener('click', () => {
     stickers.forEach(s => { s.classList.add('is-back'); s.style.setProperty('--dx', '0px'); s.style.setProperty('--dy', '0px'); delete saved[s.dataset.id]; });
-    store.del('fern-locker-stickers');
+    store.del('fern-casual-stickers');
   });
 
   /* ---------- drafting mat: page height, ruler labels, construction lines ---------- */
