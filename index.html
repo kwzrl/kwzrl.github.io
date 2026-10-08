@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Kilian Weinzierl — AI products end to end, out of Regensburg.">
+    <meta name="description" content="I craft the surface. The part people see, hear, and interact with.">
     <title>Kilian Weinzierl</title>
 
     <!-- Two crops of the same mark. A square logo dropped into a 1.91:1 preview gets
@@ -19,161 +19,471 @@
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://kwzrl.com/">
     <meta property="og:title" content="Kilian Weinzierl">
-    <meta property="og:description" content="AI products end to end — the thing itself, and the launch around it.">
+    <meta property="og:description" content="I craft the surface. The part people see, hear, and interact with.">
     <meta property="og:image" content="https://kwzrl.com/share.png">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Kilian Weinzierl">
-    <meta name="twitter:description" content="AI products end to end — the thing itself, and the launch around it.">
+    <meta name="twitter:description" content="I craft the surface. The part people see, hear, and interact with.">
     <meta name="twitter:image" content="https://kwzrl.com/share.png">
+    <link rel="preload" href="fonts/InterVariable.woff2" as="font" type="font/woff2" crossorigin>
+
+    <meta name="theme-color" content="#fafafa">
+    <script>
+        /* Stamped before the first paint, so a dark reader is never flashed a
+           white page. A stored choice wins; with none, the OS decides. The key
+           is the one the other pages here use, so the choice travels between
+           them rather than being made again on each. */
+        (function () {
+            var t = null;
+            try { t = localStorage.getItem("kwzrl:theme"); } catch (e) {}
+            if (t !== "light" && t !== "dark") t = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+            document.documentElement.dataset.theme = t;
+
+            /* And the accent with it, for the same reason: it is stamped on the
+               root as an inline property, which beats both skins' tokens, so a
+               reader who has chosen one never sees the default blue first.
+
+               Tested rather than trusted — this value goes straight into a style
+               declaration, and the only thing between localStorage and that
+               declaration is this line. Six hex digits or it is ignored. */
+            var a = null;
+            try { a = localStorage.getItem("kwzrl:accent"); } catch (e) {}
+            if (a && /^#[0-9a-f]{6}$/i.test(a)) document.documentElement.style.setProperty("--accent", a);
+        })();
+    </script>
 
     <style>
-        /* Source Serif 4, self-hosted from Adobe's OFL release; the licence
-           travels with it in fonts/OFL.txt. This is the variable build with
-           the weight pinned to 400 and only the optical size axis left in it —
-           the half this page actually uses. Carrying the weights too would
-           have made the file two and a half times the size for nothing.
-
-           The axis that stayed earns its keep on its own: it fits the drawing
-           to the size the text renders at instead of scaling one drawing to
-           every size, and no CSS is needed to ask for it, because
-           font-optical-sizing: auto is already the default. */
         @font-face {
-            font-family: "Source Serif 4";
-            src: url("fonts/SourceSerif4.woff2") format("woff2");
-            font-weight: 400;
+            font-family: "Inter";
+            src: url("fonts/InterVariable.woff2") format("woff2");
+            font-weight: 100 900;
             font-style: normal;
             font-display: swap;
         }
 
-        /* Everything else is close to the browser's own stylesheet: one column,
-           default paragraph rhythm, nothing that has to be laid out.
-           Source Serif is a text face with a generous x-height and needs no
-           compensating, so 15px sets about seventy-two characters to this
-           measure — the line runs a little long by the book, which is the
-           trade for the paragraph sitting as a block rather than a column.
+        :root {
+            --page: #fafafa;
+            --ink: #6f6e73;          /* the grey the prose is set in */
+            --ink-bright: #1c1c1c;   /* near-black: the lead, and a link on hover */
+            --ink-quiet: #7f7e85;    /* a step back from the prose: the caption */
+            --ease: cubic-bezier(0.16, 1, 0.3, 1);
 
-           The two numbers move together or not at all. Type came down from 17px
-           and the column came down from 630px with it, because a measure is a
-           count of characters and not a width: leaving the column where it was
-           would have bought eighty-odd characters a line, which is where the eye
-           starts losing its place on the way back to the left edge.
+            --arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4.6 11.4 11.4 4.6M11.4 4.6H6.3M11.4 4.6v5.1' fill='none' stroke='%23000' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 
-           The column is centred both ways. Horizontally that is the auto
-           margin. Vertically it is body becoming a single-cell grid as tall as
-           the viewport with main parked in the middle of it — which is what a
-           vertical `auto` margin cannot do, since it resolves to zero in
-           normal flow no matter how much room is left over.
+            --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 
-           `safe` is the word that matters on a phone. Plain centring pushes
-           the overflow out of both ends once the text is taller than the
-           screen, and the top of it can then never be scrolled to; safe
-           centring falls back to top alignment exactly then, which is also
-           where browsers too old for the keyword land when they drop the
-           declaration.
+            /* Every colour the page chrome is drawn in, in one place. They were
+               literals until the page had two skins to hold; a value written
+               once in the rule that uses it is fine right up to the moment a
+               second set of them has to exist, and then it is fifteen places to
+               forget. Nothing below this line states a colour of its own. */
+            /* The ground under every panel on the page, and it is paper
+               rather than panel grey. That is this page's rule and not the
+               originals': beautifului.dev presents each primitive in a grey
+               vitrine with a white card inside it, while every study here —
+               the sidebar, the tabs, the palette — fills its panel edge to
+               edge with the product's own white. Two conventions side by side
+               do not read as two categories, they read as a mistake.
 
-           min-height subtracts the vertical padding by hand because max-width
-           measures the content box — body cannot also be border-box without
-           the measure quietly swallowing its own 40px of padding. That padding
-           sitting outside max-width is what lets the column hold its measure
-           exactly on a wide screen while the same 20px keeps the text off the
-           edge of a phone, with no breakpoint that has to know the number. */
+               One value and not one per board. There used to be four greys in
+               this block and five more written into the boards themselves, and
+               the column they made was a stack of panels each a shade off its
+               neighbour — which reads as a page that could not decide rather
+               than as a page with range. Everything a panel is allowed to vary
+               is what stands *in* it. The floor is the same floor. */
+            --paper: #ffffff;
+
+            /* The edge a component gets when it is standing on paper rather
+               than filling it. Ten percent ink: enough to hold a white shape
+               against a white ground, faint enough that it is an edge and not
+               a border somebody drew on purpose. */
+            --frame: #1c1c1c1a;
+            --ink-faint: #cfcdc9;      /* fainter than a caption: the separator */
+
+            /* Two gutters and not five. Every row on this page ends in a
+               caption and every column is two panels side by side, so there
+               are exactly two distances to state: the one across a row, and
+               the one from a caption down to the next panel. They were 20, 20,
+               22, 22 and 34 across four blocks, which is not four decisions —
+               it is one decision made four times and remembered differently.
+
+               The row is the wider of the two on purpose. A gap that has a
+               line of type standing in it has to clear the type as well as the
+               panel, or the caption reads as the heading of whatever comes
+               next instead of as the line under what came before. */
+            --panel-gap: 20px;
+            --panel-row: 34px;
+
+            /* The lift under a panel: a hairline of contact, then a wide fall
+               pulled back in by a negative spread so it stays under the panel
+               instead of pooling around it. Kept deliberately shallow: a panel
+               only has to stop reading as a hole cut in the paper, not to stand
+               over it the way something floating would. It earns its keep on the
+               white sandbox panel, which is #fff on #fafafa and had no edge at
+               all before. No ring in this skin. */
+            --panel-shadow: 0 1px 2px #0000000a, 0 12px 28px -8px #0000001a;
+            --panel-ring: transparent;
+
+            --card: #f0f0f1;           /* the capsule the settings live in */
+            --card-hover: #eaeaec;
+
+            /* The one colour on a page of greys, and now the only place it is
+               written down. It used to be stated twice — once here for the
+               chrome, once inside the component set's own sheet — on the
+               reasoning that a shadow root cannot read a property from out
+               here. That reasoning was wrong: a custom property inherits
+               across a shadow boundary perfectly well. What cannot cross is a
+               *selector*, which is a different problem and the reason the skin
+               still travels as a class. The set's copy is gone; it inherits
+               this one, and so the picker in the corner moves the whole page
+               rather than the pill it sits in.
+
+               Everything drawn in it: the disc in the pill, the hairline under
+               the links in the writing, the focus ring anywhere on the page or
+               in any of the twenty-one components, selected text, the running
+               mark, a selected tab, the current row in a sidebar. The set's two
+               derivatives — the same colour where it has to carry type, and the
+               tint behind it — are computed from this one in bui.css rather
+               than picked alongside it, which is what makes eleven chips and a
+               free mixer survivable. */
+            --accent: #0285ff;
+
+            /* The three derivatives. Not a second, third and fourth colour
+               picked to sit beside the first — arithmetic on it, so that
+               whatever the reader chooses arrives here already in a usable
+               shape. The numbers are the old hand-picked blues read back out
+               in oklch. The tint lands on the old #e9f3ff to four decimal
+               places; the ink is one step deeper than the old #0070dd, for
+               a reason given below.
+
+               --accent-ink is the accent where it has to carry type. A
+               ceiling on the lightness rather than a step down from it,
+               because the reader can choose yellow: a relative step takes
+               #ffcc00 to a slightly duller yellow and leaves it unreadable,
+               a ceiling takes it to a dark gold that keeps the hue.
+
+               The ceiling is .50, and it is the loosest one that clears AA
+               everywhere. Contrast improves monotonically as it comes down,
+               so this is not an optimum — it is where to stop, before the
+               ink stops reading as the colour that was chosen and starts
+               reading as black. At .56, where the old hand-mixed #0070dd
+               sat, accent ink on accent tint bottoms out at 3.74:1 on mint.
+               At .50 the worst of every job it does — on paper, on its own
+               tint, and carrying white when it is a hover fill — is 4.71:1.
+
+               --accent-tint is the wash behind it — the same hue at a tenth
+               of the chroma, which is what keeps a red tint from reading as
+               pink and a yellow one from reading as a highlighter.
+
+               --accent-on is type standing ON a solid fill. It was #fff,
+               which is correct for exactly one blue and illegible on the
+               yellow chip. There is no contrast function in CSS yet, so the
+               switch is written as arithmetic: multiply the distance from the
+               threshold by a thousand and let clamp() collapse it to one end
+               or the other. Nothing in between, by construction.
+
+               The threshold is .57, the ends are pure black and pure white,
+               and every number here was measured rather than chosen. All
+               eleven chips were rendered against both ends and scored. The
+               obvious .75 leaves white on green at 2.12:1; softening the
+               dark end to an off-black drops purple to 4.17:1. Pure ends at
+               .57 put the worst case at 5.08:1, on purple.
+
+               .57 rather than the .53 a first sweep returned, because .53
+               is one thousandth away from indigo's own lightness, and this
+               is not a step function — it is a very steep ramp, and a colour
+               landing inside the ramp comes out a mid grey. Indigo did:
+               1.21:1, worse than either end would have been. So the
+               multiplier is 100000, which makes the ramp narrower than any
+               colour will land in, and the threshold sits in the gap between
+               indigo at .529 and purple at .615, where no chip is.
+
+               One threshold serves both on-colours, and that is the other
+               reason the ink ceiling came down to .50: at .56 the light
+               skin's ink straddled .57 and the two would have needed
+               separate numbers.
+
+               What falls out of that measurement is worth saying out loud,
+               because it reads as a mistake: nearly every chip takes the
+               BLACK end, the default blue included. White on #0285ff is
+               3.62:1 and fails AA; black on it is 4.76:1 and passes. The
+               white button was the convention, and on this blue the
+               convention was wrong.
+
+               The alternative was to keep white and deepen the fill under it
+               until white worked. It scores worse — 4.88:1 at best — and it
+               spends the one thing the picker is for, because the fill would
+               stop being the colour the reader actually chose. */
+            --accent-ink: oklch(from var(--accent) min(l, 0.50) c h);
+            --accent-tint: oklch(from var(--accent) 0.96 calc(c * 0.095) h);
+            --accent-on: oklch(from var(--accent) clamp(0, (0.57 - l) * 100000, 1) 0 h);
+
+            /* The same threshold again, against --accent-ink rather than the
+               accent, and it is not redundancy. A solid accent button deepens
+               to --accent-ink on hover — and --accent-ink moves DOWN in the
+               light skin and UP in the dark one, because its other job is
+               carrying type against the ground. So in the dark skin the hover
+               fill is the lighter of the two, and type that was correctly
+               white on the accent is wrong on it. One property rather than
+               white-on-hover-and-hope. */
+            --accent-on-ink: oklch(from var(--accent-ink) clamp(0, (0.57 - l) * 100000, 1) 0 h);
+
+            /* The palette that opens off the disc. Near-opaque rather than the
+               half-transparent sheet the material is usually drawn as: this one
+               opens over a page that is mostly white, and a white veil over
+               white is a shadow with nothing in it. The blur behind it earns its
+               keep on the panels lower down. */
+            --pop: #ffffffe6;
+            --pop-edge: #00000014;
+            --pop-gap: #ffffff;        /* the ring's breath around a chosen chip */
+            --pop-shadow: 0 16px 40px -12px #00000029, 0 2px 8px #0000000f;
+
+            /* The contribution ramp, empty day to busiest. Deliberately uneven:
+               almost the whole range is spent on the first step, so the field
+               answers "did I show up" before it answers "how much". */
+            --cell-0: #e5e5e6;
+            --cell-pad: #ececed;       /* days outside the window, drawn to close the rectangle */
+            --cell-1: #a6a5a2;
+            --cell-2: #85847f;
+            --cell-3: #6c6b66;
+            --cell-4: #595959;
+
+            /* The rail is one ink at two strengths, never full black. */
+            --rail-ink: hsla(0, 0%, 7%, .4);
+            --rail-ink-strong: hsla(0, 0%, 7%, .8);
+
+            /* How far out in the margin the dashes sit. One number, so the
+               margin column can be moved without hunting through the file. */
+            /* The rail is reserved, not borrowed. Measuring the menu off the
+               reading column only worked while the column was the widest thing
+               on the page; the boards are twice it and ate the margin, so the
+               menu ended up standing on them. The page now keeps this much to
+               itself on the right and centres everything else in what is left —
+               which is the only way the two can never collide, at any width. */
+            --rail: 16rem;
+
+            /* ---------- the two measures ----------
+
+               The reading measure, and the work measure derived from it. There
+               used to be one of each and only the first of them was a decision:
+               the boards were capped at a flat 1160, which is not a width, it is
+               a number that looked about right once.
+
+               It is stated now, and what it states is that the page has exactly
+               two widths. A row of panels is two reading columns with the panel
+               gap between them — so when a row splits, each half comes out at
+               520 exactly, and a study standing beside another study is the same
+               width as the writing above it. Nothing on this page is any width
+               that is not one of those two.
+
+               1060 rather than 1160 is the visible half of this, and it is the
+               smaller half: a panel at 1160 on a 1680 window is 69 percent of
+               the screen, which is a page presenting rather than showing. What
+               matters more is that both numbers now move together. Change the
+               reading measure and the panels follow it, because they are made
+               out of it. */
+            --col: 520px;
+            --wide: calc(var(--col) * 2 + var(--panel-gap));
+
+            /* The settings capsule: one 26px slot and 6px of wall either side.
+               Stated, because the menu now stands beside it and has to know how
+               far to stand off — measured against this rather than against a
+               number that would have to be recounted the day a fourth control
+               goes in. */
+            --capsule: 38px;
+
+            /* How wide the field is when it is shut. Enough for the twelve-cell
+               strip, the count, and the padding, with a little slack so the two
+               are not jammed against each other at the ends. */
+            --pill-w: 17rem;
+
+
+            color-scheme: light;
+        }
+
+        /* ---------- the other skin ----------
+
+           Not an inversion. Two things go wrong if you simply flip the values:
+           pure black crushes the panels, which are only a shade off the ground
+           and would have nothing left to be a shade off of; and the ramp, whose
+           whole shape is that the first step jumps most of the way to the text,
+           has to be rebuilt upward rather than reflected — a reflected ramp puts
+           its big jump at the top, where it says the opposite thing.
+
+           So the ground floors at #0e0e0e, the panels sit above it rather than
+           below, and the ramp climbs with the same uneven spacing it falls with
+           in the light: a wide first step, three narrow ones after it. */
+        :root[data-theme="dark"] {
+            --page: #0e0e0e;
+            --ink: #a3a2a8;
+            --ink-bright: #ededed;
+            --ink-quiet: #8a8990;
+
+            --paper: #171717;
+            --frame: #ffffff1f;
+            --ink-faint: #3d3d3d;
+
+            /* A shadow needs something to fall on and #0e0e0e is already the
+               floor, so most of the lift is drawn from the other side here: a
+               hairline of light around the panel, the edge a raised thing
+               would catch. The shadow stays under it, deeper than the light
+               one and doing less — it reads in the gutter and nowhere else. */
+            --panel-shadow: 0 1px 2px #0000003d, 0 16px 34px -12px #0000005c;
+            --panel-ring: #ffffff12;
+
+            --card: #161616;
+            --card-hover: #1c1c1c;
+
+            /* Lifted for the dark ground. The set no longer takes this step
+               itself — it reads this value — so this is the only lift. */
+            --accent: #3d9aff;
+
+            /* The ink turns around on a dark ground: a type colour has to come
+               up here, so the ceiling becomes a floor and the chroma comes off
+               a little, which is the step #7ec0ff was already taking by hand.
+               The tint stops being a pale wash and becomes the colour itself at
+               low alpha — a light tint on #1c1c1c would be a panel, not a wash.
+
+               This is the one place the page's rule about never lightening the
+               reader's choice behind their back does not apply, and the
+               distinction is worth stating: --accent is still painted exactly
+               as chosen. This is the derivative that has to carry 11px type
+               against a near-black ground, and there is no honest way to do
+               that without moving it.
+
+               --accent-on needs no second statement — it is a threshold on the
+               accent itself, and the accent is the same property in both skins. */
+            --accent-ink: oklch(from var(--accent) max(l, 0.79) calc(c * 0.65) h);
+            --accent-tint: oklch(from var(--accent) l c h / 0.16);
+
+            --pop: #1e1e20e6;          /* the palette's own ground, behind a blur */
+            --pop-edge: #ffffff1f;
+            --pop-gap: #232325;        /* the ring's breath around a chosen chip */
+            --pop-shadow: 0 16px 40px -12px #00000099, 0 2px 8px #00000052;
+
+            --cell-0: #1e1e1e;
+            --cell-pad: #181818;
+            --cell-1: #5e5e5e;
+            --cell-2: #7d7d7d;
+            --cell-3: #9d9d9d;
+            --cell-4: #c4c4c4;
+
+            --rail-ink: hsla(0, 0%, 96%, .4);
+            --rail-ink-strong: hsla(0, 0%, 96%, .85);
+
+            color-scheme: dark;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        /* Selected text, once, for the whole document. The set states the same
+           rule inside its own sheet — a shadow root does not inherit the page's
+           ::selection, it has to be told — so between the two there is no text
+           anywhere on the page that highlights in the browser's blue instead of
+           the reader's colour. */
+        ::selection { background: var(--accent-tint); }
+
+        html, body {
+            background: var(--page);
+            color: var(--ink);
+            font-family: var(--sans);
+            -webkit-font-smoothing: antialiased;
+            text-rendering: optimizeLegibility;
+        }
+
         body {
-            max-width: 560px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* ---------- the grain ----------
+
+           Fractal noise generated by the SVG filter itself — no image file, and
+           it tiles because stitchTiles closes the seams. Multiply rather than
+           normal, so it darkens the paper instead of laying grey haze on top of
+           it, and at 3.5% it is below the threshold of being noticed and above
+           the threshold of doing something: the flat #fafafa stops reading as an
+           empty screen.
+
+           Fixed and pointer-events: none, so it covers the viewport rather than
+           the document and never intercepts a click. */
+
+
+        /* 520px, and the 3rem subtraction is what keeps it off the edges of a
+           phone without a breakpoint having to know about it. The 20px nudge is
+           optical: a block of text centred by its box sits low, because the
+           descender space under the last line is counted and the space over the
+           first cap is not. */
+        /* main is the wide container rather than the reading column — the boards
+           need most of the window and the prose must not. The column lives
+           inside it at its own measure, centred. */
+        /* Padding on one side reserved the rail but pushed everything else off
+           the middle of the screen by half of it — the column and the boards
+           were both sitting right of centre. The margins have to stay symmetric
+           for the page to read as centred, so the rail is kept by capping the
+           width instead: the content can never grow into the gutter on either
+           side, and the gutter on the left is where the menu lives.
+
+           The cost is that the boards give up width on a narrow window rather
+           than the page giving up its centre. That is the right way round. */
+        main {
+            position: relative;
+            z-index: 1;
+            width: min(var(--wide), calc(100vw - var(--rail) * 2));
             margin: 0 auto;
-            padding: 24px 20px;
-            min-height: calc(100vh - 48px);
-            min-height: calc(100svh - 48px);
+        }
+
+        /* svh rather than vh: on a phone the address bar is counted out of vh
+           only after it has collapsed, so a vh-tall screen sits a bar's height
+           too low until you scroll.
+
+           The 20px nudge is optical — a block of text centred by its box sits
+           low, because the descender space under the last line is counted and
+           the space over the first cap is not. */
+        /* `safe` is the word that matters. Plain centring pushes the overflow out
+           of both ends once the column is taller than the screen, and its top can
+           then never be scrolled to; safe centring falls back to top alignment
+           exactly then — which the graph made possible for the first time. */
+        .view--intro {
+            min-height: 100svh;
             display: grid;
+            justify-items: center;
+            grid-template-columns: minmax(0, 1fr);
             align-content: safe center;
-            background: #fdfdfc;
-            color: #111;
-            font-family: "Source Serif 4", Georgia, "Times New Roman", Times, serif;
-            font-size: 15px;
-            line-height: 1.45;
+            padding: 7vh 0;
         }
 
-        /* #111 on #fdfdfc rather than black on white. Neither is really a
-           colour — both are a way of taking the top off the contrast, which a
-           text face set as prose in a column this wide needs more than a
-           paragraph of interface type does, because the eye stays on it longer.
-
-           The name and the one section heading set exactly like the prose around
-           them — same size, same cut, same weight. They stay headings so the
-           document keeps its outline; only the browser's default display
-           treatment is undone. */
-        h1, h2 {
-            color: inherit;
-            font-size: inherit;
-            font-weight: inherit;
+        .intro-col {
+            width: min(var(--col), 100%);
+            transform: translateY(20px);
         }
 
-        /* A link keeps the colour of the sentence it sits in and gives up the
-           browser's blue. What marks it instead is a 1px rule in #d9d9d9 —
-           light enough to read as texture while the eye is running along the
-           line, dark enough at #666 on hover to confirm the target. Splitting
-           the colour of the rule from the colour of the text is the whole
-           trick, and text-decoration-color is what makes it one declaration
-           rather than a border faked underneath.
 
-           benji.org, where this comes from, draws the same rule as an
-           absolutely positioned pseudo-element. Doing it with the decoration
-           instead is better here for two reasons that only show up in prose: it
-           follows a link that wraps onto a second line, where a pseudo-element
-           pinned to the first fragment simply stops; and skip-ink, already the
-           default, lifts it over a descender rather than cutting through it.
-
-           The offset is the one number to taste. It measures from where Source
-           Serif itself puts an underline, which is a position drawn for a
-           heavier rule than this one, so a hairline wants a little more air
-           under the baseline than the font asks for. */
-        a {
-            color: inherit;
-            text-decoration: underline;
-            text-decoration-color: #d9d9d9;
-            text-decoration-thickness: 1px;
-            text-underline-offset: 0.12em;
-            transition: text-decoration-color 0.2s ease;
+        .github {
+            width: 100%;
+            max-width: var(--pill-w);
+            margin: 0 0 1.6rem;
+            background: var(--card);
+            border-radius: 20px;
+            overflow: hidden;
+            transition: max-width .55s var(--ease), border-radius .55s var(--ease),
+                        background .2s ease;
         }
 
-        /* A touch screen reports a hover on tap and then holds it until
-           something else is tapped, so an ungated rule leaves the last link the
-           reader touched sitting there darkened. */
-        @media (hover: hover) {
-            a:hover {
-                text-decoration-color: #666;
-            }
+        .github[data-open] {
+            max-width: 100%;
+            border-radius: 18px;
         }
 
-        /* The browser's own block spacing is 1em, and 1em here is a 20px gap on
-           top of a 31px line — every break costs the better part of two blank
-           lines, which at this measure reads as a hole rather than a paragraph.
-           0.6em still separates them clearly. The headings are in the list too,
-           because their margin would otherwise scale off their own font-size,
-           which no longer differs from the prose. */
-        p, ul, h1, h2 {
-            margin-block: 0.6em;
-        }
-
-        .github-activity {
-            margin-block: 0.8em;
-        }
-
-        .github-activity__graph {
+        .github__graph {
+            padding: 16px 16px 2px;
             overflow-x: auto;
             scrollbar-width: none;
             -webkit-overflow-scrolling: touch;
         }
 
-        .github-activity__graph::-webkit-scrollbar {
-            display: none;
-        }
+        .github__graph::-webkit-scrollbar { display: none; }
 
-        /* The gap comes down from 2px to 1px. At 2px the squares are chips
-           spaced the way a control is spaced, sitting on a grey scaffold; at 1px
-           the grid closes up and reads as a field with a grain in it, which is
-           the register the rest of the page is in. Same move as setting a
-           paragraph solid rather than leaded — nothing gets smaller, the space
-           between the parts just stops being the loudest thing in it. */
         .github-grid {
             display: grid;
             grid-template-columns: repeat(53, minmax(0, 1fr));
@@ -181,277 +491,1622 @@
             grid-auto-flow: column;
             gap: 1px;
             width: 100%;
-            min-width: 528px;
+            min-width: 460px;
         }
 
-        /* No radius. A 1px round on a 10px square is not a shape, it is a tell:
-           it says the square is a button that has not been given anything to do.
-           Squared off, the same square is a mark, and marks are what the rest of
-           this page is made of. */
+        /* 2px back at nine pixels — the radius follows the square, not the other
+           way round. */
+        /* An empty day is a step below the paper it is drawn on, and the paper
+           changed. These were #efefed against the page's #fafafa, eleven steps
+           down; the field sits on the card now, which is #f0f0f1, and eleven
+           steps under that is #e5e5e6. Left at the old value the quiet half of
+           the year simply vanished — the empties and the card were a point
+           apart, so the strip in the pill looked like it started in March and
+           the open field looked like it had a hole in the left of it.
+
+           The four lit steps are untouched: they are dark enough that a ten
+           point move in the ground behind them changes nothing. */
         .github-cell {
             width: 100%;
-            height: auto;
             aspect-ratio: 1;
-            background: #efeeea;
+            border-radius: 2px;
+            background: var(--cell-0);
         }
 
-        .github-cell--pad {
-            visibility: hidden;
-        }
+        /* The ramp is built out of the page's own ink rather than out of a grey
+           scale of its own. The fullest day is --ink, exactly the colour the
+           sentences are set in; the field is written in the same ink as the
+           text, which is the whole reason it can sit in the middle of it.
 
-        /* The ramp is anchored at both ends to the page instead of floating in a
-           palette of its own. Empty sits a few percent off the paper, so a quiet
-           week is nearly the ground and the shape comes out of it rather than
-           being drawn on a grey plate. Full is #111 — the ink of the sentences
-           above it, exactly. The busiest days are the same black as the writing,
-           which is the argument for keeping the strip on a page like this at
-           all: not an inset, the same hand.
+           It is still deliberately uneven. Almost all of the range is spent on
+           the first step: an empty day sits a hair off the paper and a day with
+           anything at all on it jumps most of the way to the text. An even ramp
+           answers "how busy was this day", and the honest answer for most days
+           is "a bit". This one answers "did I show up" first, and the four steps
+           still sort the loud days from the quiet ones once you look closer. */
+        /* The pads are drawn, not hidden. Hidden, the weekday offset ate the top
+           of the first column and the tail of the last, and the field read as
+           inset from the text on the left and short of it on the right — the box
+           was the right width, but its corners were bitten out and the eye reads
+           the corners.
 
-           If it ends up shouting, level 4 is the value to walk back. */
-        .github-cell[data-level="1"] { background: #cfcdc6; }
-        .github-cell[data-level="2"] { background: #9b9890; }
-        .github-cell[data-level="3"] { background: #57544e; }
-        .github-cell[data-level="4"] { background: #111; }
+           Drawn at level 0 they complete the rectangle and the block sits flush
+           with the measure on both edges. The cost is small and worth naming:
+           the handful of cells before the window and after today are days that
+           are not in the year being shown, and they are indistinguishable from a
+           genuine quiet day. */
+        .github-cell--pad { background: var(--cell-pad); }
+        /* Written for anything inside the field carrying a level, not for the
+           grid cell specifically: the pill's twelve-cell strip is this same ramp
+           at a different size, and a second copy of these four values would be a
+           second place to forget to change one. */
+        .github [data-level="1"] { background: var(--cell-1); }
+        .github [data-level="2"] { background: var(--cell-2); }
+        .github [data-level="3"] { background: var(--cell-3); }
+        /* This was var(--ink), on the argument that the fullest day should be
+           the exact colour the sentences are set in. That argument only held
+           while the ink was #595959. The text has gone lighter since and the
+           ramp cannot follow it: level 3 is #6c6b66, which the new ink sits
+           within a hair of in lightness, so the top two steps would have
+           collapsed into one and the field would have lost a quarter of its
+           range to a colour change in the prose.
 
-        /* The mark under the pointer, drawn as an outline because an outline is
-           painted outside the box and so costs no layout and shifts no
-           neighbour. It lands in the 1px gap, which is exactly the room there is
-           for it. No transition anywhere near it: the point of the thing is that
-           it answers the moment the pointer arrives, and a fade — even a fast
-           one — is the difference between a page that responds and a page that
-           thinks about responding. */
-        .github-cell:hover {
-            outline: 1px solid #111;
-        }
+           So the darkest day is pinned. It is the old ink, which is still a
+           grey off this page and still reads as of a piece with the writing —
+           it is simply no longer the same variable, because a value shared by
+           a filled square and a line of type has two jobs and they have now
+           come apart. */
+        .github [data-level="4"] { background: var(--cell-4); }
 
-        /* The readout writes into the line that is already there rather than
-           opening a tooltip over the page. Nothing moves, nothing floats, no
-           second layer has to be positioned or kept on screen — the sentence
-           just changes what it is reporting for as long as the pointer is
-           down on a day. It is also the reason the title attribute is gone:
-           that tooltip took the better part of a second to appear, which is the
-           delay this replaces. */
-        .github-activity__day {
-            display: none;
-        }
+        /* ---------- the row ----------
 
-        .github-activity[data-hover] .github-activity__total {
-            display: none;
-        }
+           The pill's contents are the caption line that used to sit under the
+           open field, unchanged: something on the left, the count pushed to the
+           right edge by an auto margin, 13px semibold in --ink-quiet. Several
+           passes went into that line — where the two ends sit, what separates
+           them, how far back from the prose they stand — and folding it loses
+           none of that. It is the same line. It has only become the thing you
+           press.
 
-        .github-activity[data-hover] .github-activity__day {
-            display: inline;
-        }
-
-        .github-activity__summary {
+           A button, so the keyboard and the screen reader get it without being
+           told. The count inside it is plain text rather than the link to the
+           profile it used to be: an anchor inside a button is not allowed, and
+           would not behave if it were. */
+        .github__pill {
             display: flex;
             align-items: center;
-            justify-content: space-between;
             gap: 12px;
-            padding-top: 6px;
-            color: #555;
-            font-family: inherit;
-            font-size: inherit;
-            line-height: inherit;
+            width: 100%;
+            padding: 11px 16px;
+            border: 0;
+            background: none;
+            cursor: pointer;
+            text-align: left;
+            -webkit-appearance: none;
+            appearance: none;
+            font-family: var(--sans);
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: -0.005em;
+            color: var(--ink-quiet);
             font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
+
+        .github__pill:disabled { cursor: default; }
+
+        .github__pill:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: -4px;
+            border-radius: 16px;
+        }
+
+        /* Hover only while it is shut. Open, the row is the card's caption and
+           lighting it up on the way past would suggest the caption is the
+           control rather than that the whole thing is. */
+        @media (hover: hover) {
+            .github:not([data-open]) .github__pill:hover:not(:disabled) { background: var(--card-hover); }
+        }
+
+        .github__count { margin-left: auto; }
+
+        /* The left slot holds two things that are never both wanted: the strip
+           while it is shut, the word while it is open. They are stacked in one
+           grid cell rather than swapped out, so the slot stays as wide as the
+           wider of the two and nothing on the row shifts when they trade. */
+        .github__lead { display: grid; }
+        .github__lead > * { grid-area: 1 / 1; align-self: center; justify-self: start; }
+
+        /* The year at one cell a month, in the field's own ramp. A pill reading
+           only "5,334 last year" would be a door with no sign on it — you would
+           have to open it to find out whether opening it was worth doing. Twelve
+           cells are not the data; they are a promise about what is behind the
+           door, and they make that promise in the shape of the thing itself
+           rather than with an icon standing in for it. */
+        .github__spark { display: flex; gap: 2px; }
+        .github__spark span { width: 7px; height: 7px; border-radius: 2px; background: var(--cell-0); }
+
+        .github__spark, .github__label { transition: opacity .3s ease; }
+        .github__label { opacity: 0; }
+        .github[data-open] .github__spark { opacity: 0; }
+        .github[data-open] .github__label { opacity: 1; }
+
+        /* 0fr to 1fr rather than a measured height: the row resolves to the
+           content's own height, so there is no number in the stylesheet to go
+           stale when the field changes size, and nothing to measure in JS. The
+           inner div carries the overflow, because a grid row cannot clip. */
+        .github__panel {
+            display: grid;
+            grid-template-rows: 0fr;
+            transition: grid-template-rows .55s var(--ease);
+        }
+
+        .github[data-open] .github__panel { grid-template-rows: 1fr; }
+
+        .github__panel-inner { min-height: 0; overflow: hidden; }
+
+        .github[data-state="loading"] .github-grid { opacity: .5; }
+
+        /* Failed: the pill stops being a door, because there is nothing behind
+           it any more, and says so where the label goes. The fill comes off with
+           it — a capsule that cannot be pressed should not look pressable — and
+           the padding with the fill, so the message starts on the measure like
+           a line of the text. */
+        .github[data-state="failed"] {
+            max-width: 100%;
+            background: none;
+        }
+
+        .github[data-state="failed"] .github__pill { padding-left: 0; }
+        .github[data-state="failed"] .github__spark,
+        .github[data-state="failed"] .github__count { display: none; }
+        .github[data-state="failed"] .github__label { opacity: 1; }
+
+        /* ---------- the same field, folded into a sentence ----------
+
+           In the text the capsule is not an object on the page any more, it is
+           a word in a line: the section stops being the card and becomes a
+           wrapper around a paragraph and a drawer, and what opens is the card
+           below the sentence rather than the capsule itself.
+
+           The capsule is the height of a line of the prose; the figure inside
+           it is not. Those are two different jobs. The box has to match the
+           text it stands in or the leading opens up around the one line that
+           holds it, so it is padded out to about 27px — what 18px type already
+           spends on a line. The figure stays at 14px because it is a reading
+           off an instrument, not a word of the sentence, and set at the size of
+           the sentence it would be the loudest thing in the paragraph.
+
+           It sits on the prose's own baseline. align-items: baseline is what
+           makes that work: it is what gives the flex box a baseline to hand
+           back to the line, and without it the capsule floats on a guess. The
+           padding then falls either side of that line, which is why it is not
+           symmetrical — 5 above the small type, 6 below it. */
+        .github--inline {
+            max-width: none;
+            margin: 0 0 1.4em;
+            background: none;
+            border-radius: 0;
+            overflow: visible;
+        }
+
+        .github--inline p { margin-bottom: 0; }
+
+        .github--inline .github__pill {
+            display: inline-flex;
+            align-items: baseline;
+            width: auto;
+            gap: 7px;
+            padding: 5px 12px 6px;
+            border-radius: 999px;
+            background: var(--card);
+            font-size: .875rem;
+            line-height: 1.2;
+            vertical-align: baseline;
+            white-space: nowrap;
+        }
+
+        .github--inline .github__count { margin-left: 0; }
+
+        /* Neither the strip nor the word is in the line. Twelve cells were the
+           promise of what is behind the door, made in the shape of the thing
+           itself — but in a sentence the words have already made it, and the
+           strip only puts a second, smaller graph next to the number. The word
+           is kept for the one thing it still has to say, which is that there is
+           nothing behind the door after all. */
+        .github--inline .github__lead,
+        .github--inline .github__label { display: none; }
+
+        .github--inline[data-state="failed"] .github__lead { display: inline; }
+
+        .github--inline[data-state="failed"] .github__pill {
+            padding: 0;
+            background: none;
+            cursor: default;
+        }
+
+        .github--inline[data-state="failed"] .github__label { display: inline; opacity: 1; }
+
+        @media (hover: hover) {
+            .github--inline .github__pill:hover:not(:disabled) { background: var(--card-hover); }
+        }
+
+        /* The drawer carries the card now, and its own air above it. Both sit
+           inside the clipped inner, so neither shows while the row is at 0fr. */
+        .github--inline .github__graph {
+            margin-top: .8em;
+            background: var(--card);
+            border-radius: 18px;
+        }
+
+        p {
+            font-size: 1.125rem;
+            line-height: 1.55;
+            letter-spacing: -0.01em;
+            font-weight: 600;
+            margin-bottom: 1.4em;
+            text-wrap: pretty;
+        }
+
+        p:last-of-type { margin-bottom: 0; }
+
+        /* The name stands on its own line above the prose, in the near-black
+           the links reach on hover. It replaces the run-in lead that used to
+           open the first sentence — and with the heading now visible, the
+           hidden copy that was carrying the document's outline is gone: there
+           is one h1, and it is the one you can read.
+
+           It takes the paragraph's own size, weight aside. A heading that
+           announces itself at 2em would be the only thing on the page raising
+           its voice, and the page is a person talking. */
+        .name {
+            font-size: 1.125rem;
+            line-height: 1.55;
+            letter-spacing: -0.01em;
+            font-weight: 700;
+            color: var(--ink-bright);
+            /* The name is the whole of its row again, now that the language has
+               gone out to the margin, so it carries the paragraph gap itself
+               rather than handing it to a wrapper that holds nothing else. */
+            margin: 0 0 1.4em;
+        }
+
+        /* ---------- one press each ----------
+
+           Both of these were pairs for a while, DE / EN and Dark / Light with
+           one half lit, on the argument that a lone label has to be guessed at:
+           it could be the state or the offer. That argument is sound and it lost
+           to the place these stand in. Four words and two slashes is a paragraph
+           of controls parked permanently in the quietest corner of the page, for
+           two settings most readers will never touch. A pair is the right shape
+           for a control the page is about; these are furniture.
+
+           So one press each, and each shows where the page stands rather than
+           what it would do: the word is the language you are reading, the moon
+           is the skin you are not in yet. Those are opposite conventions and
+           both are the settled one for their kind — a language chip reports, a
+           moon offers — and going against either to make the two agree would
+           trade a convention a reader already has for an internal consistency
+           nobody is looking for. What each press does is on the label, where a
+           screen reader finds it and where the guess is settled properly. */
+        /* Each one a round slot of the same size, whatever is standing in it.
+           A two-letter word and a moon have nothing in common to align on — no
+           shared baseline, no shared width — so they are not aligned to each
+           other at all: each is centred in a box, and the boxes are what line
+           up. It is also what gives the hover something to be, a token lighting
+           under the pointer rather than a word changing colour on its own.
+
+           26 and not 24: DE and EN are about eighteen pixels of semibold at this
+           size, and a slot that only just clears its widest tenant reads as
+           having been measured against it. */
+        .pref {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 26px;
+            height: 26px;
+            padding: 0;
+            border: 0;
+            border-radius: 999px;
+            background: none;
+            font: inherit;
+            font-size: .8125rem;
+            font-weight: 600;
+            letter-spacing: -0.005em;
+            line-height: 1;
+            color: var(--ink-quiet);
+            cursor: pointer;
+            -webkit-appearance: none;
+            appearance: none;
+            transition: color .25s var(--ease), background .25s var(--ease);
         }
 
         @media (hover: hover) {
-            .github-activity__profile:hover {
-                color: #111;
-            }
+            .pref:hover { background: var(--card-hover); color: var(--ink-bright); }
         }
 
-        .github-activity[data-state="loading"] .github-grid {
-            opacity: 0.5;
+        /* Inset, because the slot is 26px inside a capsule with 6px of wall: an
+           outset ring would be drawn on the capsule's own edge and past it. */
+        .pref:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: -2px;
         }
 
-        .github-activity[data-state="unavailable"] {
-            display: none;
+        .pref--icon svg { display: block; }
+
+        /* A disc of the colour rather than a wheel of every colour. A conic
+           rainbow is the louder signifier and it would be the loudest thing on
+           the page by a distance — on a document drawn entirely in greys, six
+           hues in a 13px circle is not a control, it is a decoration that also
+           happens to be a control. The disc says the same thing more quietly:
+           this is the colour, press to change it. That it is currently the only
+           colour anywhere is the argument for it, not against.
+
+           The inset hairline is for the light end of whatever gets picked. At
+           #0285ff it does nothing; at a pale yellow it is the difference between
+           a swatch and a hole in the capsule. */
+        .pref__swatch {
+            width: 13px;
+            height: 13px;
+            border-radius: 999px;
+            background: var(--accent);
+            box-shadow: inset 0 0 0 1px #0000001f;
         }
 
-        @media (max-width: 568px) {
-            .github-activity__graph {
-                overflow-x: hidden;
+        /* ---------- the palette ----------
+
+           A grid of eleven colours and a way out to the whole spectrum for
+           anyone who wants it. That is the shape Apple settled on for the same
+           problem, and it is the right one — not because it is theirs, but
+           because a palette answers the question almost everybody is asking
+           ("give me a good colour") in one press, while still admitting that it
+           is not the whole question.
+
+           The chips are the system palette, one substitution: the blue is this
+           page's own #0285ff rather than Apple's #007aff. They are a hair apart,
+           and two blues a hair apart in one palette is not a palette with range,
+           it is a palette with a mistake in it. The grey is in for the same
+           reason the rest are: it is the way back to a page with no colour in
+           it at all. */
+        .accent {
+            position: relative;
+            display: flex;
+        }
+
+        /* Anchored to the left of the pill, because the pill is 5rem off the
+           right edge and there is nothing to the right of it but window. Its own
+           width and the 8px stand-off put its far edge within a pixel or two of
+           where the reserved gutter ends, so it opens over margin rather than
+           over the writing. */
+        /* Beside the capsule and level with the disc that opens it. The menu is
+           halfway down the window and this is up in the corner, so the two never
+           meet however far the panel reaches.
+
+           Held by its top edge at the offset that centres the shut panel on the
+           disc, rather than by its middle. Centred, the drawer opening would
+           push half its height back up through the grid and slide all twelve
+           chips out from under the pointer that had just pressed one. Anchored,
+           the grid does not move and the drawer comes down below it.
+
+           The 50px is half the shut height — 9 of wall, three rows of 22, two
+           gaps of 8, 9 of wall — and it is the one number in this control that
+           would have to be recounted if the grid ever changed shape. */
+        .palette {
+            position: absolute;
+            top: calc(50% - 50px);
+            right: calc(100% + 8px);
+            z-index: 4;
+            padding: 9px;
+            border-radius: 16px;
+            background: var(--pop);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            backdrop-filter: blur(20px) saturate(180%);
+            box-shadow: 0 0 0 .5px var(--pop-edge), var(--pop-shadow);
+
+            /* Scaled up out of the disc that was pressed rather than faded in
+               on the spot: the origin is the edge nearest the control, so the
+               panel reads as having come from it. The overshoot in the curve is
+               the whole of the feel — it arrives, passes its size by a little
+               and settles. Opacity is quicker than the movement, so it is
+               already legible while it is still coming to rest.
+
+               visibility rather than display, and switched with a zero-length
+               transition so it waits for the movement on the way out: display
+               would cancel both animations, and leaving it visible would keep
+               eleven buttons in the tab order of a panel nobody has opened. */
+            visibility: hidden;
+            opacity: 0;
+            transform: scale(.88);
+            transform-origin: right center;
+            transition: opacity .16s ease,
+                        transform .34s cubic-bezier(.22, 1.1, .36, 1.18),
+                        visibility 0s .34s;
+        }
+
+        .accent[data-open] .palette {
+            visibility: visible;
+            opacity: 1;
+            transform: none;
+            transition: opacity .16s ease,
+                        transform .34s cubic-bezier(.22, 1.1, .36, 1.18),
+                        visibility 0s;
+        }
+
+        .palette__grid {
+            display: grid;
+            grid-template-columns: repeat(4, 22px);
+            gap: 8px;
+        }
+
+        .chip {
+            width: 22px;
+            height: 22px;
+            padding: 0;
+            border: 0;
+            border-radius: 999px;
+            background: var(--chip);
+            cursor: pointer;
+            -webkit-appearance: none;
+            appearance: none;
+            /* The pale chips — yellow, mint — would otherwise have no edge
+               against a near-white ground. */
+            box-shadow: inset 0 0 0 1px #0000001f;
+            transition: transform .22s cubic-bezier(.22, 1.1, .36, 1.18),
+                        box-shadow .22s var(--ease);
+        }
+
+        @media (hover: hover) {
+            .chip:hover { transform: scale(1.14); }
+        }
+
+        /* Chosen: bigger, and ringed in its own colour with a breath of ground
+           between. A tick drawn on the chip would have to be one colour against
+           eleven, and would be the only mark on the page that has to worry about
+           what it is sitting on. */
+        .chip[aria-pressed="true"] {
+            transform: scale(1.1);
+            box-shadow: inset 0 0 0 1px #0000001f,
+                        0 0 0 2px var(--pop-gap),
+                        0 0 0 4px var(--chip);
+        }
+
+        /* The two rings inside the palette stay ink while every other ring on the
+           page went to the accent. A ring drawn in the accent, laid over a grid
+           of eleven colours and a field that is nothing but colour, is a ring
+           you cannot find — it is the one place on the page where the accent is
+           the noise rather than the signal. */
+        .chip:focus-visible {
+            outline: 2px solid var(--ink);
+            outline-offset: 3px;
+        }
+
+        /* The way out to everything else. A conic sweep and not a twelfth
+           colour: it is the only cell in the grid that does not name a value,
+           and it should not look like it does. */
+        .chip--custom {
+            background: conic-gradient(#ff3b30, #ff9500, #ffcc00, #34c759,
+                                       #00c7be, #0285ff, #5856d6, #af52de,
+                                       #ff2d55, #ff3b30);
+        }
+
+        .chip--custom[aria-expanded="true"] {
+            transform: scale(1.1);
+            box-shadow: inset 0 0 0 1px #0000001f,
+                        0 0 0 2px var(--pop-gap),
+                        0 0 0 4px var(--ink-faint);
+        }
+
+        /* ---------- mixing one ----------
+
+           What the conic cell used to open was the operating system's colour
+           panel: a gradient field, an eyedropper, a hue strip, three numbered
+           boxes marked R, G and B, and a stepper to swap those for three other
+           letters. Every one of those is a real answer to a real question, and
+           not one of them is the question being asked here, which is "a bit more
+           orange than that". Six controls where two will do, in somebody else's
+           window, on top of a page that had just been made to feel like one
+           thing.
+
+           So: a field and a strip. Where in the field decides how much colour
+           and how bright; where along the strip decides which colour. There is
+           no hex box and no RGB, because a number is what you reach for when you
+           have to carry a colour somewhere else, and this one only has to look
+           right in the place you are already looking.
+
+           A drawer rather than a second panel, and the cell that opens it is the
+           cell that closes it again. The 0fr/1fr row is how the contribution
+           field opens further down this page: the height animates to whatever
+           the content turns out to be, so there is no measured number here to go
+           stale. */
+        .picker {
+            display: grid;
+            grid-template-rows: 0fr;
+            transition: grid-template-rows .4s var(--ease);
+        }
+
+        .palette[data-mixing] .picker { grid-template-rows: 1fr; }
+
+        .picker__inner { min-height: 0; overflow: hidden; }
+
+        .picker__body {
+            padding-top: 10px;
+            display: grid;
+            gap: 8px;
+        }
+
+        /* Rounded well past what a gradient field is usually given. It is a
+           surface on this page before it is a colour control, and every other
+           surface out here is either a capsule or close to one. */
+        .picker__sv {
+            position: relative;
+            height: 64px;
+            border-radius: 14px;
+            background:
+                linear-gradient(to top, #000, #0000),
+                linear-gradient(to right, #fff, hsl(var(--h, 208), 100%, 50%));
+            box-shadow: inset 0 0 0 1px #0000001f;
+            cursor: crosshair;
+            touch-action: none;
+        }
+
+        .picker__hue {
+            position: relative;
+            height: 12px;
+            border-radius: 999px;
+            background: linear-gradient(to right,
+                        #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00);
+            box-shadow: inset 0 0 0 1px #0000001f;
+            cursor: ew-resize;
+            touch-action: none;
+        }
+
+        /* A ring and not a dot: the colour under it is the colour being chosen,
+           and a filled knob would cover the one pixel the reader is aiming at.
+           Two shadows, one either side of the white, so the ring holds its shape
+           over the black corner of the field as well as the white one.
+
+           The 7px in the travel is its own radius. Positioned inside that, the
+           knob runs edge to edge without ever hanging over one — which matters
+           because the drawer above it has to clip, and a knob half outside would
+           be cut in half while the drawer is opening. */
+        .picker__knob {
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            border-radius: 999px;
+            border: 2px solid #fff;
+            box-shadow: 0 0 0 1px #00000038, inset 0 0 0 1px #00000038;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+
+        .picker__sv .picker__knob {
+            left: calc(7px + var(--sx, 1) * (100% - 14px));
+            top: calc(7px + var(--sy, 0) * (100% - 14px));
+        }
+
+        .picker__hue .picker__knob {
+            left: calc(7px + var(--hx, .578) * (100% - 14px));
+            top: 50%;
+        }
+
+        .picker__sv:focus-visible,
+        .picker__hue:focus-visible {
+            outline: 2px solid var(--ink);
+            outline-offset: 3px;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .palette, .chip { transition: opacity .16s ease, visibility 0s; }
+            .palette, .accent[data-open] .palette { transform: none; }
+            .chip:hover, .chip[aria-pressed="true"] { transform: none; }
+            .picker { transition: none; }
+        }
+
+        /* ---------- the page's two settings ----------
+
+           How it is written and how it is lit, in the top corner of the gutter:
+           one capsule standing on its end, the word over the moon.
+
+           The width is stated rather than left to the slots inside it, because
+           the menu measures its own alignment off this. See the rule below it:
+           the two are in one column and only one of them is a box you can see.
+
+           The capsule is the page's own — the same --card ground and the same
+           fully-rounded ends as the pill the contribution field lives in down in
+           the prose. Turned upright it is a new shape and not a new material,
+           which is the difference between a page that has a vocabulary and a
+           page that has a collection.
+
+           It does a second thing, which is why it is here rather than two bare
+           marks: it says the two belong together. A word and a moon floating
+           loose in a margin are two unrelated specks; in one capsule they are
+           the page's settings, and the capsule is the only line drawn around
+           anything out here.
+
+           They are the only thing in this margin visible at rest — a setting you
+           cannot find is a setting nobody changes, and unlike the menu there is
+           no dash a setting could hide behind.
+
+           Anchored to the corner rather than to anything in the column, and the
+           same 5rem from both edges. The menu below is centred in the window
+           instead, so there is no shared line for these to hold to; what is left
+           to be consistent about is the inset, and a square one is the only
+           inset that needs no explaining.
+
+           Fixed, and so the settings are reachable the whole way down the page
+           rather than only at the top — which is what the floating bar was for,
+           at the cost of a standing object over the work. */
+        .prefs {
+            position: fixed;
+            top: 5rem;
+            right: 5rem;
+            z-index: 3;
+            width: var(--capsule);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            padding: 6px;
+            border-radius: 999px;
+            background: var(--card);
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            margin: -1px;
+            padding: 0;
+            overflow: hidden;
+            clip-path: inset(50%);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        /* ---------- links in the text ----------
+
+           The hairline is a background gradient rather than an underline, which
+           is what makes it animatable: text-decoration cannot be scaled, a
+           background-size can. It grows from the left edge on hover and sits at
+           1.08em, below the baseline and clear of the descenders. */
+        /* The hairline is the accent and the word is not. That split is the
+           whole of where colour is allowed to go on this page: a mark can be any
+           colour a reader picks, because a mark that comes out pale is a quieter
+           mark; type that comes out pale is type nobody can read. So the accent
+           draws rules, discs and underlines, and never a letter — which is also
+           why the focus rings below stay on --ink. A focus ring is the one mark
+           that must not be allowed to disappear. */
+        .tlink {
+            color: inherit;
+            text-decoration: none;
+            background-image: linear-gradient(var(--accent), var(--accent));
+            background-repeat: no-repeat;
+            background-position: 0 1.08em;
+            background-size: 0% 1.5px;
+            transition: background-size .35s var(--ease);
+        }
+
+        .tlink:hover,
+        .tlink:focus-visible { background-size: 100% 1.5px; }
+
+
+        /* ------------------------------------------------------------------
+           LAB — FEY, TEXT ONLY
+
+           lab-fey with the boards and the menu taken out. What is left is the
+           writing, the settings capsule in the corner and the year of commits,
+           which stands open here with no pill in front of it.
+           ------------------------------------------------------------------ */
+
+        *, *::before, *::after { box-sizing: border-box; }
+        html, body { margin: 0; }
+
+        /* The grain fey.com lays over the whole viewport: fractal noise from an
+           SVG filter, multiply on paper, never in the way of a click. */
+        body::after {
+            content: "";
+            position: fixed;
+            inset: 0;
+            z-index: 4;
+            pointer-events: none;
+            opacity: .035;
+            mix-blend-mode: multiply;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+        }
+
+        :root[data-theme="dark"] body::after { mix-blend-mode: screen; opacity: .05; }
+
+        main { width: 100%; padding: 0 1.5rem; }
+
+        /* The graph is the whole year at any width: the cells shrink with the
+           column instead of the strip scrolling sideways. */
+        .github-grid { min-width: 0; }
+
+        /* No card around the field. It stands on the paper at the measure, so
+           its edges line up with the text above and below, and every day,
+           padding included, is drawn in the same empty grey. */
+        .github--inline .github__graph {
+            margin-top: .9em;
+            padding: 0;
+            background: none;
+            border-radius: 0;
+        }
+        .github-cell--pad { background: var(--cell-0); }
+
+        @media (max-width: 1099px) {
+            .prefs {
+                top: 1rem;
+                right: 1rem;
+                width: auto;
+                flex-direction: row;
             }
 
-            .github-grid {
-                min-width: 0;
-                gap: 1px;
-            }
+            .view--intro { padding-top: 5.5rem; }
+        }
+
+
+        @keyframes rise {
+            from { opacity: 0; filter: blur(6px); transform: translateY(28px); }
+            to   { opacity: 1; filter: blur(0);   transform: translateY(20px); }
+        }
+
+        .intro-col { animation: rise .9s var(--ease) both; }
+
+        @media (prefers-reduced-motion: reduce) {
+            .intro-col { animation: none; }
+            .boards { transform: none; }
+            .tlink, .link, .label, .link::before, .links, .board, .board__surface { transition: none; }
+            .github, .github__panel, .github__spark, .github__label { transition: none; }
+            .board, .ui__card, .board.is-pending, .ui__card.is-pending { opacity: 1; transform: none; }
         }
     </style>
 </head>
 
 <body>
+    <main>
+            <div class="prefs">
+                <!-- EN as authored, because the document is the English copy.
+                     The word is whichever language you are reading and it is
+                     rewritten the moment the switch is thrown; what pressing it
+                     will do is on the aria-label, which is rewritten with it. -->
+                <button class="pref" id="langToggle" type="button"
+                        aria-label="Switch to German">EN</button>
 
-    <h1>Hi, I’m Kilian.</h1>
+                <button class="pref pref--icon" id="themeToggle" type="button"
+                        aria-label="Switch to dark mode">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.9 13.1A9 9 0 0 1 10.9 3.1 9 9 0 1 0 20.9 13.1Z"/></svg>
+                </button>
 
-    <p>I’m 21 and live in Regensburg, Germany. I like building things across design,
-        engineering, film, and the internet.</p>
+                <!-- Third and last: the skin and the accent are both about how
+                     the page looks and belong next to each other, under the one
+                     control that is about what it says.
 
-    <p>I’m fascinated by how fast things are moving in AI and where we’re headed as
-        humanity. I spend a lot of time thinking about what kinds of businesses you can
-        build with it and what it means to be an entrepreneur when things change this
-        quickly. To capture some of that change, I built
-        <a href="https://warningroom.com">Warning Room</a>, a group chat full of public
-        statements from frontier AI teams.</p>
+                     The chips carry their value twice, once in a custom property
+                     the CSS paints from and once in a data attribute the script
+                     reads. One of them could be derived from the other at
+                     runtime; neither is worth the line that would do it, and a
+                     colour written where it is drawn is a colour that can be
+                     corrected by looking at it. -->
+                <div class="accent" data-accent>
+                    <button class="pref pref--swatch" type="button"
+                            aria-haspopup="true" aria-expanded="false"
+                            aria-label="Accent colour">
+                        <span class="pref__swatch" aria-hidden="true"></span>
+                    </button>
 
-    <p>Right now, I’m building <a href="https://avogram.com">Avo</a>.</p>
+                    <div class="palette" role="group" aria-label="Accent colour">
+                        <div class="palette__grid" data-grid>
+                            <button class="chip" type="button" style="--chip:#ff3b30" data-colour="#ff3b30" aria-label="Red" aria-pressed="false"></button>
+                            <button class="chip" type="button" style="--chip:#ff9500" data-colour="#ff9500" aria-label="Orange" aria-pressed="false"></button>
+                            <button class="chip" type="button" style="--chip:#ffcc00" data-colour="#ffcc00" aria-label="Yellow" aria-pressed="false"></button>
+                            <button class="chip" type="button" style="--chip:#34c759" data-colour="#34c759" aria-label="Green" aria-pressed="false"></button>
+                            <button class="chip" type="button" style="--chip:#00c7be" data-colour="#00c7be" aria-label="Mint" aria-pressed="false"></button>
+                            <button class="chip" type="button" style="--chip:#0285ff" data-colour="#0285ff" aria-label="Blue" aria-pressed="false"></button>
+                            <button class="chip" type="button" style="--chip:#5856d6" data-colour="#5856d6" aria-label="Indigo" aria-pressed="false"></button>
+                            <button class="chip" type="button" style="--chip:#af52de" data-colour="#af52de" aria-label="Purple" aria-pressed="false"></button>
+                            <button class="chip" type="button" style="--chip:#ff2d55" data-colour="#ff2d55" aria-label="Pink" aria-pressed="false"></button>
+                            <button class="chip" type="button" style="--chip:#a2845e" data-colour="#a2845e" aria-label="Brown" aria-pressed="false"></button>
+                            <button class="chip" type="button" style="--chip:#8e8e93" data-colour="#8e8e93" aria-label="Grey" aria-pressed="false"></button>
 
-    <p>We believe filmmaking is about to become a medium for everyone. As machines take over
-        more of production, far more people will be able to create entire films. Avo is built
-        around one principle: automate the production, preserve the direction.</p>
+                            <button class="chip chip--custom" type="button" data-custom
+                                    aria-expanded="false" aria-label="Mix a colour"></button>
+                        </div>
 
-    <p>Before this, I worked at BMW. I left in 2026 to focus full time on building my own
-        things.</p>
+                        <!-- role="application" on the field: it is two dimensions
+                             read off one surface, which no native control and no
+                             ARIA pattern describes. The strip beside it is an
+                             ordinary slider and is announced as one. -->
+                        <div class="picker" data-picker>
+                            <div class="picker__inner">
+                                <div class="picker__body">
+                                    <div class="picker__sv" data-sv tabindex="0"
+                                         role="application" aria-label="Amount of colour and brightness">
+                                        <span class="picker__knob" data-sv-knob></span>
+                                    </div>
 
-    <p>Most of my time is spent designing, coding, writing, and exploring what new creative
-        tools can make possible.</p>
+                                    <div class="picker__hue" data-hue tabindex="0"
+                                         role="slider" aria-label="Which colour"
+                                         aria-valuemin="0" aria-valuemax="359" aria-valuenow="208">
+                                        <span class="picker__knob" data-hue-knob></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-    <section class="github-activity" id="github-activity" data-state="loading" aria-label="GitHub activity">
-        <div class="github-activity__graph" id="github-graph" aria-hidden="true"></div>
-        <div class="github-activity__summary">
-            <a class="github-activity__profile" href="https://github.com/kwzrl" target="_blank" rel="noopener noreferrer" aria-label="Open @kwzrl on GitHub in a new tab">@kwzrl</a>
-            <span><span class="github-activity__total"><span id="github-total" aria-live="polite">—</span> contributions</span><span class="github-activity__day" id="github-day" aria-hidden="true"></span></span>
+        <div class="view view--intro">
+            <div class="intro-col">
+            <h1 class="name">Kilian Weinzierl</h1>
+            <p data-de="Hey, ich bin 21 und lebe in Regensburg.">Hey, I’m 21 and live in
+                Regensburg, Germany.</p>
+
+            <p data-de="Ich gestalte die Oberfläche. Den Teil, den Menschen sehen, hören und benutzen.">I
+                craft the surface. The part people see, hear, and interact with.</p>
+
+            <p data-de="Es soll sich gut anfühlen, im Alltag halten und sauber aussehen. Jedes Element muss sich seinen Platz verdienen.">It
+                should feel good, hold up in practice and look clean. Every element earning
+                its place.</p>
+
+            <section class="github github--inline" id="github" data-state="loading" data-open
+                     aria-label="GitHub contributions">
+                <p><span data-de="Ich arbeite an den meisten Tagen und gestalte direkt im Code. Keine statischen Mockups, keine zweite Version in einem anderen Werkzeug.">I
+                    work most days, and I design directly in code. No static mockups, no second
+                    version living in another tool.</span></p>
+
+                <div class="github__panel" id="githubPanel" data-gh-panel>
+                    <div class="github__panel-inner">
+                        <div class="github__graph" data-gh-graph aria-hidden="true"></div>
+                    </div>
+                </div>
+            </section>
+
+            <p><span data-de="2026 habe ich BMW verlassen, um nur noch eigene Dinge zu bauen. Eins davon ist">I
+                left BMW in 2026 to build my own things full time. One of them is</span>
+                <a class="tlink" href="https://warningroom.com">Warning Room</a><span data-de=", ein Gruppenchat aus öffentlichen Aussagen der führenden KI-Teams.">, a
+                group chat full of public statements from frontier AI teams.</span></p>
+
+            </div>
         </div>
-    </section>
-
-    <p>I’m always happy to connect.</p>
-
-    <p style="text-align: center;">
-        <a href="https://github.com/kwzrl">GitHub</a> ·
-        <a href="https://x.com/kwzrl_">X</a>
-    </p>
+    </main>
 
     <script>
         (() => {
-            const activity = document.getElementById("github-activity");
-            const graph = document.getElementById("github-graph");
-            const number = new Intl.NumberFormat("en-US");
+            /* ---------- the field ----------
 
-            function localISO(date) {
-                const year = date.getFullYear();
-                const month = String(date.getMonth() + 1).padStart(2, "0");
-                const day = String(date.getDate()).padStart(2, "0");
-                return `${year}-${month}-${day}`;
-            }
+               The live page's data path, unchanged because it is already right:
+               the full-year endpoints rather than ?y=last, which is cache-stale,
+               with the trailing 365 days sliced in JS. Levels come from quantiles
+               of this account's own non-zero days, so the ramp describes the year
+               it is drawing rather than a fixed scale most of the squares would
+               sit at the bottom of. */
+            (() => {
+                const number = new Intl.NumberFormat("en-US");
 
-            function drawGraph(days) {
-                const grid = document.createElement("div");
-                grid.className = "github-grid";
-
-                const counts = days
-                    .map((day) => Number(day.count) || 0)
-                    .filter((count) => count > 0)
-                    .sort((a, b) => a - b);
-                const quantile = (position) =>
-                    counts[Math.floor((counts.length - 1) * position)] || 1;
-                const thresholds = [quantile(0.3), quantile(0.6), quantile(0.85)];
-                const levelFor = (count) => {
-                    if (!count) return 0;
-                    if (count <= thresholds[0]) return 1;
-                    if (count <= thresholds[1]) return 2;
-                    if (count <= thresholds[2]) return 3;
-                    return 4;
+                const localISO = (date) => {
+                    const y = date.getFullYear();
+                    const m = String(date.getMonth() + 1).padStart(2, "0");
+                    const d = String(date.getDate()).padStart(2, "0");
+                    return `${y}-${m}-${d}`;
                 };
 
-                const firstDay = new Date(`${days[0].date}T00:00:00`).getDay();
-                for (let index = 0; index < firstDay; index += 1) {
-                    const pad = document.createElement("span");
-                    pad.className = "github-cell github-cell--pad";
-                    grid.appendChild(pad);
+                /* ---------- one year, drawn once ----------
+
+                   The field was on the page in two places while the floating bar
+                   stood at the foot of the window, which is why the drawing is a
+                   mount taken over a container rather than over the document:
+                   two mounts of one year of data, requested once and handed to
+                   whichever containers are there.
+
+                   The bar is gone and there is one container again. The shape
+                   stays — it costs nothing, everything in it reads off the mount
+                   rather than off the document, and it is what a second field
+                   would be built out of. */
+                const mount = (root, { failed } = {}) => {
+                    const graph = root.querySelector("[data-gh-graph]");
+                    const panel = root.querySelector("[data-gh-panel]");
+                    const pill = root.querySelector("[data-gh-pill]");
+                    const spark = root.querySelector("[data-gh-spark]");
+                    const label = root.querySelector("[data-gh-label]");
+                    const total = root.querySelector("[data-gh-total]");
+
+                    const drawGrid = (days) => {
+                        const grid = document.createElement("div");
+                        grid.className = "github-grid";
+
+                        if (days) {
+                            const counts = days
+                                .map((day) => Number(day.count) || 0)
+                                .filter((count) => count > 0)
+                                .sort((a, b) => a - b);
+                            const quantile = (at) => counts[Math.floor((counts.length - 1) * at)] || 1;
+                            const cuts = [quantile(0.3), quantile(0.6), quantile(0.85)];
+                            const levelFor = (count) => {
+                                if (!count) return 0;
+                                if (count <= cuts[0]) return 1;
+                                if (count <= cuts[1]) return 2;
+                                if (count <= cuts[2]) return 3;
+                                return 4;
+                            };
+
+                            /* 53 columns of 7 is 371 cells and a year is 365, so the
+                               weekday offset at the front and whatever is left at the
+                               back are padded until the rectangle closes. */
+                            const lead = new Date(`${days[0].date}T00:00:00`).getDay();
+                            const pad = () => {
+                                const cell = document.createElement("span");
+                                cell.className = "github-cell github-cell--pad";
+                                grid.appendChild(cell);
+                            };
+
+                            for (let i = 0; i < lead; i += 1) pad();
+
+                            days.forEach((day) => {
+                                const cell = document.createElement("span");
+                                cell.className = "github-cell";
+                                cell.dataset.level = levelFor(Number(day.count) || 0);
+                                grid.appendChild(cell);
+                            });
+
+                            for (let i = lead + days.length; i < 371; i += 1) pad();
+                        } else {
+                            for (let i = 0; i < 371; i += 1) {
+                                const cell = document.createElement("span");
+                                cell.className = "github-cell";
+                                grid.appendChild(cell);
+                            }
+                        }
+
+                        graph.replaceChildren(grid);
+                        graph.scrollLeft = graph.scrollWidth;
+                    };
+
+                    /* The strip in the pill: the same year, at one cell a month.
+
+                       Its levels are quantiles of the twelve monthly totals, not of
+                       the 365 daily ones. Reusing the daily cuts would have given
+                       twelve cells at level 4 every time — a month is thirty days of
+                       commits, and any month at all clears a threshold set by the
+                       busiest single day. The cuts have to be drawn against the
+                       thing being drawn.
+
+                       Thirteen calendar months are touched by a 365-day window, the
+                       first and last of them partial, so the strip takes the last
+                       twelve and lets the stub at the front go. A cell that covers
+                       nine days would read as a quiet month rather than as half a
+                       month, which is a lie the shape cannot caveat. */
+                    const drawSpark = (days) => {
+                        const months = new Map();
+                        (days || []).forEach((day) => {
+                            const key = day.date.slice(0, 7);
+                            months.set(key, (months.get(key) || 0) + (Number(day.count) || 0));
+                        });
+
+                        const totals = [...months.values()].slice(-12);
+                        const ranked = totals.filter((sum) => sum > 0).sort((a, b) => a - b);
+                        const quantile = (at) => ranked[Math.floor((ranked.length - 1) * at)] || 1;
+                        const cuts = [quantile(0.3), quantile(0.6), quantile(0.85)];
+                        const levelFor = (sum) => {
+                            if (!sum) return 0;
+                            if (sum <= cuts[0]) return 1;
+                            if (sum <= cuts[1]) return 2;
+                            if (sum <= cuts[2]) return 3;
+                            return 4;
+                        };
+
+                        const source = totals.length ? totals : new Array(12).fill(0);
+                        spark.replaceChildren(...source.map((sum) => {
+                            const cell = document.createElement("span");
+                            cell.dataset.level = levelFor(sum);
+                            return cell;
+                        }));
+                    };
+
+                    /* scrollLeft on the way open because the field is only scrolled
+                       at all on a window too narrow for 460px, and today belongs at
+                       the right edge when it is. */
+                    const setOpen = (open) => {
+                        root.toggleAttribute("data-open", open);
+                        
+                        if (open) graph.scrollLeft = graph.scrollWidth;
+                    };
+
+                    setOpen(true);
+
+                    drawGrid(null);
+                    
+                    return {
+                        show(days, sum) {
+                            
+                            drawGrid(days);
+                                                        root.dataset.state = "ready";
+                            
+                        },
+                        /* Failure says so rather than vanishing. A section that
+                           removes itself leaves the page looking finished and the
+                           author with no idea it ever broke — which is how this
+                           sat at half opacity without anyone being told. */
+                        fail() {
+                            root.dataset.state = "failed";
+                            root.hidden = true;
+                        },
+                    };
+                };
+
+                const fields = [
+                    /* The column is centred in the viewport, so this one growing
+                       moves the paragraphs above it. That is left alone rather than
+                       designed around: the height animates, so the text drifts
+                       instead of jumping, and once the column is taller than the
+                       screen the safe centring has already given up and nothing
+                       moves at all. Nothing in the margin has to be told: neither
+                       the settings nor the menu is measured against the column any
+                       more. */
+                    mount(document.getElementById("github"), {
+                        failed: "Contribution graph unavailable",
+                    }),
+                ];
+
+                const load = async () => {
+                    try {
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        const start = new Date(today);
+                        start.setDate(start.getDate() - 364);
+
+                        /* A request with no deadline is the one failure mode this
+                           had no answer for: a fetch that never settles leaves the
+                           section sitting at data-state="loading" for as long as
+                           the tab is open, grid at half opacity and the count on a
+                           dash, with nothing anywhere saying what happened. The
+                           catch only ever caught refusals, never silence.
+
+                           Eight seconds, then the request is aborted and treated
+                           as a failure like any other. */
+                        const stopwatch = new AbortController();
+                        const deadline = setTimeout(() => stopwatch.abort(), 8000);
+
+                        const years = [...new Set([start.getFullYear(), today.getFullYear()])];
+                        const responses = await Promise.all(years.map((year) =>
+                            fetch(`https://github-contributions-api.jogruber.de/v4/kwzrl?y=${year}`,
+                                  { signal: stopwatch.signal })
+                        )).finally(() => clearTimeout(deadline));
+
+                        if (responses.some((response) => !response.ok)) throw new Error("request failed");
+
+                        const payloads = await Promise.all(responses.map((r) => r.json()));
+                        const days = payloads
+                            .flatMap((data) => data.contributions || [])
+                            .filter((day) => day.date >= localISO(start) && day.date <= localISO(today))
+                            .sort((a, b) => a.date.localeCompare(b.date));
+
+                        if (!days.length) throw new Error("no data");
+
+                        const total = days.reduce((sum, day) => sum + (Number(day.count) || 0), 0);
+                        fields.forEach((field) => field.show(days, total));
+                    } catch (error) {
+                        fields.forEach((field) => field.fail());
+                        console.warn("[lab-fey] contribution graph:", error);
+                    }
+                };
+
+                load();
+            })();
+
+            /* ---------- the skin ----------
+
+               The head has already stamped data-theme before the first paint, so
+               this only has to keep the parts that are not CSS in step with it: a
+               stored choice pins the page, and with nothing stored it stays live
+               to the OS, so a reader who flips their system at dusk flips with
+               it. The key is the one the other pages here use, so the choice
+               travels between them rather than being made again on each.
+
+               The boards follow the page now. Each of them used to carry its own
+               switch in the corner, which was the right answer while the page had
+               no skin of its own — a port of a dark product UI can be read either
+               way round, and on a page that was only ever paper the only place to
+               ask was the board itself. Now that the whole page has a skin,
+               eleven panels each disagreeing with it separately is not a feature;
+               it is eleven ways to be left with a dark panel on white paper.
+
+               The two ports that kept one are no exception any more. A sidebar
+               and a tab strip that carry a mode switch are showing an interface
+               that really has one — but drawn inside a panel on a page that
+               already asks the question out in its margin, a second switch reads
+               as a setting for the panel rather than for the page. Both still
+               take the page's skin through setTheme; what is gone is the button. */
+            const THEME_KEY = "kwzrl:theme";
+            const root = document.documentElement;
+            const themeButton = document.getElementById("themeToggle");
+            const themeMeta = document.querySelector('meta[name="theme-color"]');
+            const sysDark = matchMedia("(prefers-color-scheme: dark)");
+            const moon = '<path d="M20.9 13.1A9 9 0 0 1 10.9 3.1 9 9 0 1 0 20.9 13.1Z"/>';
+            const sun = '<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/>';
+
+            const storedTheme = () => {
+                try {
+                    const value = localStorage.getItem(THEME_KEY);
+                    return value === "light" || value === "dark" ? value : null;
+                } catch (error) {
+                    return null;
+                }
+            };
+
+            const applyTheme = (name) => {
+                root.dataset.theme = name;
+                const dark = name === "dark";
+
+                /* The browser chrome on a phone reads this, not the stylesheet. */
+                if (themeMeta) {
+                    themeMeta.content = getComputedStyle(root).getPropertyValue("--page").trim()
+                        || (dark ? "#0e0e0e" : "#fafafa");
                 }
 
-                days.forEach((day) => {
-                    const cell = document.createElement("span");
-                    cell.className = "github-cell";
-                    cell.dataset.level = levelFor(Number(day.count) || 0);
-                    cell.dataset.date = day.date;
-                    cell.dataset.count = Number(day.count) || 0;
-                    grid.appendChild(cell);
+                /* The glyph is the skin you are not in — press the moon to get
+                   the night — so it is swapped, not marked. No aria-pressed with
+                   it: a button whose label already reads "Switch to dark mode"
+                   and which also reports itself as pressed is a control saying
+                   two different things about the same state. The label carries
+                   it alone. */
+                themeButton.setAttribute("aria-label", `Switch to ${dark ? "light" : "dark"} mode`);
+                themeButton.querySelector("svg").innerHTML = dark ? sun : moon;
+
+                document.querySelectorAll(".board").forEach((board) => {
+                    board.classList.toggle("dark", dark);
                 });
 
-                graph.replaceChildren(grid);
-                graph.scrollLeft = graph.scrollWidth;
-            }
+                /* These paint their own insides, behind a shadow root a
+                   variable cannot reach into, so they are told instead. They
+                   used to be named here one at a time, which was fine at three
+                   and is a list to forget to add to at twenty-seven: the marker
+                   on the element says the same thing, and says it where the
+                   element is. The optional call is not defensive padding —
+                   they are deferred modules, some of them not yet fetched at
+                   all, and have not been upgraded on the first pass through
+                   here. Each reads the page's skin itself as it connects,
+                   which is what covers that first pass. */
+                document.querySelectorAll("[data-shadow]").forEach((element) => {
+                    if (element.setTheme) element.setTheme(dark);
+                });
+            };
 
-            /* Delegated once on the container, so a year of cells costs one
-               listener rather than 365, and the handler survives the grid being
-               replaced when the real data lands. `pointerover` bubbles and
-               `pointerleave` does not, which is precisely the pair wanted here:
-               every cell reports in, and only the container reports out. */
-            const day = document.getElementById("github-day");
-            const dayFormat = new Intl.DateTimeFormat("en-GB", {
-                day: "numeric", month: "short", year: "numeric",
+            const setTheme = (name) => {
+                try { localStorage.setItem(THEME_KEY, name); } catch (error) { /* private window */ }
+                applyTheme(name);
+            };
+
+            themeButton.addEventListener("click", () => {
+                setTheme(root.dataset.theme === "dark" ? "light" : "dark");
             });
 
-            function readout(cell) {
-                const count = Number(cell.dataset.count);
-                const date = dayFormat.format(new Date(`${cell.dataset.date}T00:00:00`));
-                const what = !count ? "No contributions"
-                    : `${number.format(count)} contribution${count === 1 ? "" : "s"}`;
-                day.textContent = `${what} on ${date}`;
-                activity.dataset.hover = "";
-            }
-
-            graph.addEventListener("pointerover", (event) => {
-                const cell = event.target.closest(".github-cell[data-date]");
-                if (cell) readout(cell);
+            sysDark.addEventListener("change", (event) => {
+                if (!storedTheme()) applyTheme(event.matches ? "dark" : "light");
             });
 
-            graph.addEventListener("pointerleave", () => {
-                delete activity.dataset.hover;
-            });
-
-            function drawLoadingGraph() {
-                const grid = document.createElement("div");
-                grid.className = "github-grid";
-                for (let index = 0; index < 371; index += 1) {
-                    const cell = document.createElement("span");
-                    cell.className = "github-cell";
-                    grid.appendChild(cell);
-                }
-                graph.appendChild(grid);
-                graph.scrollLeft = graph.scrollWidth;
-            }
-
-            async function loadGithubActivity() {
-                try {
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    const start = new Date(today);
-                    start.setDate(start.getDate() - 364);
-
-                    const years = [...new Set([start.getFullYear(), today.getFullYear()])];
-                    const responses = await Promise.all(years.map((year) =>
-                        fetch(`https://github-contributions-api.jogruber.de/v4/kwzrl?y=${year}`)
-                    ));
-                    if (responses.some((response) => !response.ok)) {
-                        throw new Error("GitHub contribution request failed");
-                    }
-                    const payloads = await Promise.all(responses.map((response) => response.json()));
-                    const days = payloads
-                        .flatMap((data) => data.contributions || [])
-                        .filter((day) => day.date >= localISO(start) && day.date <= localISO(today))
-                        .sort((a, b) => a.date.localeCompare(b.date));
-
-                    if (!days.length) throw new Error("No contribution data");
-
-                    const total = days.reduce((sum, day) => sum + (Number(day.count) || 0), 0);
-                    document.getElementById("github-total").textContent = number.format(total);
-                    drawGraph(days);
-                    activity.dataset.state = "ready";
-                } catch (error) {
-                    activity.dataset.state = "unavailable";
-                }
-            }
-
-            drawLoadingGraph();
-            loadGithubActivity();
+            applyTheme(root.dataset.theme === "dark" ? "dark" : "light");
         })();
     </script>
 
+    <script>
+        /* ---------- the accent ----------
+
+           One property on the root, and everything drawn in it follows: the disc
+           in the capsule and the hairline under the links in the writing. Set
+           inline, so it beats both skins' tokens and a chosen colour survives
+           the skin being switched — which is the right way round. A reader who
+           picked a colour picked it, not a colour per skin.
+
+           The cost of that, stated plainly: the two defaults are a pair, #0285ff
+           on paper and a lifted #3d9aff on the dark ground, and a chosen colour
+           has no second value to step to. Pick something dark and the dark skin
+           keeps it dark. The alternative was to lighten what the reader chose
+           behind their back, which is worse. */
+        (() => {
+            const KEY = "kwzrl:accent";
+            const root = document.documentElement;
+            const host = document.querySelector("[data-accent]");
+            if (!host) return;
+
+            const disc = host.querySelector(".pref--swatch");
+            const panel = host.querySelector(".palette");
+            const grid = host.querySelector("[data-grid]");
+            const custom = host.querySelector("[data-custom]");
+            const chips = [...host.querySelectorAll(".chip[data-colour]")];
+
+            const HEX = /^#[0-9a-f]{6}$/i;
+
+            const stored = () => {
+                try {
+                    const value = localStorage.getItem(KEY);
+                    return HEX.test(value || "") ? value.toLowerCase() : null;
+                } catch (error) {
+                    return null;
+                }
+            };
+
+            /* What the page is actually painted in, whether that came from a
+               choice or from the skin's own token. Read off the page rather than
+               written down again here, so the tokens stay the only place the two
+               defaults are stated. */
+            const current = () => {
+                const value = getComputedStyle(root).getPropertyValue("--accent").trim();
+                return HEX.test(value) ? value.toLowerCase() : null;
+            };
+
+            /* Exactly one chip is marked, or none — a colour mixed in the
+               drawer below is very unlikely to be one of the eleven, and nothing
+               is lit rather than the nearest one being lit on its behalf. */
+            const mark = () => {
+                const now = current();
+                chips.forEach((chip) => {
+                    chip.setAttribute("aria-pressed", String(chip.dataset.colour.toLowerCase() === now));
+                });
+            };
+
+            const paint = (value) => {
+                root.style.setProperty("--accent", value);
+                mark();
+            };
+
+            const keep = (value) => {
+                try {
+                    localStorage.setItem(KEY, value);
+                } catch (error) {
+                    /* private window: the colour holds for this visit only */
+                }
+            };
+
+            /* ---------- mixing one ----------
+
+               HSV and not RGB, because the two controls are the two questions a
+               person actually asks about a colour — which one, and how strong —
+               and in HSV those are one axis each. In RGB neither of them is any
+               axis at all: "a bit more orange" is a move in all three at once,
+               which is why a picker built on RGB needs numbers to be usable.
+
+               The state lives here rather than being read back off the page.
+               Two different (h, s, v) can round to one hex — every grey is every
+               hue at zero saturation — and a picker that re-derived itself from
+               its own output would swing its hue strip to red the moment you
+               dragged the field to the black corner. */
+            const sv = host.querySelector("[data-sv]");
+            const hue = host.querySelector("[data-hue]");
+
+            let hsv = { h: 208, s: .99, v: 1 };
+            let mixing = false;
+
+            const toHex = (h, s, v) => {
+                const channel = (n) => {
+                    const k = (n + h / 60) % 6;
+                    const level = v - v * s * Math.max(0, Math.min(k, 4 - k, 1));
+                    return Math.round(level * 255).toString(16).padStart(2, "0");
+                };
+                return `#${channel(5)}${channel(3)}${channel(1)}`;
+            };
+
+            const fromHex = (hex) => {
+                const [r, g, b] = [1, 3, 5].map((at) => parseInt(hex.slice(at, at + 2), 16) / 255);
+                const high = Math.max(r, g, b);
+                const low = Math.min(r, g, b);
+                const span = high - low;
+
+                let h = 0;
+                if (span) {
+                    if (high === r) h = (g - b) / span + (g < b ? 6 : 0);
+                    else if (high === g) h = (b - r) / span + 2;
+                    else h = (r - g) / span + 4;
+                    h *= 60;
+                }
+
+                return { h, s: high ? span / high : 0, v: high };
+            };
+
+            /* Three custom properties and an attribute. The field's own hue is
+               one of them, so the gradient under the knob is repainted by the
+               strip without either of them knowing about the other. */
+            const draw = () => {
+                sv.style.setProperty("--h", Math.round(hsv.h));
+                sv.style.setProperty("--sx", hsv.s.toFixed(4));
+                sv.style.setProperty("--sy", (1 - hsv.v).toFixed(4));
+                hue.style.setProperty("--hx", (hsv.h / 360).toFixed(4));
+                hue.setAttribute("aria-valuenow", Math.round(hsv.h));
+            };
+
+            const mix = ({ commit } = {}) => {
+                const value = toHex(hsv.h, hsv.s, hsv.v);
+                paint(value);
+                draw();
+                if (commit) keep(value);
+            };
+
+            /* Pointer capture, so a drag that leaves the field keeps feeding it.
+               Dragging off the edge and back is how anybody reaches a corner,
+               and a control that stops listening at its own boundary is a
+               control you have to be careful with.
+
+               The 7px is the knob's radius, taken off both ends: the reading is
+               mapped onto the same inset travel the knob is drawn on, so the
+               ring sits under the cursor rather than lagging it near the edges.
+               Written down once, in the CSS and here, and it is the only number
+               the two have to agree about. */
+            const RADIUS = 7;
+
+            const track = (element, read) => {
+                const at = (event) => {
+                    const box = element.getBoundingClientRect();
+                    const span = (value, size) =>
+                        Math.min(Math.max(value / Math.max(size - RADIUS * 2, 1), 0), 1);
+
+                    read(
+                        span(event.clientX - box.left - RADIUS, box.width),
+                        span(event.clientY - box.top - RADIUS, box.height),
+                    );
+                    mix();
+                };
+
+                element.addEventListener("pointerdown", (event) => {
+                    element.setPointerCapture(event.pointerId);
+                    element.focus({ preventScroll: true });
+                    at(event);
+                });
+
+                element.addEventListener("pointermove", (event) => {
+                    if (element.hasPointerCapture(event.pointerId)) at(event);
+                });
+
+                element.addEventListener("pointerup", (event) => {
+                    element.releasePointerCapture(event.pointerId);
+                    mix({ commit: true });
+                });
+            };
+
+            track(sv, (x, y) => { hsv.s = x; hsv.v = 1 - y; });
+            track(hue, (x) => { hsv.h = x * 360; });
+
+            /* Shift for the coarse step, which is the convention everywhere else
+               a slider takes arrow keys. Every press is written down: a keyboard
+               user has no pointerup to stand for "done". */
+            const clamp = (value) => Math.min(Math.max(value, 0), 1);
+
+            sv.addEventListener("keydown", (event) => {
+                const step = event.shiftKey ? .1 : .02;
+                const moves = {
+                    ArrowRight: () => { hsv.s = clamp(hsv.s + step); },
+                    ArrowLeft: () => { hsv.s = clamp(hsv.s - step); },
+                    ArrowUp: () => { hsv.v = clamp(hsv.v + step); },
+                    ArrowDown: () => { hsv.v = clamp(hsv.v - step); },
+                }[event.key];
+
+                if (!moves) return;
+                event.preventDefault();
+                moves();
+                mix({ commit: true });
+            });
+
+            hue.addEventListener("keydown", (event) => {
+                const step = event.shiftKey ? 30 : 5;
+                const delta = { ArrowRight: step, ArrowLeft: -step }[event.key];
+                if (delta === undefined) return;
+
+                event.preventDefault();
+                hsv.h = (hsv.h + delta + 360) % 360;
+                mix({ commit: true });
+            });
+
+            /* Opened on whatever the page is already wearing, so the first drag
+               is a correction and not a jump. */
+            const setMixing = (next) => {
+                if (next === mixing) return;
+                mixing = next;
+                panel.toggleAttribute("data-mixing", mixing);
+                custom.setAttribute("aria-expanded", String(mixing));
+
+                if (!mixing) return;
+
+                const now = current();
+                if (now) hsv = fromHex(now);
+                draw();
+            };
+
+            custom.addEventListener("click", () => setMixing(!mixing));
+
+            /* ---------- opening and closing ----------
+
+               The attribute is on the wrapper rather than on the panel, so the
+               disc and the panel can both be styled off one state without either
+               having to know about the other.
+
+               Focus goes into the grid on the way in and back to the disc on the
+               way out, which is the whole of what makes this usable from the
+               keyboard: a panel you can open and not reach is a panel that is
+               only there for the mouse. */
+            let open = false;
+
+            const setOpen = (next) => {
+                if (next === open) return;
+                open = next;
+                host.toggleAttribute("data-open", open);
+                disc.setAttribute("aria-expanded", String(open));
+
+                /* The drawer does not survive the panel. It is a detour off the
+                   grid, and a palette that reopened into the mixer would be
+                   hiding the eleven colours most presses are looking for behind
+                   a decision the reader made once. */
+                if (!open) setMixing(false);
+
+                /* A frame, not immediately: the panel is visibility:hidden
+                   until the attribute has been through style, and focus() on a
+                   hidden element does nothing and reports nothing. */
+                if (open) {
+                    requestAnimationFrame(() => {
+                        const lit = chips.find((chip) => chip.getAttribute("aria-pressed") === "true");
+                        (lit || chips[0]).focus({ preventScroll: true });
+                    });
+                }
+            };
+
+            const close = ({ restore } = {}) => {
+                if (!open) return;
+                setOpen(false);
+                if (restore) disc.focus({ preventScroll: true });
+            };
+
+            disc.addEventListener("click", () => setOpen(!open));
+
+            chips.forEach((chip) => {
+                chip.addEventListener("click", () => {
+                    const value = chip.dataset.colour.toLowerCase();
+                    paint(value);
+                    keep(value);
+                    close({ restore: true });
+                });
+            });
+
+            /* ---------- the keyboard ----------
+
+               Four across, so left and right walk the grid in reading order and
+               up and down step a row. Clamped rather than wrapped: a grid whose
+               last cell jumps to the first reads as a list that has been bent
+               into a rectangle, and this one is a rectangle. */
+            const COLUMNS = 4;
+
+            grid.addEventListener("keydown", (event) => {
+                const cells = [...grid.querySelectorAll(".chip")];
+                const at = cells.indexOf(document.activeElement);
+
+                const step = {
+                    ArrowRight: 1,
+                    ArrowLeft: -1,
+                    ArrowDown: COLUMNS,
+                    ArrowUp: -COLUMNS,
+                }[event.key];
+
+                if (step === undefined || at < 0) return;
+
+                const to = Math.min(Math.max(at + step, 0), cells.length - 1);
+                if (to === at) return;
+
+                event.preventDefault();
+                cells[to].focus({ preventScroll: true });
+            });
+
+            document.addEventListener("keydown", (event) => {
+                if (event.key === "Escape" && open) {
+                    /* Ahead of the page's own Escape, which glides to the top.
+                       The nearest thing open is the thing Escape means — and
+                       with the drawer down, the nearest thing is the drawer. */
+                    event.stopPropagation();
+
+                    if (mixing) {
+                        setMixing(false);
+                        custom.focus({ preventScroll: true });
+                    } else {
+                        close({ restore: true });
+                    }
+                }
+            }, true);
+
+            document.addEventListener("pointerdown", (event) => {
+                if (!host.contains(event.target)) close();
+            });
+
+            /* Tabbing out of the last chip should leave the panel behind rather
+               than leave it standing open over the page with nothing in it
+               focused. */
+            host.addEventListener("focusout", (event) => {
+                if (!host.contains(event.relatedTarget)) close();
+            });
+
+            /* The skin can change under a page that has no accent of its own,
+               and the marked chip would then be one blue out of date. Watched on
+               the attribute rather than wired into the skin's own script: the two
+               know nothing about each other, and the root already says everything
+               this needs to hear. */
+            new MutationObserver(mark).observe(root, { attributeFilter: ["data-theme"] });
+
+            mark();
+        })();
+    </script>
+
+    <script>
+        /* ---------- the two languages ----------
+
+           Nothing here swaps a page for another page. Every line that has a
+           German reading carries it on the element itself, and the switch walks
+           that list and sets the text. The English stays where it was written,
+           in the document, so the two versions of a sentence are never more
+           than one attribute apart when one of them is edited.
+
+           Only the writing is translated. The names of the projects and the two
+           controls in the margin are not sentences and are left where they are —
+           DE and EN name themselves in both languages, which is the whole reason
+           a language switch is written that way. */
+        (() => {
+            const KEY = "kwzrl:lang";
+            const root = document.documentElement;
+            const toggle = document.getElementById("langToggle");
+            const fields = [...document.querySelectorAll("[data-de]")];
+
+            /* Read before anything is swapped: the document as authored is the
+               English copy, and there is nowhere else it is written down. */
+            const english = new Map(fields.map((field) => [field, field.textContent]));
+
+            const apply = (lang) => {
+                root.lang = lang;
+
+                /* The word reports rather than offers: it says DE while you are
+                   reading German and becomes EN as the switch is thrown. The
+                   other half — what pressing it does — goes on the label, so the
+                   guess a lone chip leaves open is settled for anyone who asks,
+                   without a second word standing in the margin for everyone who
+                   does not. */
+                toggle.textContent = lang === "de" ? "DE" : "EN";
+                toggle.setAttribute(
+                    "aria-label",
+                    lang === "de" ? "Switch to English" : "Switch to German",
+                );
+
+                fields.forEach((field) => {
+                    field.textContent = lang === "de" ? field.dataset.de : english.get(field);
+                });
+
+                /* And the same again for the components, for the reason the
+                   skin has to be handed over too: the walk above runs once over
+                   the document, and their text is neither in the document nor,
+                   in the lazy ones, anywhere at all when it runs. Each carries
+                   both readings on the node inside its own root, and reads the
+                   page's language as it connects. */
+                document.querySelectorAll("[data-shadow]").forEach((element) => {
+                    if (element.setLang) element.setLang(lang);
+                });
+
+                /* German wraps to a different number of lines, so the column is
+                   a different height and every panel below it has moved. The rail
+                   marks whichever one the reading line is standing in, and it has
+                   just been told about a page that no longer exists. */
+                window.dispatchEvent(new Event("resize"));
+            };
+
+            toggle.addEventListener("click", () => {
+                const next = root.lang === "de" ? "en" : "de";
+                apply(next);
+                try {
+                    localStorage.setItem(KEY, next);
+                } catch (error) {
+                    /* private window: the choice holds for this visit only */
+                }
+            });
+
+            try {
+                if (localStorage.getItem(KEY) === "de") apply("de");
+            } catch (error) {
+                /* nothing stored, nothing to restore */
+            }
+        })();
+    </script>
 </body>
 
 </html>
